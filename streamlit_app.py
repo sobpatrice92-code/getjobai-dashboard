@@ -108,6 +108,7 @@ with st.sidebar:
         "📋 Offres d'Emploi",
         "📤 Candidatures",
         "🤖 Agents IA",
+        "📅 Planificateur",
         "💬 Assistant IA",
         "⚙️ Paramètres"
     ]
@@ -576,6 +577,97 @@ elif page == "🤖 Agents IA":
             st.error(f"Erreur chargement actions: {e}")
     else:
         st.warning("Connectez-vous pour voir vos actions")
+
+# ============================================================
+# PAGE: PLANIFICATEUR
+# ============================================================
+
+elif page == "📅 Planificateur":
+    section_header(
+        "📅 Planificateur",
+        "Lancez vos agents automatiquement à heures fixes"
+    )
+
+    # Agents planifiables (nom → action_type = fichier .py)
+    schedulable = {
+        "Job Hunter": "job_hunter",
+        "Indeed Agent": "indeed_agent",
+        "COOP Hunter": "coop_hunter",
+        "Smart Apply": "smart_apply_agent",
+        "Networking Agent": "networking_agent",
+        "Follow-up Engine": "followup_engine",
+        "Immigration Advisor": "immigration_advisor",
+        "Post LinkedIn": "linkedin_agent",
+        "Profil LinkedIn 10/10": "profile_optimizer",
+        "ATS Optimizer": "ats_optimizer",
+        "Stratégie Carrière": "career_strategy_agent",
+    }
+    type_to_name = {v: k for k, v in schedulable.items()}
+
+    if not st.session_state.user_id:
+        alert("Connectez-vous pour gérer vos planifications.", "warning")
+    else:
+        db = get_supabase_client()
+
+        alert("⚠️ Le worker (simple_worker.py) doit tourner sur votre PC pour "
+              "que les agents planifiés se lancent.", "info")
+
+        # --- Formulaire d'ajout ---
+        section_header("➕ Nouvelle planification", "")
+        c1, c2, c3 = st.columns([4, 3, 2])
+        with c1:
+            sel_agent = st.selectbox("Agent", list(schedulable.keys()), key="sched_agent")
+        with c2:
+            sel_time = st.time_input("Heure", key="sched_time")
+        with c3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("➕ Ajouter", type="primary", use_container_width=True):
+                hhmm = sel_time.strftime("%H:%M")
+                if db.create_schedule(st.session_state.user_id,
+                                      schedulable[sel_agent], hhmm):
+                    st.success(f"✅ {sel_agent} planifié à {hhmm}")
+                    st.rerun()
+                else:
+                    st.error("Erreur lors de la création.")
+
+        st.markdown("---")
+
+        # --- Liste des planifications ---
+        section_header("🗓️ Mes planifications", "")
+        schedules = db.get_schedules(st.session_state.user_id)
+
+        if not schedules:
+            st.info("Aucune planification. Ajoutez-en une ci-dessus.")
+        else:
+            for s in schedules:
+                sid = s.get("id")
+                agent_name = type_to_name.get(s.get("agent_type"), s.get("agent_type"))
+                run_time = s.get("run_time", "")[:5]
+                enabled = bool(s.get("enabled"))
+                last = s.get("last_run_date") or "jamais"
+                statut = "🟢 Actif" if enabled else "⏸️ En pause"
+
+                col1, col2, col3, col4 = st.columns([4, 3, 2, 2])
+                with col1:
+                    st.markdown(f"**🤖 {agent_name}**")
+                    st.caption(f"Dernier lancement: {last}")
+                with col2:
+                    st.markdown(f"🕐 **{run_time}** chaque jour")
+                    st.caption(statut)
+                with col3:
+                    if enabled:
+                        if st.button("⏸️ Pause", key=f"pause_{sid}"):
+                            db.toggle_schedule(sid, False)
+                            st.rerun()
+                    else:
+                        if st.button("▶️ Activer", key=f"on_{sid}"):
+                            db.toggle_schedule(sid, True)
+                            st.rerun()
+                with col4:
+                    if st.button("🗑️ Suppr.", key=f"del_{sid}"):
+                        db.delete_schedule(sid)
+                        st.rerun()
+                st.markdown("---")
 
 # ============================================================
 # PAGE: ASSISTANT IA

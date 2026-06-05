@@ -65,6 +65,56 @@ class SupabaseClient:
             st.error(f"Erreur get_all_users: {e}")
         return []
 
+    # ------------------------------------------------------------------
+    # PLANIFICATEUR (table schedules)
+    # ------------------------------------------------------------------
+    def get_schedules(self, user_id: str) -> List[Dict]:
+        """Récupérer les planifications d'un utilisateur."""
+        url = f"{self.url}/rest/v1/schedules?user_id=eq.{user_id}&order=run_time.asc"
+        try:
+            r = httpx.get(url, headers=self.headers, timeout=10)
+            if r.status_code == 200:
+                return r.json()
+        except Exception as e:
+            st.error(f"Erreur get_schedules: {e}")
+        return []
+
+    def create_schedule(self, user_id: str, agent_type: str, run_time: str) -> bool:
+        """Créer une planification (run_time format 'HH:MM')."""
+        url = f"{self.url}/rest/v1/schedules"
+        data = {
+            "user_id": user_id,
+            "agent_type": agent_type,
+            "run_time": run_time,
+            "enabled": True,
+        }
+        try:
+            r = httpx.post(url, headers=self.headers, json=data, timeout=10)
+            return r.status_code in (200, 201)
+        except Exception as e:
+            st.error(f"Erreur create_schedule: {e}")
+        return False
+
+    def toggle_schedule(self, schedule_id: str, enabled: bool) -> bool:
+        """Activer/désactiver une planification."""
+        url = f"{self.url}/rest/v1/schedules?id=eq.{schedule_id}"
+        h = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            r = httpx.patch(url, headers=h, json={"enabled": enabled}, timeout=10)
+            return r.status_code in (200, 204)
+        except Exception:
+            return False
+
+    def delete_schedule(self, schedule_id: str) -> bool:
+        """Supprimer une planification."""
+        url = f"{self.url}/rest/v1/schedules?id=eq.{schedule_id}"
+        h = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            r = httpx.delete(url, headers=h, timeout=10)
+            return r.status_code in (200, 204)
+        except Exception:
+            return False
+
     def update_user_status(self, user_id: str, field: str, value: bool) -> bool:
         """Mettre à jour un statut booléen d'un utilisateur (is_whitelisted, is_active...).
         Seuls les champs autorisés sont modifiables (sécurité)."""
