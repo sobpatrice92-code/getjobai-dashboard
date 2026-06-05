@@ -22,6 +22,10 @@ from ui_ux_pro_max import (
 # Import Database
 from database import get_supabase_client
 
+# Import Authentification + Assistant IA
+from auth import login_screen, set_password
+from chatbot import chatbot_page
+
 # Configuration
 st.set_page_config(
     page_title="GetJobAI - Votre Assistant IA de Recherche d'Emploi",
@@ -37,10 +41,12 @@ st.set_page_config(
 inject_animations()
 
 # Initialiser session state
+if 'auth_ok' not in st.session_state:
+    st.session_state.auth_ok = False
 if 'user_id' not in st.session_state:
     st.session_state.user_id = None
 if 'user_email' not in st.session_state:
-    st.session_state.user_email = "sobpatrice92@gmail.com"  # Par défaut pour démo
+    st.session_state.user_email = None
 if 'is_admin' not in st.session_state:
     st.session_state.is_admin = False
 if 'real_admin_email' not in st.session_state:
@@ -48,7 +54,14 @@ if 'real_admin_email' not in st.session_state:
 if 'is_whitelisted' not in st.session_state:
     st.session_state.is_whitelisted = False
 
-# Charger user depuis Supabase si email existe
+# ============================================================
+# PORTE D'AUTHENTIFICATION — pas d'accès sans connexion
+# ============================================================
+if not st.session_state.auth_ok:
+    login_screen()
+    st.stop()
+
+# Recharger les données user depuis Supabase si besoin (ex: impersonation admin)
 if st.session_state.user_email and not st.session_state.user_id:
     try:
         db = get_supabase_client()
@@ -95,6 +108,7 @@ with st.sidebar:
         "📋 Offres d'Emploi",
         "📤 Candidatures",
         "🤖 Agents IA",
+        "💬 Assistant IA",
         "⚙️ Paramètres"
     ]
     # Page Admin visible uniquement pour les administrateurs
@@ -113,10 +127,12 @@ with st.sidebar:
     if st.session_state.user_email:
         st.markdown(f"👤 **{st.session_state.user_email}**")
         if st.button("🚪 Déconnexion"):
+            st.session_state.auth_ok = False
             st.session_state.user_id = None
             st.session_state.user_email = None
             st.session_state.is_admin = False
             st.session_state.real_admin_email = None
+            st.session_state.is_whitelisted = False
             st.rerun()
 
 # ============================================================
@@ -562,6 +578,17 @@ elif page == "🤖 Agents IA":
         st.warning("Connectez-vous pour voir vos actions")
 
 # ============================================================
+# PAGE: ASSISTANT IA
+# ============================================================
+
+elif page == "💬 Assistant IA":
+    section_header(
+        "💬 Assistant IA",
+        "Votre coach personnel pour la recherche d'emploi"
+    )
+    chatbot_page()
+
+# ============================================================
 # PAGE: PARAMÈTRES
 # ============================================================
 
@@ -571,7 +598,7 @@ elif page == "⚙️ Paramètres":
         "Configurez votre profil et vos préférences"
     )
 
-    tab1, tab2, tab3 = st.tabs(["👤 Profil", "🔑 Keywords", "🔔 Notifications"])
+    tab1, tab2, tab3, tab4 = st.tabs(["👤 Profil", "🔑 Keywords", "🔔 Notifications", "🔒 Mot de passe"])
 
     with tab1:
         st.subheader("Informations Personnelles")
@@ -616,6 +643,20 @@ TECHNOLOGUE CONSTRUCTION GENIE CIVIL""",
 
         if st.button("💾 Sauvegarder Notifications", type="primary"):
             st.success("✅ Préférences sauvegardées!")
+
+    with tab4:
+        st.subheader("Changer mon mot de passe")
+        new_pwd = st.text_input("Nouveau mot de passe (min. 6 caractères)", type="password", key="param_new_pwd")
+        new_pwd2 = st.text_input("Confirmer le nouveau mot de passe", type="password", key="param_new_pwd2")
+        if st.button("🔒 Changer le mot de passe", type="primary"):
+            if len(new_pwd) < 6:
+                st.error("Le mot de passe doit faire au moins 6 caractères.")
+            elif new_pwd != new_pwd2:
+                st.error("Les mots de passe ne correspondent pas.")
+            elif set_password(st.session_state.user_id, new_pwd):
+                st.success("✅ Mot de passe changé avec succès!")
+            else:
+                st.error("Erreur lors du changement de mot de passe.")
 
 # ============================================================
 # PAGE: ADMIN
