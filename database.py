@@ -109,8 +109,7 @@ class SupabaseClient:
         data = {
             "user_id": user_id,
             "action_type": agent_name,
-            "agent_name": agent_name,
-            "params": params or {},
+            "parameters": params or {},
             "status": "pending",
             "priority": 5
         }
