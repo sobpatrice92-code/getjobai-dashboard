@@ -108,6 +108,7 @@ with st.sidebar:
         "📋 Offres d'Emploi",
         "📤 Candidatures",
         "🤖 Agents IA",
+        "📦 Livrables",
         "📅 Planificateur",
         "💬 Assistant IA",
         "⚙️ Paramètres"
@@ -550,6 +551,76 @@ elif page == "🤖 Agents IA":
             st.error(f"Erreur chargement actions: {e}")
     else:
         st.warning("Connectez-vous pour voir vos actions")
+
+# ============================================================
+# PAGE: LIVRABLES (résultats de tous les agents)
+# ============================================================
+
+elif page == "📦 Livrables":
+    section_header(
+        "📦 Livrables",
+        "Tous les résultats produits par vos agents"
+    )
+
+    if not st.session_state.user_id:
+        alert("Connectez-vous pour voir vos livrables.", "warning")
+    else:
+        db = get_supabase_client()
+        livrables = db.get_livrables(st.session_state.user_id, limit=100)
+
+        # Libellés lisibles par type
+        TYPE_INFO = {
+            "scraping": ("🔍", "Recherche d'offres"),
+            "candidature": ("📤", "Candidature"),
+            "relance": ("📧", "Relance"),
+            "networking": ("🤝", "Networking LinkedIn"),
+            "post_linkedin": ("📝", "Post LinkedIn"),
+            "immigration": ("🍁", "Conseil immigration"),
+            "profil": ("⭐", "Optimisation profil"),
+            "cv_ats": ("🤖", "CV optimisé ATS"),
+            "strategie": ("🧭", "Stratégie carrière"),
+            "autre": ("📦", "Livrable"),
+        }
+
+        if not livrables:
+            alert("Aucun livrable pour l'instant. Lancez un agent depuis la page "
+                  "🤖 Agents IA — son résultat apparaîtra ici.", "info")
+        else:
+            # Filtre par type
+            types_presents = sorted({l.get("type", "autre") for l in livrables})
+            sel_type = st.selectbox(
+                "Filtrer par type",
+                ["Tous"] + [TYPE_INFO.get(t, ("📦", t))[1] for t in types_presents]
+            )
+
+            st.caption(f"📊 {len(livrables)} livrable(s)")
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            for liv in livrables:
+                t = liv.get("type", "autre")
+                icon, label = TYPE_INFO.get(t, ("📦", t))
+                # Appliquer le filtre
+                if sel_type != "Tous" and label != sel_type:
+                    continue
+
+                statut = liv.get("statut", "")
+                statut_badge = "✅" if statut == "termine" else ("❌" if statut == "echec" else "⏳")
+                resume = liv.get("resume") or "(pas de résumé)"
+                date = (liv.get("created_at") or "")[:16].replace("T", " ")
+
+                with st.container():
+                    c1, c2 = st.columns([8, 2])
+                    with c1:
+                        st.markdown(f"**{icon} {label}** {statut_badge}")
+                        st.caption(f"🤖 {liv.get('agent', '')} • {date}")
+                        st.markdown(f"{resume}")
+                    with c2:
+                        # Voir le détail (output complet)
+                        with st.expander("Détail"):
+                            contenu = liv.get("contenu_json") or {}
+                            output = contenu.get("output", "") if isinstance(contenu, dict) else str(contenu)
+                            st.code(output[-2000:] or "(vide)")
+                    st.markdown("---")
 
 # ============================================================
 # PAGE: PLANIFICATEUR

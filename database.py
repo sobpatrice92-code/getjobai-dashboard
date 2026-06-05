@@ -66,6 +66,21 @@ class SupabaseClient:
         return []
 
     # ------------------------------------------------------------------
+    # LIVRABLES (résultats de tous les agents)
+    # ------------------------------------------------------------------
+    def get_livrables(self, user_id: str, limit: int = 100) -> List[Dict]:
+        """Récupérer les livrables (résultats d'agents) d'un utilisateur."""
+        url = (f"{self.url}/rest/v1/livrables?user_id=eq.{user_id}"
+               f"&order=created_at.desc&limit={limit}")
+        try:
+            r = httpx.get(url, headers=self.headers, timeout=10)
+            if r.status_code == 200:
+                return r.json()
+        except Exception as e:
+            st.error(f"Erreur get_livrables: {e}")
+        return []
+
+    # ------------------------------------------------------------------
     # PLANIFICATEUR (table schedules)
     # ------------------------------------------------------------------
     def get_schedules(self, user_id: str) -> List[Dict]:
