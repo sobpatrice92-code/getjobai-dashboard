@@ -41,6 +41,10 @@ if 'user_id' not in st.session_state:
     st.session_state.user_id = None
 if 'user_email' not in st.session_state:
     st.session_state.user_email = "sobpatrice92@gmail.com"  # Par défaut pour démo
+if 'is_admin' not in st.session_state:
+    st.session_state.is_admin = False
+if 'real_admin_email' not in st.session_state:
+    st.session_state.real_admin_email = None  # Pour revenir après impersonation
 
 # Charger user depuis Supabase si email existe
 if st.session_state.user_email and not st.session_state.user_id:
@@ -49,6 +53,15 @@ if st.session_state.user_email and not st.session_state.user_id:
         user = db.get_user_by_email(st.session_state.user_email)
         if user:
             st.session_state.user_id = user['id']
+            user_is_admin = bool(user.get('is_admin', False))
+            # Si un vrai admin est déjà connecté, conserver ses privilèges même
+            # en consultant le compte d'un autre utilisateur (impersonation).
+            if st.session_state.real_admin_email:
+                st.session_state.is_admin = True
+            else:
+                st.session_state.is_admin = user_is_admin
+                if user_is_admin:
+                    st.session_state.real_admin_email = st.session_state.user_email
     except Exception:
         pass  # Silently fail si pas de connexion
 
@@ -74,15 +87,20 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     # Navigation
+    nav_options = [
+        "🏠 Dashboard",
+        "📋 Offres d'Emploi",
+        "📤 Candidatures",
+        "🤖 Agents IA",
+        "⚙️ Paramètres"
+    ]
+    # Page Admin visible uniquement pour les administrateurs
+    if st.session_state.get("is_admin"):
+        nav_options.append("👑 Admin")
+
     page = st.radio(
         "Navigation",
-        [
-            "🏠 Dashboard",
-            "📋 Offres d'Emploi",
-            "📤 Candidatures",
-            "🤖 Agents IA",
-            "⚙️ Paramètres"
-        ],
+        nav_options,
         label_visibility="collapsed"
     )
 
@@ -94,6 +112,8 @@ with st.sidebar:
         if st.button("🚪 Déconnexion"):
             st.session_state.user_id = None
             st.session_state.user_email = None
+            st.session_state.is_admin = False
+            st.session_state.real_admin_email = None
             st.rerun()
 
 # ============================================================
@@ -577,6 +597,80 @@ TECHNOLOGUE CONSTRUCTION GENIE CIVIL""",
 
         if st.button("💾 Sauvegarder Notifications", type="primary"):
             st.success("✅ Préférences sauvegardées!")
+
+# ============================================================
+# PAGE: ADMIN
+# ============================================================
+
+elif page == "👑 Admin":
+    section_header(
+        "👑 Administration",
+        "Gestion des utilisateurs GetJobAI"
+    )
+
+    # Sécurité: double-vérification du statut admin
+    if not st.session_state.get("is_admin"):
+        alert("⛔ Accès réservé aux administrateurs.", "danger")
+    else:
+        try:
+            db = get_supabase_client()
+            users = db.get_all_users()
+
+            # Stats globales
+            total_users = len(users)
+            actifs = sum(1 for u in users if u.get("is_active"))
+            admins = sum(1 for u in users if u.get("is_admin"))
+
+            stats_grid([
+                {"label": "Utilisateurs", "value": str(total_users), "icon": "👥"},
+                {"label": "Actifs", "value": str(actifs), "icon": "✅"},
+                {"label": "Admins", "value": str(admins), "icon": "👑"},
+            ])
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # Bandeau impersonation
+            real_admin = st.session_state.get("real_admin_email")
+            if real_admin and st.session_state.user_email != real_admin:
+                alert(f"🎭 Vous consultez le compte de **{st.session_state.user_email}**. "
+                      f"Vous êtes connecté en tant que {real_admin}.", "warning")
+                if st.button("↩️ Revenir à mon compte admin", type="primary"):
+                    st.session_state.user_email = real_admin
+                    st.session_state.user_id = None  # force le rechargement
+                    st.rerun()
+                st.markdown("<br>", unsafe_allow_html=True)
+
+            section_header("📋 Liste des utilisateurs", "")
+
+            for u in users:
+                uid = u.get("id", "")
+                email = u.get("email", "?")
+                nom = u.get("full_name") or u.get("nom_complet") or "—"
+                ville = u.get("ville") or u.get("province") or ""
+                nb_offres = db.count_jobs(uid)
+                badge_admin = " 👑" if u.get("is_admin") else ""
+                badge_actif = "🟢" if u.get("is_active") else "🔴"
+
+                with st.container():
+                    c1, c2, c3 = st.columns([5, 3, 2])
+                    with c1:
+                        st.markdown(f"**{badge_actif} {nom}{badge_admin}**")
+                        st.caption(f"✉️ {email}")
+                    with c2:
+                        st.markdown(f"📊 **{nb_offres}** offres")
+                        if ville:
+                            st.caption(f"📍 {ville}")
+                    with c3:
+                        # Bouton pour consulter ce compte (sauf le sien)
+                        if email != st.session_state.user_email:
+                            if st.button("👁️ Voir", key=f"view_{uid}"):
+                                st.session_state.user_email = email
+                                st.session_state.user_id = None  # force rechargement
+                                st.rerun()
+                    st.markdown("---")
+
+        except Exception as e:
+            st.error(f"Erreur page admin: {e}")
 
 # ============================================================
 # FOOTER

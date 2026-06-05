@@ -52,6 +52,30 @@ class SupabaseClient:
             st.error(f"Erreur get_user: {e}")
         return None
 
+    def get_all_users(self) -> List[Dict]:
+        """Récupérer tous les utilisateurs (champs non-sensibles uniquement, pour admin)"""
+        # On ne sélectionne JAMAIS les mots de passe / clés / cookies
+        fields = "id,email,full_name,nom_complet,ville,province,is_admin,is_active,created_at,last_active"
+        url = f"{self.url}/rest/v1/users?select={fields}&order=created_at.asc"
+        try:
+            response = httpx.get(url, headers=self.headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            st.error(f"Erreur get_all_users: {e}")
+        return []
+
+    def count_jobs(self, user_id: str) -> int:
+        """Compter les offres d'un utilisateur"""
+        url = f"{self.url}/rest/v1/jobs?select=id&user_id=eq.{user_id}"
+        try:
+            response = httpx.get(url, headers=self.headers, timeout=10)
+            if response.status_code == 200:
+                return len(response.json())
+        except Exception:
+            pass
+        return 0
+
     def get_jobs(self, user_id: str, limit: int = 100, score_min: int = 0,
                  sources: List[str] = None) -> List[Dict]:
         """Récupérer offres d'emploi"""
