@@ -15,8 +15,17 @@ class SupabaseClient:
     """Client Supabase utilisant l'API REST"""
 
     def __init__(self):
-        self.url = st.secrets.get("SUPABASE_URL") or os.getenv("SUPABASE_URL")
-        self.key = st.secrets.get("SUPABASE_KEY") or os.getenv("SUPABASE_KEY")
+        # Priorité aux variables d'environnement (Render). st.secrets plante
+        # si aucun secrets.toml n'existe → on l'encapsule dans un try/except.
+        self.url = os.getenv("SUPABASE_URL")
+        self.key = os.getenv("SUPABASE_KEY")
+
+        if not self.url or not self.key:
+            try:
+                self.url = self.url or st.secrets.get("SUPABASE_URL")
+                self.key = self.key or st.secrets.get("SUPABASE_KEY")
+            except Exception:
+                pass
 
         if not self.url or not self.key:
             raise ValueError("SUPABASE_URL et SUPABASE_KEY requis!")

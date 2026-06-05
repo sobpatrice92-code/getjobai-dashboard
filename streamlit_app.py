@@ -404,20 +404,68 @@ elif page == "🤖 Agents IA":
             "icon": "📧",
             "color": "primary",
             "stats": "Relances J+7, J+14, J+21"
+        },
+        {
+            "name": "Immigration Advisor",
+            "desc": "Conseils immigration Canada (PVT, RP, Arrima)",
+            "icon": "🍁",
+            "color": "success",
+            "stats": "Programmes fédéraux + Québec"
+        },
+        {
+            "name": "Post LinkedIn",
+            "desc": "Génère et publie des posts LinkedIn",
+            "icon": "📝",
+            "color": "info",
+            "stats": "Posts engageants pour votre réseau"
+        },
+        {
+            "name": "Profil LinkedIn 10/10",
+            "desc": "Optimise votre profil LinkedIn au max",
+            "icon": "⭐",
+            "color": "warning",
+            "stats": "Headline, résumé, mots-clés ATS"
+        },
+        {
+            "name": "Lettre de Motivation",
+            "desc": "Génère lettres personnalisées (humanisées)",
+            "icon": "✉️",
+            "color": "primary",
+            "stats": "Anti-IA, adaptées à chaque offre"
+        },
+        {
+            "name": "ATS Optimizer",
+            "desc": "Optimise CV pour les filtres ATS",
+            "icon": "🤖",
+            "color": "secondary",
+            "stats": "Mots-clés + format compatible robots"
+        },
+        {
+            "name": "Stratégie Carrière",
+            "desc": "Plan de carrière personnalisé",
+            "icon": "🧭",
+            "color": "success",
+            "stats": "Objectifs + roadmap génie civil"
         }
     ]
 
     # Afficher agents en grille avec exécution fonctionnelle
     col1, col2 = st.columns(2)
 
-    # Mapping agent name → agent_type pour Supabase
+    # Mapping agent name → action_type (= nom du fichier .py dans agents/)
     agent_mapping = {
         "Job Hunter": "job_hunter",
         "Indeed Agent": "indeed_agent",
         "COOP Hunter": "coop_hunter",
-        "Smart Apply": "smart_apply",
+        "Smart Apply": "smart_apply_agent",
         "Networking Agent": "networking_agent",
-        "Follow-up Engine": "followup_engine"
+        "Follow-up Engine": "followup_engine",
+        "Immigration Advisor": "immigration_advisor",
+        "Post LinkedIn": "linkedin_poster",
+        "Profil LinkedIn 10/10": "profile_optimizer",
+        "Lettre de Motivation": "cover_letter",
+        "ATS Optimizer": "ats_optimizer",
+        "Stratégie Carrière": "career_strategy_agent"
     }
 
     for i, agent in enumerate(agents):
