@@ -414,7 +414,7 @@ elif page == "🤖 Agents IA":
         },
         {
             "name": "Post LinkedIn",
-            "desc": "Génère et publie des posts LinkedIn",
+            "desc": "Publie un post LinkedIn (⚠️ publie pour de vrai)",
             "icon": "📝",
             "color": "info",
             "stats": "Posts engageants pour votre réseau"
@@ -425,13 +425,6 @@ elif page == "🤖 Agents IA":
             "icon": "⭐",
             "color": "warning",
             "stats": "Headline, résumé, mots-clés ATS"
-        },
-        {
-            "name": "Lettre de Motivation",
-            "desc": "Génère lettres personnalisées (humanisées)",
-            "icon": "✉️",
-            "color": "primary",
-            "stats": "Anti-IA, adaptées à chaque offre"
         },
         {
             "name": "ATS Optimizer",
@@ -461,9 +454,8 @@ elif page == "🤖 Agents IA":
         "Networking Agent": "networking_agent",
         "Follow-up Engine": "followup_engine",
         "Immigration Advisor": "immigration_advisor",
-        "Post LinkedIn": "linkedin_poster",
+        "Post LinkedIn": "linkedin_agent",
         "Profil LinkedIn 10/10": "profile_optimizer",
-        "Lettre de Motivation": "cover_letter",
         "ATS Optimizer": "ats_optimizer",
         "Stratégie Carrière": "career_strategy_agent"
     }
