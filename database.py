@@ -237,22 +237,33 @@ class SupabaseClient:
         }
 
         try:
-            response = httpx.post(url, headers=self.headers, json=data, timeout=10)
+            # return=representation pour récupérer l'id de l'action créée (suivi en direct)
+            headers = {**self.headers, "Prefer": "return=representation"}
+            response = httpx.post(url, headers=headers, json=data, timeout=10)
             if response.status_code in [200, 201]:
-                # Supabase 201 peut retourner réponse vide - c'est OK
                 if response.text and response.text.strip():
                     try:
                         result = response.json()
                         return result[0] if isinstance(result, list) else result
                     except:
                         pass
-                # Succès même si pas de JSON retourné
                 return {"status": "created", "action_type": agent_name}
             else:
                 st.error(f"Erreur HTTP {response.status_code}: {response.text}")
                 return None
         except Exception as e:
             st.error(f"Erreur create_action: {e}")
+        return None
+
+    def get_action(self, action_id: str) -> Optional[Dict]:
+        """Récupérer une action précise (statut + log en direct)."""
+        url = f"{self.url}/rest/v1/actions?id=eq.{action_id}&select=*"
+        try:
+            r = httpx.get(url, headers=self.headers, timeout=8)
+            if r.status_code == 200 and r.json():
+                return r.json()[0]
+        except Exception:
+            pass
         return None
 
     def get_recent_actions(self, user_id: str, limit: int = 10) -> List[Dict]:

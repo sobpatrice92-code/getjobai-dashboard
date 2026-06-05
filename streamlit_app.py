@@ -391,6 +391,79 @@ elif page == "🤖 Agents IA":
         "Lancez vos assistants de recherche d'emploi automatisés"
     )
 
+    # ----- MONITEUR D'EXÉCUTION EN DIRECT (animation + logs) -----
+    if st.session_state.get("monitor_action_id"):
+
+        @st.fragment(run_every="2s")
+        def live_monitor():
+            db = get_supabase_client()
+            action = db.get_action(st.session_state.monitor_action_id)
+            if not action:
+                st.warning("Action introuvable.")
+                return
+            statut = action.get("status", "pending")
+            res = action.get("result") or {}
+            live_log = res.get("live_log", "") if isinstance(res, dict) else ""
+            agent_nom = st.session_state.get("monitor_agent", "Agent")
+
+            # Étapes animées selon le statut
+            etapes = ["🔌 Connexion", "🔍 Recherche", "🧮 Analyse", "☁️ Upload"]
+            if statut == "pending":
+                actif, libelle, couleur = 0, "En file d'attente…", "#f59e0b"
+            elif statut == "processing":
+                # progression visuelle basée sur la taille du log
+                actif = min(3, 1 + len(live_log) // 800)
+                libelle, couleur = "En cours d'exécution…", "#667eea"
+            elif statut == "completed":
+                actif, libelle, couleur = 4, "Terminé ✅", "#10b981"
+            else:
+                actif, libelle, couleur = -1, "Échec ❌", "#ef4444"
+
+            # Barre d'étapes animée
+            chips = ""
+            for idx, et in enumerate(etapes):
+                done = (actif > idx) or actif == 4
+                running = (idx == actif and statut == "processing")
+                bg = couleur if (done or running) else "#e5e7eb"
+                txt = "white" if (done or running) else "#9ca3af"
+                pulse = "animation: pulse 1s infinite;" if running else ""
+                chips += (f"<span style='background:{bg};color:{txt};padding:6px 14px;"
+                          f"border-radius:20px;margin:3px;display:inline-block;"
+                          f"font-size:0.85rem;{pulse}'>{et}</span>")
+
+            spinner = "🔄" if statut == "processing" else ("⏳" if statut == "pending" else ("✅" if statut == "completed" else "❌"))
+            st.markdown(f"""
+            <style>@keyframes pulse {{0%,100%{{opacity:1;}}50%{{opacity:0.5;}}}}
+            @keyframes spin {{from{{transform:rotate(0)}}to{{transform:rotate(360deg)}}}}</style>
+            <div style="background:linear-gradient(135deg,#1e293b,#334155);padding:1.5rem;
+                 border-radius:14px;border-left:5px solid {couleur};margin-bottom:1rem;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:2rem;{'animation:spin 1.5s linear infinite;display:inline-block;' if statut=='processing' else ''}">{spinner}</span>
+                <div>
+                  <h3 style="color:white;margin:0;">{agent_nom}</h3>
+                  <p style="color:#cbd5e1;margin:0;font-size:0.9rem;">{libelle}</p>
+                </div>
+              </div>
+              <div style="margin-top:1rem;">{chips}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Logs en direct
+            st.markdown("**📜 Logs en direct**")
+            st.code(live_log[-2500:] or "En attente de la sortie de l'agent…", language="text")
+
+            if statut in ("completed", "failed"):
+                if statut == "completed":
+                    st.success(f"✅ {agent_nom} terminé ! Résultats dans 📦 Livrables et 📋 Offres.")
+                else:
+                    st.error(f"❌ {agent_nom} a échoué. Voir les logs ci-dessus.")
+                if st.button("✖️ Fermer le moniteur", key="close_monitor"):
+                    st.session_state.monitor_action_id = None
+                    st.rerun()
+
+        live_monitor()
+        st.markdown("---")
+
     # Agents disponibles
     agents = [
         {
@@ -500,23 +573,22 @@ elif page == "🤖 Agents IA":
                     try:
                         db = get_supabase_client()
                         agent_type = agent_mapping.get(agent["name"], "unknown")
-
-                        # Créer action dans Supabase (FIXED: use 'parameters' not 'params')
                         action = db.create_action(
                             user_id=st.session_state.user_id,
                             agent_name=agent_type,
                             params={"source": "dashboard"}
                         )
-
-                        if action:
-                            alert(f"✅ {agent['name']} lancé! Un worker local va le traiter.", "success")
-                            alert("⚠️ IMPORTANT: Assurez-vous que simple_worker.py tourne sur votre machine.", "warning")
+                        if action and action.get("id"):
+                            # Démarrer le moniteur en direct
+                            st.session_state.monitor_action_id = action["id"]
+                            st.session_state.monitor_agent = agent["name"]
+                            st.rerun()
+                        elif action:
+                            alert(f"✅ {agent['name']} lancé! (suivi indisponible)", "success")
                         else:
-                            st.error(f"❌ Échec du lancement - vérifiez les logs Supabase")
+                            st.error("❌ Échec du lancement - vérifiez les logs Supabase")
                     except Exception as e:
                         st.error(f"❌ Erreur: {str(e)}")
-                        import traceback
-                        st.code(traceback.format_exc())
                 else:
                     st.error("User ID manquant - impossible de lancer l'agent")
 
