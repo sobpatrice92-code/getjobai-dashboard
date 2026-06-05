@@ -14,6 +14,8 @@ Dashboard professionnel pour la recherche d'emploi automatisée avec IA.
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://getjobai.streamlit.app)
 
+**Version:** 1.0.1 - Step B Complete (Agent execution from Dashboard)
+
 ## 🛠️ Tech Stack
 
 - **Frontend:** Streamlit + UI UX PRO MAX
