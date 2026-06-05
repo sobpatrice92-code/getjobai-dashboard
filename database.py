@@ -117,8 +117,15 @@ class SupabaseClient:
         try:
             response = httpx.post(url, headers=self.headers, json=data, timeout=10)
             if response.status_code in [200, 201]:
-                result = response.json()
-                return result[0] if isinstance(result, list) else result
+                # Supabase 201 peut retourner réponse vide - c'est OK
+                if response.text and response.text.strip():
+                    try:
+                        result = response.json()
+                        return result[0] if isinstance(result, list) else result
+                    except:
+                        pass
+                # Succès même si pas de JSON retourné
+                return {"status": "created", "action_type": agent_name}
             else:
                 st.error(f"Erreur HTTP {response.status_code}: {response.text}")
                 return None
