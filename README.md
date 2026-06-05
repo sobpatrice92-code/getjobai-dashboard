@@ -53,10 +53,11 @@ streamlit run streamlit_app.py
 
 ## 📊 Stats
 
-- **175 offres** dans la base
+- **175+ offres** dans la base
 - **88% taux de match**
 - **4 sources actives**
 - **6 agents IA**
+- **Exécution depuis Dashboard** (NEW!)
 
 ## 📄 License
 
