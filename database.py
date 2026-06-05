@@ -120,6 +120,9 @@ class SupabaseClient:
             if response.status_code in [200, 201]:
                 result = response.json()
                 return result[0] if isinstance(result, list) else result
+            else:
+                st.error(f"Erreur HTTP {response.status_code}: {response.text}")
+                return None
         except Exception as e:
             st.error(f"Erreur create_action: {e}")
         return None
