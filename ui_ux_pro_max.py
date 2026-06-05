@@ -1,0 +1,361 @@
+"""
+UI UX PRO MAX - Design System for GetJobAI
+===========================================
+Base de données intégrée de composants UI/UX professionnels
+pour Streamlit Dashboard
+"""
+import streamlit as st
+
+# ============================================================
+# PALETTES DE COULEURS PROFESSIONNELLES
+# ============================================================
+
+COLOR_SCHEMES = {
+    "getjobai": {
+        "primary": "#667eea",
+        "secondary": "#764ba2",
+        "success": "#48bb78",
+        "warning": "#ed8936",
+        "danger": "#f56565",
+        "info": "#4299e1",
+        "light": "#f7fafc",
+        "dark": "#2d3748",
+        "text": "#2d3748",
+        "background": "#ffffff"
+    },
+    "modern": {
+        "primary": "#6366f1",
+        "secondary": "#8b5cf6",
+        "success": "#10b981",
+        "warning": "#f59e0b",
+        "danger": "#ef4444",
+        "info": "#3b82f6",
+        "light": "#f9fafb",
+        "dark": "#111827"
+    },
+    "dark_mode": {
+        "primary": "#818cf8",
+        "secondary": "#a78bfa",
+        "success": "#34d399",
+        "warning": "#fbbf24",
+        "danger": "#f87171",
+        "info": "#60a5fa",
+        "light": "#1f2937",
+        "dark": "#111827",
+        "background": "#0f172a",
+        "text": "#f3f4f6"
+    }
+}
+
+# ============================================================
+# COMPOSANTS UI STYLÉS
+# ============================================================
+
+def card(title: str, content: str, color: str = "primary", icon: str = "📋"):
+    """Carte stylée avec bordure colorée"""
+    colors = COLOR_SCHEMES["getjobai"]
+
+    st.markdown(f"""
+    <div style="
+        border-left: 4px solid {colors[color]};
+        padding: 1rem 1.5rem;
+        margin: 1rem 0;
+        background: linear-gradient(135deg, {colors['light']} 0%, #ffffff 100%);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    ">
+        <h3 style="margin: 0; color: {colors[color]};">{icon} {title}</h3>
+        <p style="margin: 0.5rem 0 0 0; color: {colors['text']};">{content}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def metric_card(label: str, value: str, delta: str = None, icon: str = "📊"):
+    """Métrique stylée avec delta"""
+    colors = COLOR_SCHEMES["getjobai"]
+
+    delta_html = ""
+    if delta:
+        delta_color = colors["success"] if delta.startswith("+") else colors["danger"]
+        delta_html = f'<div style="color: {delta_color}; font-size: 0.9rem; margin-top: 0.5rem;">{delta}</div>'
+
+    st.markdown(f"""
+    <div style="
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        text-align: center;
+    ">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">{icon}</div>
+        <div style="color: {colors['text']}; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">{label}</div>
+        <div style="font-size: 2rem; font-weight: bold; color: {colors['primary']}; margin-top: 0.5rem;">{value}</div>
+        {delta_html}
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def alert(message: str, type: str = "info", dismissible: bool = False):
+    """Alerte stylée (info, success, warning, danger)"""
+    colors = COLOR_SCHEMES["getjobai"]
+    icons = {
+        "info": "ℹ️",
+        "success": "✅",
+        "warning": "⚠️",
+        "danger": "❌"
+    }
+
+    st.markdown(f"""
+    <div style="
+        background-color: {colors[type]}15;
+        border-left: 4px solid {colors[type]};
+        padding: 1rem 1.5rem;
+        margin: 1rem 0;
+        border-radius: 4px;
+        color: {colors['text']};
+    ">
+        <strong>{icons[type]} {message}</strong>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def progress_bar(label: str, value: int, max_value: int = 100, color: str = "primary"):
+    """Barre de progression stylée"""
+    colors = COLOR_SCHEMES["getjobai"]
+    percentage = (value / max_value) * 100
+
+    st.markdown(f"""
+    <div style="margin: 1rem 0;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span style="color: {colors['text']}; font-weight: 500;">{label}</span>
+            <span style="color: {colors['text']}; font-weight: bold;">{value}/{max_value}</span>
+        </div>
+        <div style="
+            background-color: {colors['light']};
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+        ">
+            <div style="
+                background: linear-gradient(90deg, {colors[color]} 0%, {colors['secondary']} 100%);
+                width: {percentage}%;
+                height: 100%;
+                border-radius: 10px;
+                transition: width 0.3s ease;
+            "></div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def badge(text: str, color: str = "primary", size: str = "md"):
+    """Badge stylé"""
+    colors = COLOR_SCHEMES["getjobai"]
+    sizes = {"sm": "0.75rem", "md": "0.85rem", "lg": "1rem"}
+
+    return f"""
+    <span style="
+        background-color: {colors[color]};
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: {sizes[size]};
+        font-weight: 600;
+        display: inline-block;
+        margin: 0.25rem;
+    ">{text}</span>
+    """
+
+
+def button_custom(label: str, color: str = "primary", icon: str = ""):
+    """Bouton HTML stylé (pour affichage uniquement, pas interactif)"""
+    colors = COLOR_SCHEMES["getjobai"]
+
+    return f"""
+    <button style="
+        background: linear-gradient(135deg, {colors[color]} 0%, {colors['secondary']} 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: transform 0.2s;
+    " onmouseover="this.style.transform='translateY(-2px)'"
+       onmouseout="this.style.transform='translateY(0)'">
+        {icon} {label}
+    </button>
+    """
+
+
+def section_header(title: str, subtitle: str = "", icon: str = ""):
+    """En-tête de section stylé"""
+    colors = COLOR_SCHEMES["getjobai"]
+
+    subtitle_html = f'<p style="color: {colors["text"]}; opacity: 0.7; margin: 0.5rem 0 0 0;">{subtitle}</p>' if subtitle else ""
+
+    st.markdown(f"""
+    <div style="
+        margin: 2rem 0 1.5rem 0;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid {colors['primary']};
+    ">
+        <h2 style="
+            margin: 0;
+            color: {colors['primary']};
+            font-size: 1.8rem;
+            font-weight: 700;
+        ">{icon} {title}</h2>
+        {subtitle_html}
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def stats_grid(stats: list):
+    """Grille de statistiques
+
+    Args:
+        stats: Liste de dicts avec 'label', 'value', 'icon', 'delta' (optionnel)
+    """
+    cols = st.columns(len(stats))
+    for i, stat in enumerate(stats):
+        with cols[i]:
+            metric_card(
+                stat.get('label', ''),
+                stat.get('value', '0'),
+                stat.get('delta'),
+                stat.get('icon', '📊')
+            )
+
+
+def job_card_pro(job: dict):
+    """Carte offre d'emploi professionnelle"""
+    colors = COLOR_SCHEMES["getjobai"]
+
+    score = job.get('score', 0)
+    score_color = colors['success'] if score >= 75 else (colors['warning'] if score >= 60 else colors['danger'])
+
+    st.markdown(f"""
+    <div style="
+        background: white;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border-left: 4px solid {score_color};
+        transition: transform 0.2s, box-shadow 0.2s;
+    " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'"
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 12px rgba(0,0,0,0.08)'">
+
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="flex: 1;">
+                <h3 style="margin: 0; color: {colors['primary']}; font-size: 1.3rem;">{job.get('title', 'N/A')}</h3>
+                <p style="margin: 0.5rem 0; color: {colors['text']}; font-size: 1.1rem; font-weight: 500;">🏢 {job.get('company', 'N/A')}</p>
+                <p style="margin: 0.25rem 0; color: {colors['text']}; opacity: 0.7;">📍 {job.get('location', 'N/A')} | 🌐 {job.get('source', 'N/A')}</p>
+            </div>
+            <div style="
+                background: {score_color};
+                color: white;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                font-size: 1.2rem;
+                font-weight: bold;
+                text-align: center;
+                min-width: 60px;
+            ">
+                {score}<br><span style="font-size: 0.7rem;">/ 100</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <a href="{job.get('url', '#')}" target="_blank" style="
+                background: {colors['primary']};
+                color: white;
+                padding: 0.5rem 1.5rem;
+                border-radius: 6px;
+                text-decoration: none;
+                display: inline-block;
+                font-weight: 600;
+            ">🔗 Voir l'offre</a>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ============================================================
+# ANIMATIONS CSS
+# ============================================================
+
+def inject_animations():
+    """Injecte les animations CSS dans le dashboard"""
+    st.markdown("""
+    <style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(0); }
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    .slide-in {
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+# ============================================================
+# EXEMPLE D'UTILISATION
+# ============================================================
+
+if __name__ == "__main__":
+    st.set_page_config(page_title="UI UX PRO MAX Demo", layout="wide")
+
+    inject_animations()
+
+    section_header("🎨 UI UX PRO MAX", "Base de données de composants professionnels", "")
+
+    # Stats
+    stats_grid([
+        {"label": "Total Offres", "value": "120", "icon": "📊", "delta": "+45 cette semaine"},
+        {"label": "Candidatures", "value": "28", "icon": "📤", "delta": "+12 aujourd'hui"},
+        {"label": "Taux Match", "value": "88%", "icon": "🎯", "delta": "+5%"},
+    ])
+
+    # Alertes
+    alert("Bienvenue dans GetJobAI Dashboard!", "success")
+    alert("Nouveau job hunter terminé avec 22 offres", "info")
+
+    # Carte
+    card("Job Hunter", "Agent de recherche d'emploi automatisé sur LinkedIn et Job Bank", "primary", "🎯")
+
+    # Barre de progression
+    progress_bar("Progression du mois", 75, 100, "success")
+
+    # Job card
+    job_card_pro({
+        "title": "Chargé de Projet Junior",
+        "company": "Pomerleau",
+        "location": "Ottawa, ON",
+        "score": 85,
+        "source": "LinkedIn",
+        "url": "https://linkedin.com/jobs/123"
+    })
