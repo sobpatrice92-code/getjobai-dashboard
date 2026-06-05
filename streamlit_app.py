@@ -407,8 +407,18 @@ elif page == "🤖 Agents IA":
         }
     ]
 
-    # Afficher agents en grille
+    # Afficher agents en grille avec exécution fonctionnelle
     col1, col2 = st.columns(2)
+
+    # Mapping agent name → agent_type pour Supabase
+    agent_mapping = {
+        "Job Hunter": "job_hunter",
+        "Indeed Agent": "indeed_agent",
+        "COOP Hunter": "coop_hunter",
+        "Smart Apply": "smart_apply",
+        "Networking Agent": "networking_agent",
+        "Follow-up Engine": "followup_engine"
+    }
 
     for i, agent in enumerate(agents):
         with col1 if i % 2 == 0 else col2:
@@ -416,10 +426,59 @@ elif page == "🤖 Agents IA":
             st.caption(f"📊 {agent['stats']}")
 
             if st.button(f"🚀 Lancer {agent['name']}", key=f"launch_{i}", use_container_width=True):
-                with st.spinner(f"{agent['name']} en cours d'exécution..."):
-                    st.success(f"✅ {agent['name']} lancé avec succès!")
+                if st.session_state.user_id:
+                    try:
+                        db = get_supabase_client()
+                        agent_type = agent_mapping.get(agent["name"], "unknown")
+
+                        # Créer action dans Supabase
+                        action = db.create_action(
+                            user_id=st.session_state.user_id,
+                            agent_name=agent_type,
+                            params={"source": "dashboard"}
+                        )
+
+                        if action:
+                            alert(f"✅ {agent['name']} lancé! Un worker local va le traiter.", "success")
+                            alert("⚠️ IMPORTANT: Lancez simple_worker.py sur votre machine locale pour exécuter l'agent.", "warning")
+                        else:
+                            st.error(f"Erreur lors du lancement de {agent['name']}")
+                    except Exception as e:
+                        st.error(f"Erreur: {e}")
+                else:
+                    st.error("User ID manquant - impossible de lancer l'agent")
 
             st.markdown("<br>", unsafe_allow_html=True)
+
+    # Afficher actions récentes
+    section_header("📋 Actions Récentes", "Dernières exécutions d'agents")
+
+    if st.session_state.user_id:
+        try:
+            db = get_supabase_client()
+            actions = db.get_recent_actions(st.session_state.user_id, limit=5)
+
+            if actions:
+                for action in actions:
+                    status_icon = {
+                        "pending": "⏳",
+                        "running": "🔄",
+                        "completed": "✅",
+                        "failed": "❌"
+                    }.get(action.get("status", "pending"), "⏳")
+
+                    col_icon, col_info = st.columns([1, 11])
+                    with col_icon:
+                        st.markdown(f"### {status_icon}")
+                    with col_info:
+                        st.markdown(f"**{action.get('agent_name', 'Unknown')}** - {action.get('status', 'pending')}")
+                        st.caption(f"Créé: {action.get('created_at', 'N/A')}")
+            else:
+                st.info("Aucune action récente")
+        except Exception as e:
+            st.error(f"Erreur chargement actions: {e}")
+    else:
+        st.warning("Connectez-vous pour voir vos actions")
 
 # ============================================================
 # PAGE: PARAMÈTRES

@@ -102,6 +102,40 @@ class SupabaseClient:
 
         return stats
 
+    def create_action(self, user_id: str, agent_name: str, params: Dict = None) -> Optional[Dict]:
+        """Créer une action pour lancer un agent"""
+        url = f"{self.url}/rest/v1/actions"
+
+        data = {
+            "user_id": user_id,
+            "action_type": agent_name,
+            "agent_name": agent_name,
+            "params": params or {},
+            "status": "pending",
+            "priority": 5
+        }
+
+        try:
+            response = httpx.post(url, headers=self.headers, json=data, timeout=10)
+            if response.status_code in [200, 201]:
+                result = response.json()
+                return result[0] if isinstance(result, list) else result
+        except Exception as e:
+            st.error(f"Erreur create_action: {e}")
+        return None
+
+    def get_recent_actions(self, user_id: str, limit: int = 10) -> List[Dict]:
+        """Récupérer actions récentes"""
+        url = f"{self.url}/rest/v1/actions?user_id=eq.{user_id}&order=created_at.desc&limit={limit}"
+
+        try:
+            response = httpx.get(url, headers=self.headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            st.error(f"Erreur get_recent_actions: {e}")
+        return []
+
     def get_candidatures(self, user_id: str) -> Dict:
         """Récupérer statistiques candidatures"""
         stats = {
