@@ -30,6 +30,11 @@ class SupabaseClient:
         if not self.url or not self.key:
             raise ValueError("SUPABASE_URL et SUPABASE_KEY requis!")
 
+        # Nettoyer tout espace/saut de ligne (erreurs de copier-coller dans Render).
+        # Un JWT et une URL n'ont jamais d'espaces internes.
+        self.url = "".join(self.url.split())
+        self.key = "".join(self.key.split())
+
         self.headers = {
             "apikey": self.key,
             "Authorization": f"Bearer {self.key}",
