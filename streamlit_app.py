@@ -19,6 +19,9 @@ from ui_ux_pro_max import (
     COLOR_SCHEMES
 )
 
+# Import Database
+from database import get_supabase_client
+
 # Configuration
 st.set_page_config(
     page_title="GetJobAI - Votre Assistant IA de Recherche d'Emploi",
@@ -37,7 +40,17 @@ inject_animations()
 if 'user_id' not in st.session_state:
     st.session_state.user_id = None
 if 'user_email' not in st.session_state:
-    st.session_state.user_email = None
+    st.session_state.user_email = "sobpatrice92@gmail.com"  # Par défaut pour démo
+
+# Charger user depuis Supabase si email existe
+if st.session_state.user_email and not st.session_state.user_id:
+    try:
+        db = get_supabase_client()
+        user = db.get_user_by_email(st.session_state.user_email)
+        if user:
+            st.session_state.user_id = user['id']
+    except Exception:
+        pass  # Silently fail si pas de connexion
 
 # ============================================================
 # SIDEBAR - NAVIGATION
@@ -93,33 +106,62 @@ if page == "🏠 Dashboard":
         f"Bienvenue sur GetJobAI - {datetime.now().strftime('%d %B %Y')}"
     )
 
-    # Stats principales
-    stats_grid([
-        {
-            "label": "Total Offres",
-            "value": "175",
-            "icon": "📊",
-            "delta": "+55 cette semaine"
-        },
-        {
-            "label": "Candidatures",
-            "value": "61",
-            "icon": "📤",
-            "delta": "+28 aujourd'hui"
-        },
-        {
-            "label": "Taux de Match",
-            "value": "88%",
-            "icon": "🎯",
-            "delta": "+5%"
-        },
-        {
-            "label": "Réponses",
-            "value": "12",
-            "icon": "💬",
-            "delta": "+3 cette semaine"
-        }
-    ])
+    # Charger stats depuis Supabase
+    if st.session_state.user_id:
+        try:
+            db = get_supabase_client()
+            job_stats = db.get_stats(st.session_state.user_id)
+            cand_stats = db.get_candidatures(st.session_state.user_id)
+
+            total_offres = job_stats.get("total_offres", 0)
+            offres_semaine = job_stats.get("offres_semaine", 0)
+            score_moyen = job_stats.get("score_moyen", 0)
+            total_cands = cand_stats.get("envoyees", 0) + cand_stats.get("en_attente", 0)
+
+            # Stats principales
+            stats_grid([
+                {
+                    "label": "Total Offres",
+                    "value": str(total_offres),
+                    "icon": "📊",
+                    "delta": f"+{offres_semaine} cette semaine"
+                },
+                {
+                    "label": "Candidatures",
+                    "value": str(total_cands),
+                    "icon": "📤",
+                    "delta": f"+{cand_stats.get('en_attente', 0)} en attente"
+                },
+                {
+                    "label": "Taux de Match",
+                    "value": f"{score_moyen}%",
+                    "icon": "🎯",
+                    "delta": "Basé sur IA scoring"
+                },
+                {
+                    "label": "Réponses",
+                    "value": str(cand_stats.get("reponses", 0)),
+                    "icon": "💬",
+                    "delta": f"{cand_stats.get('entretiens', 0)} entretiens"
+                }
+            ])
+        except Exception as e:
+            st.error(f"Erreur chargement stats: {e}")
+            # Fallback stats
+            stats_grid([
+                {"label": "Total Offres", "value": "175", "icon": "📊", "delta": "+55"},
+                {"label": "Candidatures", "value": "61", "icon": "📤", "delta": "+28"},
+                {"label": "Taux Match", "value": "88%", "icon": "🎯", "delta": "+5%"},
+                {"label": "Réponses", "value": "12", "icon": "💬", "delta": "+3"}
+            ])
+    else:
+        # Fallback si pas d'user
+        stats_grid([
+            {"label": "Total Offres", "value": "175", "icon": "📊", "delta": "+55"},
+            {"label": "Candidatures", "value": "61", "icon": "📤", "delta": "+28"},
+            {"label": "Taux Match", "value": "88%", "icon": "🎯", "delta": "+5%"},
+            {"label": "Réponses", "value": "12", "icon": "💬", "delta": "+3"}
+        ])
 
     st.markdown("<br>", unsafe_allow_html=True)
 
