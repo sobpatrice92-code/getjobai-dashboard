@@ -612,23 +612,52 @@ elif page == "📅 Planificateur":
         alert("⚠️ Le worker (simple_worker.py) doit tourner sur votre PC pour "
               "que les agents planifiés se lancent.", "info")
 
+        # Jours de la semaine (Python weekday: Lun=0 ... Dim=6)
+        JOURS = [("Lun", 0), ("Mar", 1), ("Mer", 2), ("Jeu", 3), ("Ven", 4), ("Sam", 5), ("Dim", 6)]
+        JOURS_NOMS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+
+        def format_jours(days_str):
+            if not days_str:
+                return "tous les jours"
+            idxs = sorted(int(x) for x in str(days_str).split(",") if x.strip().isdigit())
+            if idxs == [0, 1, 2, 3, 4, 5, 6]:
+                return "tous les jours"
+            if idxs == [0, 1, 2, 3, 4]:
+                return "Lun→Ven"
+            if idxs == [5, 6]:
+                return "week-end"
+            return ", ".join(JOURS_NOMS[i] for i in idxs if 0 <= i < 7)
+
         # --- Formulaire d'ajout ---
         section_header("➕ Nouvelle planification", "")
-        c1, c2, c3 = st.columns([4, 3, 2])
+        c1, c2, c3 = st.columns([4, 2, 2])
         with c1:
             sel_agent = st.selectbox("Agent", list(schedulable.keys()), key="sched_agent")
         with c2:
-            sel_time = st.time_input("Heure", key="sched_time")
+            heures = [f"{h:02d}" for h in range(24)]
+            sel_heure = st.selectbox("Heure", heures, index=8, key="sched_heure")
         with c3:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("➕ Ajouter", type="primary", use_container_width=True):
-                hhmm = sel_time.strftime("%H:%M")
-                if db.create_schedule(st.session_state.user_id,
-                                      schedulable[sel_agent], hhmm):
-                    st.success(f"✅ {sel_agent} planifié à {hhmm}")
-                    st.rerun()
-                else:
-                    st.error("Erreur lors de la création.")
+            minutes = [f"{m:02d}" for m in range(0, 60, 5)]
+            sel_minute = st.selectbox("Minutes", minutes, index=0, key="sched_minute")
+
+        sel_jours = st.multiselect(
+            "Jours d'exécution",
+            JOURS_NOMS,
+            default=JOURS_NOMS,  # tous les jours par défaut
+            key="sched_jours"
+        )
+
+        if st.button("➕ Ajouter", type="primary"):
+            run_time = f"{sel_heure}:{sel_minute}"
+            jours_idx = sorted(str(dict(JOURS)[j]) for j in sel_jours)
+            if not jours_idx:
+                st.error("Choisissez au moins un jour.")
+            elif db.create_schedule(st.session_state.user_id,
+                                    schedulable[sel_agent], run_time, ",".join(jours_idx)):
+                st.success(f"✅ {sel_agent} planifié à {run_time} ({format_jours(','.join(jours_idx))})")
+                st.rerun()
+            else:
+                st.error("Erreur lors de la création.")
 
         st.markdown("---")
 
@@ -652,7 +681,7 @@ elif page == "📅 Planificateur":
                     st.markdown(f"**🤖 {agent_name}**")
                     st.caption(f"Dernier lancement: {last}")
                 with col2:
-                    st.markdown(f"🕐 **{run_time}** chaque jour")
+                    st.markdown(f"🕐 **{run_time}** • {format_jours(s.get('days'))}")
                     st.caption(statut)
                 with col3:
                     if enabled:

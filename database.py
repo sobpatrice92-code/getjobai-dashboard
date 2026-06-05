@@ -79,13 +79,15 @@ class SupabaseClient:
             st.error(f"Erreur get_schedules: {e}")
         return []
 
-    def create_schedule(self, user_id: str, agent_type: str, run_time: str) -> bool:
-        """Créer une planification (run_time format 'HH:MM')."""
+    def create_schedule(self, user_id: str, agent_type: str, run_time: str,
+                        days: str = "0,1,2,3,4,5,6") -> bool:
+        """Créer une planification (run_time 'HH:MM', days = jours weekday séparés par virgule)."""
         url = f"{self.url}/rest/v1/schedules"
         data = {
             "user_id": user_id,
             "agent_type": agent_type,
             "run_time": run_time,
+            "days": days,
             "enabled": True,
         }
         try:
