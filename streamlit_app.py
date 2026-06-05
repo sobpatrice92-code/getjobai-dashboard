@@ -618,12 +618,14 @@ elif page == "👑 Admin":
 
             # Stats globales
             total_users = len(users)
-            actifs = sum(1 for u in users if u.get("is_active"))
+            approuves = sum(1 for u in users if u.get("is_whitelisted"))
+            en_attente = sum(1 for u in users if not u.get("is_whitelisted"))
             admins = sum(1 for u in users if u.get("is_admin"))
 
             stats_grid([
                 {"label": "Utilisateurs", "value": str(total_users), "icon": "👥"},
-                {"label": "Actifs", "value": str(actifs), "icon": "✅"},
+                {"label": "Approuvés", "value": str(approuves), "icon": "✅"},
+                {"label": "En attente", "value": str(en_attente), "icon": "⏳"},
                 {"label": "Admins", "value": str(admins), "icon": "👑"},
             ])
 
@@ -648,20 +650,35 @@ elif page == "👑 Admin":
                 nom = u.get("full_name") or u.get("nom_complet") or "—"
                 ville = u.get("ville") or u.get("province") or ""
                 nb_offres = db.count_jobs(uid)
+                is_approved = bool(u.get("is_whitelisted"))
                 badge_admin = " 👑" if u.get("is_admin") else ""
                 badge_actif = "🟢" if u.get("is_active") else "🔴"
+                badge_appr = "✅ Approuvé" if is_approved else "⏳ En attente"
 
                 with st.container():
                     c1, c2, c3 = st.columns([5, 3, 2])
                     with c1:
                         st.markdown(f"**{badge_actif} {nom}{badge_admin}**")
                         st.caption(f"✉️ {email}")
+                        st.caption(badge_appr)
                     with c2:
                         st.markdown(f"📊 **{nb_offres}** offres")
                         if ville:
                             st.caption(f"📍 {ville}")
                     with c3:
-                        # Bouton pour consulter ce compte (sauf le sien)
+                        # Approuver / Révoquer (sauf pour les admins, toujours approuvés)
+                        if not u.get("is_admin"):
+                            if is_approved:
+                                if st.button("🚫 Révoquer", key=f"revoke_{uid}"):
+                                    if db.update_user_status(uid, "is_whitelisted", False):
+                                        st.success(f"{email} révoqué")
+                                        st.rerun()
+                            else:
+                                if st.button("✅ Approuver", key=f"approve_{uid}", type="primary"):
+                                    if db.update_user_status(uid, "is_whitelisted", True):
+                                        st.success(f"{email} approuvé")
+                                        st.rerun()
+                        # Consulter ce compte (sauf le sien)
                         if email != st.session_state.user_email:
                             if st.button("👁️ Voir", key=f"view_{uid}"):
                                 st.session_state.user_email = email

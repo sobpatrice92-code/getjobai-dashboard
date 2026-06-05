@@ -55,7 +55,7 @@ class SupabaseClient:
     def get_all_users(self) -> List[Dict]:
         """Récupérer tous les utilisateurs (champs non-sensibles uniquement, pour admin)"""
         # On ne sélectionne JAMAIS les mots de passe / clés / cookies
-        fields = "id,email,full_name,nom_complet,ville,province,is_admin,is_active,created_at,last_active"
+        fields = "id,email,full_name,nom_complet,ville,province,is_admin,is_active,is_whitelisted,created_at,last_active"
         url = f"{self.url}/rest/v1/users?select={fields}&order=created_at.asc"
         try:
             response = httpx.get(url, headers=self.headers, timeout=10)
@@ -64,6 +64,23 @@ class SupabaseClient:
         except Exception as e:
             st.error(f"Erreur get_all_users: {e}")
         return []
+
+    def update_user_status(self, user_id: str, field: str, value: bool) -> bool:
+        """Mettre à jour un statut booléen d'un utilisateur (is_whitelisted, is_active...).
+        Seuls les champs autorisés sont modifiables (sécurité)."""
+        allowed = {"is_whitelisted", "is_active"}
+        if field not in allowed:
+            st.error(f"Champ non autorisé: {field}")
+            return False
+
+        url = f"{self.url}/rest/v1/users?id=eq.{user_id}"
+        headers = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            response = httpx.patch(url, headers=headers, json={field: value}, timeout=10)
+            return response.status_code in (200, 204)
+        except Exception as e:
+            st.error(f"Erreur update_user_status: {e}")
+        return False
 
     def count_jobs(self, user_id: str) -> int:
         """Compter les offres d'un utilisateur"""
