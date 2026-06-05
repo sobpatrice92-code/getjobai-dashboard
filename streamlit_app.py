@@ -45,6 +45,8 @@ if 'is_admin' not in st.session_state:
     st.session_state.is_admin = False
 if 'real_admin_email' not in st.session_state:
     st.session_state.real_admin_email = None  # Pour revenir après impersonation
+if 'is_whitelisted' not in st.session_state:
+    st.session_state.is_whitelisted = False
 
 # Charger user depuis Supabase si email existe
 if st.session_state.user_email and not st.session_state.user_id:
@@ -53,6 +55,7 @@ if st.session_state.user_email and not st.session_state.user_id:
         user = db.get_user_by_email(st.session_state.user_email)
         if user:
             st.session_state.user_id = user['id']
+            st.session_state.is_whitelisted = bool(user.get('is_whitelisted', False))
             user_is_admin = bool(user.get('is_admin', False))
             # Si un vrai admin est déjà connecté, conserver ses privilèges même
             # en consultant le compte d'un autre utilisateur (impersonation).
@@ -115,6 +118,22 @@ with st.sidebar:
             st.session_state.is_admin = False
             st.session_state.real_admin_email = None
             st.rerun()
+
+# ============================================================
+# BARRIÈRE D'ACCÈS — utilisateurs non approuvés
+# ============================================================
+# Un utilisateur connecté mais non approuvé (et non admin) ne voit rien
+# tant qu'un administrateur ne l'a pas validé.
+if st.session_state.user_id and not st.session_state.is_admin \
+        and not st.session_state.is_whitelisted:
+    section_header("⏳ Compte en attente d'approbation", "")
+    alert(
+        "Votre compte a bien été créé mais il doit être **approuvé par un "
+        "administrateur** avant que vous puissiez utiliser GetJobAI. "
+        "Vous recevrez un accès dès validation. Merci de votre patience !",
+        "warning"
+    )
+    st.stop()
 
 # ============================================================
 # PAGE: DASHBOARD
