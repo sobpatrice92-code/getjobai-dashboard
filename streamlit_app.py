@@ -428,8 +428,10 @@ elif page == "🤖 Agents IA":
             if st.button(f"🚀 Lancer {agent['name']}", key=f"launch_{i}", use_container_width=True):
                 if st.session_state.user_id:
                     try:
+                        st.info(f"🔍 DEBUG: user_id={st.session_state.user_id}, agent={agent['name']}")
                         db = get_supabase_client()
                         agent_type = agent_mapping.get(agent["name"], "unknown")
+                        st.info(f"🔍 DEBUG: agent_type={agent_type}")
 
                         # Créer action dans Supabase
                         action = db.create_action(
@@ -438,13 +440,15 @@ elif page == "🤖 Agents IA":
                             params={"source": "dashboard"}
                         )
 
+                        st.info(f"🔍 DEBUG: action result={action}")
+
                         if action:
                             alert(f"✅ {agent['name']} lancé! Un worker local va le traiter.", "success")
                             alert("⚠️ IMPORTANT: Lancez simple_worker.py sur votre machine locale pour exécuter l'agent.", "warning")
                         else:
-                            st.error(f"Erreur lors du lancement de {agent['name']}")
+                            st.error(f"Erreur lors du lancement de {agent['name']} - action retournée None")
                     except Exception as e:
-                        st.error(f"Erreur: {e}")
+                        st.error(f"Exception: {type(e).__name__}: {e}")
                 else:
                     st.error("User ID manquant - impossible de lancer l'agent")
 
