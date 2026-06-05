@@ -280,92 +280,58 @@ if page == "🏠 Dashboard":
 # ============================================================
 
 elif page == "📋 Offres d'Emploi":
-    section_header(
-        "📋 Offres d'Emploi",
-        "175 offres trouvées avec vos keywords personnalisés"
-    )
+    if not st.session_state.user_id:
+        section_header("📋 Offres d'Emploi", "")
+        alert("Connectez-vous pour voir vos offres.", "warning")
+    else:
+        db = get_supabase_client()
+        # Charger les VRAIES offres de l'utilisateur depuis Supabase
+        all_jobs = db.get_jobs(st.session_state.user_id, limit=500)
 
-    # Filtres
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        sources = st.multiselect(
-            "Sources",
-            ["LinkedIn", "Job Bank", "Talent.com", "Charity Village"],
-            default=["LinkedIn", "Job Bank"]
+        section_header(
+            "📋 Offres d'Emploi",
+            f"{len(all_jobs)} offres trouvées par vos agents"
         )
 
-    with col2:
-        score_min = st.slider("Score minimum", 0, 100, 60)
+        # Sources réellement présentes dans les données
+        sources_dispo = sorted({j.get("source", "") for j in all_jobs if j.get("source")})
 
-    with col3:
-        sort_by = st.selectbox("Trier par", ["Score ↓", "Date ↓", "Entreprise"])
+        # Filtres
+        col1, col2, col3 = st.columns([3, 2, 3])
+        with col1:
+            sel_sources = st.multiselect("Sources", sources_dispo, default=[])
+        with col2:
+            score_min = st.slider("Score minimum", 0, 100, 0)
+        with col3:
+            search = st.text_input("🔍 Rechercher", placeholder="Titre ou entreprise...")
 
-    with col4:
-        keywords_filter = st.text_input("🔍 Rechercher", placeholder="Mots-clés...")
+        # Appliquer les filtres
+        results = []
+        for j in all_jobs:
+            score = j.get("score") or 0
+            if score < score_min:
+                continue
+            if sel_sources and j.get("source") not in sel_sources:
+                continue
+            if search:
+                hay = (str(j.get("title", "")) + " " + str(j.get("company", ""))).lower()
+                if search.lower() not in hay:
+                    continue
+            # Normaliser le score (job_card_pro plante si None)
+            j["score"] = score
+            results.append(j)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        # Trier par score décroissant
+        results.sort(key=lambda x: x.get("score") or 0, reverse=True)
 
-    # Exemples d'offres (à remplacer par vraies données Supabase)
-    offres_demo = [
-        {
-            "title": "Chargé de Projet Junior Construction",
-            "company": "Pomerleau",
-            "location": "Ottawa, ON",
-            "score": 85,
-            "source": "LinkedIn",
-            "url": "https://linkedin.com/jobs/view/123"
-        },
-        {
-            "title": "Coordonnateur des Travaux Construction",
-            "company": "VINCI",
-            "location": "Ottawa, ON",
-            "score": 82,
-            "source": "Job Bank",
-            "url": "https://jobbank.gc.ca/jobposting/123"
-        },
-        {
-            "title": "Estimateur Junior Construction",
-            "company": "Bird Construction",
-            "location": "Ottawa, ON",
-            "score": 78,
-            "source": "Talent.com",
-            "url": "https://talent.com/job/123"
-        },
-        {
-            "title": "Project Manager - Infrastructure",
-            "company": "Habitat for Humanity Ottawa",
-            "location": "Ottawa, ON",
-            "score": 72,
-            "source": "Charity Village",
-            "url": "https://charityvillage.com/job/123"
-        },
-        {
-            "title": "Surveillant de Chantier",
-            "company": "Chandos Construction",
-            "location": "Ottawa, ON",
-            "score": 68,
-            "source": "LinkedIn",
-            "url": "https://linkedin.com/jobs/view/456"
-        },
-        {
-            "title": "Technologue en Génie Civil",
-            "company": "Stantec",
-            "location": "Ottawa, ON",
-            "score": 65,
-            "source": "Job Bank",
-            "url": "https://jobbank.gc.ca/jobposting/456"
-        }
-    ]
+        st.caption(f"📊 {len(results)} offre(s) affichée(s)")
+        st.markdown("<br>", unsafe_allow_html=True)
 
-    # Afficher offres
-    offres_filtrees = [o for o in offres_demo if o['score'] >= score_min]
-
-    if not offres_filtrees:
-        alert("Aucune offre ne correspond à vos filtres. Ajustez les critères ci-dessus.", "warning")
-    else:
-        for offre in offres_filtrees:
-            job_card_pro(offre)
+        if not results:
+            alert("Aucune offre ne correspond à vos filtres. Ajustez les critères.", "warning")
+        else:
+            for offre in results[:100]:
+                job_card_pro(offre)
 
 # ============================================================
 # PAGE: CANDIDATURES
@@ -377,18 +343,25 @@ elif page == "📤 Candidatures":
         "Suivez l'état de vos candidatures"
     )
 
-    # Stats candidatures
-    stats_grid([
-        {"label": "En Attente", "value": "28", "icon": "⏳"},
-        {"label": "Envoyées", "value": "33", "icon": "✅"},
-        {"label": "Réponses", "value": "12", "icon": "💬"},
-        {"label": "Entretiens", "value": "3", "icon": "🎯"}
-    ])
+    # Stats candidatures RÉELLES depuis Supabase
+    if st.session_state.user_id:
+        db = get_supabase_client()
+        cand = db.get_candidatures(st.session_state.user_id)
+        en_attente = cand.get("en_attente", 0)
+        stats_grid([
+            {"label": "En Attente", "value": str(en_attente), "icon": "⏳"},
+            {"label": "Envoyées", "value": str(cand.get("envoyees", 0)), "icon": "✅"},
+            {"label": "Réponses", "value": str(cand.get("reponses", 0)), "icon": "💬"},
+            {"label": "Entretiens", "value": str(cand.get("entretiens", 0)), "icon": "🎯"}
+        ])
+    else:
+        en_attente = 0
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Alerte candidatures en attente
-    alert("⏳ Vous avez 28 candidatures en attente d'approbation", "warning")
+    if en_attente > 0:
+        alert(f"⏳ Vous avez {en_attente} candidature(s) en attente d'approbation", "warning")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
