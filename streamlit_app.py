@@ -372,7 +372,7 @@ elif page == "📤 Candidatures":
                   "place ici en attente de votre validation.", "info")
         else:
             statut_icon = {
-                "en_attente": "⏳", "validee": "✔️", "envoyee": "✅",
+                "en_attente": "⏳", "validee": "✔️", "envoyee": "✅", "recue": "📬",
                 "reponse": "💬", "entretien": "🎯", "refus": "❌",
             }
             en_attente_list = [c for c in cands if (c.get("status") or "") == "en_attente"]
@@ -588,6 +588,13 @@ elif page == "🤖 Agents IA":
             "stats": "Pitch + questions probables + réponses + conseils"
         },
         {
+            "name": "Suivi Boîte Mail",
+            "desc": "Lit votre Gmail et met à jour les statuts (reçue/refus/entretien)",
+            "icon": "📬",
+            "color": "secondary",
+            "stats": "Détecte accusés de réception et réponses automatiquement"
+        },
+        {
             "name": "Immigration Advisor",
             "desc": "Conseils immigration Canada (PVT, RP, Arrima)",
             "icon": "🍁",
@@ -637,6 +644,7 @@ elif page == "🤖 Agents IA":
         "Follow-up Engine": "followup_engine",
         "Préparer Candidatures": "candidature_prep",
         "Préparer mon Entretien": "entretien_prep",
+        "Suivi Boîte Mail": "mail_tracker",
         "Immigration Advisor": "immigration_advisor",
         "Post LinkedIn": "linkedin_agent",
         "Profil LinkedIn 10/10": "profile_optimizer",
@@ -733,6 +741,7 @@ elif page == "📦 Livrables":
             "cv_ats": ("🤖", "CV optimisé ATS"),
             "strategie": ("🧭", "Stratégie carrière"),
             "entretien": ("🎙️", "Préparation entretien"),
+            "suivi_mail": ("📬", "Suivi boîte mail"),
             "autre": ("📦", "Livrable"),
         }
 
@@ -806,6 +815,7 @@ elif page == "📅 Planificateur":
         "Follow-up Engine": "followup_engine",
         "Préparer Candidatures": "candidature_prep",
         "Préparer mon Entretien": "entretien_prep",
+        "Suivi Boîte Mail": "mail_tracker",
         "Immigration Advisor": "immigration_advisor",
         "Post LinkedIn": "linkedin_agent",
         "Profil LinkedIn 10/10": "profile_optimizer",

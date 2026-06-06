@@ -342,7 +342,9 @@ class SupabaseClient:
                     # Une réponse = refus OU invitation entretien
                     a_reponse = (a_entretien or 'repons' in s or 'response' in s
                                  or 'refus' in s or 'reject' in s)
-                    a_envoye = ('envoy' in s or 'sent' in s or a_reponse)
+                    # Reçue (accusé de réception) compte comme envoyée
+                    a_envoye = ('envoy' in s or 'sent' in s or 'recu' in s
+                                or 'reçu' in s or a_reponse)
                     # Entonnoir cumulatif : Envoyées >= Réponses >= Entretiens
                     if a_envoye:
                         stats["envoyees"] += 1
