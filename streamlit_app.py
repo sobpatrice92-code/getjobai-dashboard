@@ -398,10 +398,12 @@ elif page == "📤 Candidatures":
                     # Lire la LETTRE
                     with st.expander("✉️ Lire la lettre de motivation"):
                         st.write(lettre)
-                    # Lire le CV joint
-                    with st.expander(f"📎 Lire mon CV ({cv_nom})"):
-                        if cv_texte:
-                            st.text(cv_texte)
+                    # Lire le CV ADAPTÉ à cette offre (sinon CV de base)
+                    cv_offre = c.get("cv_adapte") or cv_texte
+                    label_cv = "📎 Lire mon CV adapté à cette offre" if c.get("cv_adapte") else f"📎 Lire mon CV ({cv_nom})"
+                    with st.expander(label_cv):
+                        if cv_offre:
+                            st.text(cv_offre)
                         else:
                             st.info("CV non disponible. Ajoutez-le dans Paramètres.")
 
