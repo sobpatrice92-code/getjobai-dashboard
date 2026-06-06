@@ -337,16 +337,19 @@ class SupabaseClient:
                 candidatures = response.json()
 
                 for cand in candidatures:
-                    status = cand.get('status', '').lower()
-                    # Matching robuste (sans accent: envoyee/validee, etc.)
-                    if 'attente' in status or 'pending' in status:
-                        stats["en_attente"] += 1
-                    elif 'envoy' in status or 'valid' in status or 'sent' in status:
+                    s = (cand.get('status') or '').lower()
+                    a_reponse = ('repons' in s or 'response' in s or 'entretien' in s or 'interview' in s)
+                    a_entretien = ('entretien' in s or 'interview' in s)
+                    a_envoye = ('envoy' in s or 'sent' in s or a_reponse)
+                    # Entonnoir cumulatif : Envoyées >= Réponses >= Entretiens
+                    if a_envoye:
                         stats["envoyees"] += 1
-                    elif 'repons' in status or 'response' in status:
+                    if a_reponse:
                         stats["reponses"] += 1
-                    elif 'entretien' in status or 'interview' in status:
+                    if a_entretien:
                         stats["entretiens"] += 1
+                    if not a_envoye:  # pas encore envoyée (en attente / validée)
+                        stats["en_attente"] += 1
 
         except Exception as e:
             st.error(f"Erreur get_candidatures: {e}")

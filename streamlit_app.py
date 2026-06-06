@@ -407,22 +407,28 @@ elif page == "📤 Candidatures":
                         else:
                             st.info("CV non disponible. Ajoutez-le dans Paramètres.")
 
-                    # Actions de validation (seulement si en attente)
-                    if stt == "en_attente":
-                        b1, b2, b3 = st.columns(3)
-                        with b1:
-                            if st.button("✔️ Valider", key=f"val_{cid}", type="primary", use_container_width=True):
-                                db.update_candidature_status(cid, "validee")
-                                st.success("Candidature validée (prête à envoyer)")
-                                st.rerun()
-                        with b2:
-                            if st.button("✏️ Marquer envoyée", key=f"env_{cid}", use_container_width=True):
-                                db.update_candidature_status(cid, "envoyee")
-                                st.rerun()
-                        with b3:
-                            if st.button("❌ Rejeter", key=f"rej_{cid}", use_container_width=True):
-                                db.delete_candidature(cid)
-                                st.rerun()
+                    # Suivi du cycle de vie (lié aux compteurs En attente / Envoyées / Réponses / Entretiens)
+                    st.caption("📊 Faire évoluer le statut :")
+                    b1, b2, b3, b4, b5 = st.columns(5)
+                    with b1:
+                        if st.button("⏳ En attente", key=f"s_att_{cid}", use_container_width=True,
+                                     disabled=(stt == "en_attente")):
+                            db.update_candidature_status(cid, "en_attente"); st.rerun()
+                    with b2:
+                        if st.button("📤 Envoyée", key=f"s_env_{cid}", type="primary", use_container_width=True,
+                                     disabled=(stt == "envoyee")):
+                            db.update_candidature_status(cid, "envoyee"); st.rerun()
+                    with b3:
+                        if st.button("💬 Réponse", key=f"s_rep_{cid}", use_container_width=True,
+                                     disabled=(stt == "reponse")):
+                            db.update_candidature_status(cid, "reponse"); st.rerun()
+                    with b4:
+                        if st.button("🎯 Entretien", key=f"s_ent_{cid}", use_container_width=True,
+                                     disabled=(stt == "entretien")):
+                            db.update_candidature_status(cid, "entretien"); st.rerun()
+                    with b5:
+                        if st.button("❌ Rejeter", key=f"s_rej_{cid}", use_container_width=True):
+                            db.delete_candidature(cid); st.rerun()
                     st.markdown("---")
 
 # ============================================================
