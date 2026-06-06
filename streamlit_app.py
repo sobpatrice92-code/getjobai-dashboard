@@ -364,6 +364,8 @@ elif page == "📤 Candidatures":
     if st.session_state.user_id:
         cands = db.get_candidatures_list(st.session_state.user_id)
 
+        cv_texte = db.get_user_cv(st.session_state.user_id)
+
         if not cands:
             alert("Aucune candidature pour l'instant. Lancez l'agent **📝 Préparer "
                   "Candidatures** (page 🤖 Agents IA) : il génère vos lettres et les "
@@ -396,8 +398,12 @@ elif page == "📤 Candidatures":
                     # Lire la LETTRE
                     with st.expander("✉️ Lire la lettre de motivation"):
                         st.write(lettre)
-                    # Voir le CV
-                    st.caption(f"📎 CV joint: **{cv_nom}**")
+                    # Lire le CV joint
+                    with st.expander(f"📎 Lire mon CV ({cv_nom})"):
+                        if cv_texte:
+                            st.text(cv_texte)
+                        else:
+                            st.info("CV non disponible. Ajoutez-le dans Paramètres.")
 
                     # Actions de validation (seulement si en attente)
                     if stt == "en_attente":

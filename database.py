@@ -68,6 +68,17 @@ class SupabaseClient:
     # ------------------------------------------------------------------
     # LIVRABLES (résultats de tous les agents)
     # ------------------------------------------------------------------
+    def get_user_cv(self, user_id: str) -> str:
+        """Récupérer le texte du CV de l'utilisateur (colonne cv_text)."""
+        url = f"{self.url}/rest/v1/users?id=eq.{user_id}&select=cv_text,cv_filename"
+        try:
+            r = httpx.get(url, headers=self.headers, timeout=10)
+            if r.status_code == 200 and r.json():
+                return r.json()[0].get("cv_text") or ""
+        except Exception:
+            pass
+        return ""
+
     def get_candidatures_list(self, user_id: str, limit: int = 200) -> List[Dict]:
         """Liste détaillée des candidatures d'un utilisateur."""
         url = (f"{self.url}/rest/v1/candidatures?user_id=eq.{user_id}"
@@ -327,13 +338,14 @@ class SupabaseClient:
 
                 for cand in candidatures:
                     status = cand.get('status', '').lower()
-                    if 'pending' in status or 'attente' in status:
+                    # Matching robuste (sans accent: envoyee/validee, etc.)
+                    if 'attente' in status or 'pending' in status:
                         stats["en_attente"] += 1
-                    elif 'sent' in status or 'envoyée' in status:
+                    elif 'envoy' in status or 'valid' in status or 'sent' in status:
                         stats["envoyees"] += 1
-                    elif 'response' in status or 'réponse' in status:
+                    elif 'repons' in status or 'response' in status:
                         stats["reponses"] += 1
-                    elif 'interview' in status or 'entretien' in status:
+                    elif 'entretien' in status or 'interview' in status:
                         stats["entretiens"] += 1
 
         except Exception as e:
