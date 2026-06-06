@@ -444,7 +444,7 @@ elif page == "🤖 Agents IA":
     # ----- MONITEUR D'EXÉCUTION EN DIRECT (animation + logs) -----
     if st.session_state.get("monitor_action_id"):
 
-        @st.fragment(run_every="2s")
+        @st.fragment(run_every="3s")
         def live_monitor():
             db = get_supabase_client()
             action = db.get_action(st.session_state.monitor_action_id)
