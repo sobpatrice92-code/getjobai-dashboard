@@ -24,7 +24,7 @@ from database import get_supabase_client
 
 # Import Authentification + Assistant IA
 from auth import login_screen, set_password
-from chatbot import chatbot_page
+from chatbot import chatbot_page, generer_message_linkedin
 
 # Configuration
 st.set_page_config(
@@ -774,8 +774,14 @@ elif page == "🤝 Réseau":
 
                     if url:
                         st.markdown(f"🔗 [Ouvrir le profil LinkedIn]({url})")
-                    st.text_area("✉️ Message prêt (copiez-le)", value=message,
-                                 height=110, key=f"msg_{cid}")
+
+                    if not message:
+                        if st.button("✨ Générer un message", key=f"gen_{cid}"):
+                            msg = generer_message_linkedin(nom, titre, entreprise)
+                            db.update_contact_message(cid, msg)
+                            st.rerun()
+                    st.text_area("✉️ Message (copiez-le pour l'envoyer sur LinkedIn)",
+                                 value=message, height=110, key=f"msg_{cid}")
 
                     b1, b2 = st.columns(2)
                     with b1:

@@ -122,6 +122,15 @@ class SupabaseClient:
             st.error(f"Erreur get_contacts_reseau: {e}")
         return []
 
+    def update_contact_message(self, contact_id: str, message: str) -> bool:
+        url = f"{self.url}/rest/v1/contacts_reseau?id=eq.{contact_id}"
+        h = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            r = httpx.patch(url, headers=h, json={"message": message}, timeout=10)
+            return r.status_code in (200, 204)
+        except Exception:
+            return False
+
     def update_contact_reseau(self, contact_id: str, statut: str) -> bool:
         url = f"{self.url}/rest/v1/contacts_reseau?id=eq.{contact_id}"
         h = {**self.headers, "Prefer": "return=minimal"}

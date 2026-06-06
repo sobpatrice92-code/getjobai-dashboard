@@ -35,6 +35,33 @@ def _get_client():
         return None
 
 
+def generer_message_linkedin(nom, titre, entreprise, secteur="génie civil / construction",
+                             nom_user="Patrice"):
+    """Génère un message de connexion LinkedIn personnalisé (< 300 caractères)."""
+    client = _get_client()
+    if client is None:
+        return (f"Bonjour {nom.split()[0] if nom else ''}, je suis {nom_user}, "
+                f"professionnel en {secteur}. J'aimerais rejoindre votre réseau. Merci !")
+    try:
+        prompt = (
+            f"Rédige un court message d'invitation LinkedIn (MAX 280 caractères, ton "
+            f"professionnel et chaleureux, pas de cliché IA) de la part de {nom_user} "
+            f"(candidat en {secteur}) vers {nom}"
+            + (f", {titre}" if titre else "")
+            + (f" chez {entreprise}" if entreprise else "")
+            + ". Objectif : se connecter pour des opportunités. Réponds UNIQUEMENT avec le "
+            "message, sans guillemets."
+        )
+        r = client.chat.completions.create(
+            model="gpt-4o", temperature=0.7, max_tokens=150,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return r.choices[0].message.content.strip()[:290]
+    except Exception:
+        return (f"Bonjour {nom.split()[0] if nom else ''}, je suis {nom_user}, "
+                f"professionnel en {secteur}. J'aimerais échanger avec vous. Merci !")
+
+
 def chatbot_page():
     """Affiche la page de l'assistant IA conversationnel."""
     st.markdown("### 💬 Assistant IA")
