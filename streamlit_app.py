@@ -560,6 +560,13 @@ elif page == "🤖 Agents IA":
             "stats": "Mode validation: vous lisez avant d'envoyer"
         },
         {
+            "name": "Préparer mon Entretien",
+            "desc": "Guide d'entretien personnalisé (NotebookLM + votre CV)",
+            "icon": "🎙️",
+            "color": "info",
+            "stats": "Pitch + questions probables + réponses + conseils"
+        },
+        {
             "name": "Immigration Advisor",
             "desc": "Conseils immigration Canada (PVT, RP, Arrima)",
             "icon": "🍁",
@@ -608,6 +615,7 @@ elif page == "🤖 Agents IA":
         "Networking Agent": "networking_agent",
         "Follow-up Engine": "followup_engine",
         "Préparer Candidatures": "candidature_prep",
+        "Préparer mon Entretien": "entretien_prep",
         "Immigration Advisor": "immigration_advisor",
         "Post LinkedIn": "linkedin_agent",
         "Profil LinkedIn 10/10": "profile_optimizer",
@@ -703,6 +711,7 @@ elif page == "📦 Livrables":
             "profil": ("⭐", "Optimisation profil"),
             "cv_ats": ("🤖", "CV optimisé ATS"),
             "strategie": ("🧭", "Stratégie carrière"),
+            "entretien": ("🎙️", "Préparation entretien"),
             "autre": ("📦", "Livrable"),
         }
 
@@ -739,11 +748,15 @@ elif page == "📦 Livrables":
                         st.caption(f"🤖 {liv.get('agent', '')} • {date}")
                         st.markdown(f"{resume}")
                     with c2:
-                        # Voir le détail (output complet)
-                        with st.expander("Détail"):
-                            contenu = liv.get("contenu_json") or {}
-                            output = contenu.get("output", "") if isinstance(contenu, dict) else str(contenu)
-                            st.code(output[-2000:] or "(vide)")
+                        contenu = liv.get("contenu_json") or {}
+                        guide = contenu.get("guide", "") if isinstance(contenu, dict) else ""
+                        if t == "entretien" and guide:
+                            with st.expander("📖 Lire mon guide d'entretien"):
+                                st.markdown(guide)
+                        else:
+                            with st.expander("Détail"):
+                                output = contenu.get("output", "") if isinstance(contenu, dict) else str(contenu)
+                                st.code(output[-2000:] or "(vide)")
                     st.markdown("---")
 
 # ============================================================
@@ -765,6 +778,7 @@ elif page == "📅 Planificateur":
         "Networking Agent": "networking_agent",
         "Follow-up Engine": "followup_engine",
         "Préparer Candidatures": "candidature_prep",
+        "Préparer mon Entretien": "entretien_prep",
         "Immigration Advisor": "immigration_advisor",
         "Post LinkedIn": "linkedin_agent",
         "Profil LinkedIn 10/10": "profile_optimizer",
