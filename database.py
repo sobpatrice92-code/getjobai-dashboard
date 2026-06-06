@@ -68,6 +68,18 @@ class SupabaseClient:
     # ------------------------------------------------------------------
     # LIVRABLES (résultats de tous les agents)
     # ------------------------------------------------------------------
+    def get_candidatures_list(self, user_id: str, limit: int = 200) -> List[Dict]:
+        """Liste détaillée des candidatures d'un utilisateur."""
+        url = (f"{self.url}/rest/v1/candidatures?user_id=eq.{user_id}"
+               f"&order=created_at.desc&limit={limit}")
+        try:
+            r = httpx.get(url, headers=self.headers, timeout=10)
+            if r.status_code == 200:
+                return r.json()
+        except Exception as e:
+            st.error(f"Erreur get_candidatures_list: {e}")
+        return []
+
     def get_livrables(self, user_id: str, limit: int = 100) -> List[Dict]:
         """Récupérer les livrables (résultats d'agents) d'un utilisateur."""
         url = (f"{self.url}/rest/v1/livrables?user_id=eq.{user_id}"

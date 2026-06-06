@@ -360,26 +360,36 @@ elif page == "📤 Candidatures":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Alerte candidatures en attente
-    if en_attente > 0:
-        alert(f"⏳ Vous avez {en_attente} candidature(s) en attente d'approbation", "warning")
+    # Liste RÉELLE des candidatures depuis Supabase
+    if st.session_state.user_id:
+        cands = db.get_candidatures_list(st.session_state.user_id)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        if not cands:
+            alert("Aucune candidature pour l'instant. Les candidatures apparaîtront ici "
+                  "quand l'agent **Smart Apply** postulera à des offres.", "info")
+        else:
+            st.caption(f"📋 {len(cands)} candidature(s)")
+            st.markdown("<br>", unsafe_allow_html=True)
 
-    # Action
-    col1, col2, col3 = st.columns([2, 1, 1])
-    with col1:
-        if st.button("✅ Valider et Envoyer Toutes (28 candidatures)", type="primary", use_container_width=True):
-            with st.spinner("Envoi des candidatures en cours..."):
-                st.success("✅ 28 candidatures envoyées avec succès!")
+            statut_icon = {
+                "en_attente": "⏳", "envoyee": "✅", "reponse": "💬",
+                "entretien": "🎯", "refus": "❌",
+            }
+            for c in cands:
+                stt = (c.get("status") or "").lower()
+                icon = next((v for k, v in statut_icon.items() if k in stt), "📄")
+                titre = c.get("job_title") or "Poste"
+                company = c.get("company") or "—"
+                canal = c.get("canal") or ""
+                date = (c.get("created_at") or "")[:10]
 
-    with col2:
-        if st.button("👁️ Prévisualiser", use_container_width=True):
-            st.info("Prévisualisation des candidatures...")
-
-    with col3:
-        if st.button("❌ Annuler Tout", use_container_width=True):
-            st.warning("Candidatures annulées")
+                col1, col2 = st.columns([8, 2])
+                with col1:
+                    st.markdown(f"**{icon} {titre}** — {company}")
+                    st.caption(f"{canal} • {date}")
+                with col2:
+                    st.markdown(c.get("status", ""))
+                st.markdown("---")
 
 # ============================================================
 # PAGE: AGENTS IA
