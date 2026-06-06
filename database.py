@@ -338,8 +338,10 @@ class SupabaseClient:
 
                 for cand in candidatures:
                     s = (cand.get('status') or '').lower()
-                    a_reponse = ('repons' in s or 'response' in s or 'entretien' in s or 'interview' in s)
                     a_entretien = ('entretien' in s or 'interview' in s)
+                    # Une réponse = refus OU invitation entretien
+                    a_reponse = (a_entretien or 'repons' in s or 'response' in s
+                                 or 'refus' in s or 'reject' in s)
                     a_envoye = ('envoy' in s or 'sent' in s or a_reponse)
                     # Entonnoir cumulatif : Envoyées >= Réponses >= Entretiens
                     if a_envoye:

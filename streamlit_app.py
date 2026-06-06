@@ -407,8 +407,8 @@ elif page == "📤 Candidatures":
                         else:
                             st.info("CV non disponible. Ajoutez-le dans Paramètres.")
 
-                    # Suivi du cycle de vie (lié aux compteurs En attente / Envoyées / Réponses / Entretiens)
-                    st.caption("📊 Faire évoluer le statut :")
+                    # Suivi du cycle de vie réel : Envoyée → Réponse (Refus | Entretien)
+                    st.caption("📊 Statut de la candidature :")
                     b1, b2, b3, b4, b5 = st.columns(5)
                     with b1:
                         if st.button("⏳ En attente", key=f"s_att_{cid}", use_container_width=True,
@@ -419,16 +419,31 @@ elif page == "📤 Candidatures":
                                      disabled=(stt == "envoyee")):
                             db.update_candidature_status(cid, "envoyee"); st.rerun()
                     with b3:
-                        if st.button("💬 Réponse", key=f"s_rep_{cid}", use_container_width=True,
-                                     disabled=(stt == "reponse")):
-                            db.update_candidature_status(cid, "reponse"); st.rerun()
+                        if st.button("❌ Refus", key=f"s_ref_{cid}", use_container_width=True,
+                                     disabled=("refus" in stt)):
+                            db.update_candidature_status(cid, "refus"); st.rerun()
                     with b4:
-                        if st.button("🎯 Entretien", key=f"s_ent_{cid}", use_container_width=True,
+                        if st.button("🎯 Entretien !", key=f"s_ent_{cid}", use_container_width=True,
                                      disabled=(stt == "entretien")):
                             db.update_candidature_status(cid, "entretien"); st.rerun()
                     with b5:
-                        if st.button("❌ Rejeter", key=f"s_rej_{cid}", use_container_width=True):
+                        if st.button("🗑️ Suppr.", key=f"s_del_{cid}", use_container_width=True):
                             db.delete_candidature(cid); st.rerun()
+
+                    # Si entretien obtenu -> préparer CET entretien (ciblé entreprise/poste)
+                    if stt == "entretien":
+                        if st.button(f"🎙️ Préparer cet entretien ({company})", key=f"prep_{cid}",
+                                     type="primary"):
+                            action = db.create_action(
+                                user_id=st.session_state.user_id,
+                                agent_name="entretien_prep",
+                                params={"source": "candidature", "job_title": titre, "company": company}
+                            )
+                            if action and action.get("id"):
+                                alert(f"🎙️ Préparation d'entretien lancée pour {company} ! "
+                                      "Suivez-la dans 🤖 Agents IA, résultat dans 📦 Livrables.", "success")
+                            else:
+                                st.error("Échec du lancement.")
                     st.markdown("---")
 
 # ============================================================
