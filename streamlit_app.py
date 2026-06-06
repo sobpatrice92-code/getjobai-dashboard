@@ -763,21 +763,20 @@ elif page == "📦 Livrables":
                 date = (liv.get("created_at") or "")[:16].replace("T", " ")
 
                 with st.container():
-                    c1, c2 = st.columns([8, 2])
-                    with c1:
-                        st.markdown(f"**{icon} {label}** {statut_badge}")
-                        st.caption(f"🤖 {liv.get('agent', '')} • {date}")
-                        st.markdown(f"{resume}")
-                    with c2:
-                        contenu = liv.get("contenu_json") or {}
-                        guide = contenu.get("guide", "") if isinstance(contenu, dict) else ""
-                        if t == "entretien" and guide:
-                            with st.expander("📖 Lire mon guide d'entretien"):
-                                st.markdown(guide)
-                        else:
-                            with st.expander("Détail"):
-                                output = contenu.get("output", "") if isinstance(contenu, dict) else str(contenu)
-                                st.code(output[-2000:] or "(vide)")
+                    st.markdown(f"**{icon} {label}** {statut_badge}")
+                    st.caption(f"🤖 {liv.get('agent', '')} • {date}")
+                    st.markdown(f"{resume}")
+
+                    # Contenu en PLEINE LARGEUR (lisible en grand)
+                    contenu = liv.get("contenu_json") or {}
+                    guide = contenu.get("guide", "") if isinstance(contenu, dict) else ""
+                    if t == "entretien" and guide:
+                        with st.expander("📖 Lire mon guide d'entretien (plein écran)", expanded=False):
+                            st.markdown(guide)
+                    else:
+                        with st.expander("Détail"):
+                            output = contenu.get("output", "") if isinstance(contenu, dict) else str(contenu)
+                            st.code(output[-2000:] or "(vide)")
                     st.markdown("---")
 
 # ============================================================
