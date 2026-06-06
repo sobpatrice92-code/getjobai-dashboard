@@ -108,6 +108,7 @@ with st.sidebar:
         "📋 Offres d'Emploi",
         "📤 Candidatures",
         "🤖 Agents IA",
+        "🤝 Réseau",
         "📦 Livrables",
         "📅 Planificateur",
         "💬 Assistant IA",
@@ -725,6 +726,69 @@ elif page == "🤖 Agents IA":
             st.error(f"Erreur chargement actions: {e}")
     else:
         st.warning("Connectez-vous pour voir vos actions")
+
+# ============================================================
+# PAGE: RÉSEAU (networking semi-auto)
+# ============================================================
+
+elif page == "🤝 Réseau":
+    section_header(
+        "🤝 Réseau LinkedIn",
+        "Contacts trouvés + messages prêts — vous envoyez en 1 clic (robuste, sans risque)"
+    )
+
+    if not st.session_state.user_id:
+        alert("Connectez-vous pour voir vos contacts réseau.", "warning")
+    else:
+        db = get_supabase_client()
+        contacts = db.get_contacts_reseau(st.session_state.user_id)
+        a_faire = [c for c in contacts if (c.get("statut") or "") == "a_contacter"]
+
+        alert("💡 L'agent **Networking** trouve les recruteurs et rédige les messages. "
+              "Ici, vous ouvrez le profil, copiez le message, et envoyez **vous-même** "
+              "(1 min) — aucun risque de ban, rien ne casse.", "info")
+
+        if not contacts:
+            alert("Aucun contact pour l'instant. Lancez l'agent **🤝 Networking Agent** "
+                  "(page 🤖 Agents IA) : il trouvera des recruteurs et préparera les messages.", "info")
+        else:
+            st.caption(f"🤝 {len(contacts)} contact(s) • {len(a_faire)} à contacter")
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            for c in contacts:
+                cid = c.get("id")
+                statut = c.get("statut") or "a_contacter"
+                icon = "✅" if statut == "contacte" else "📨"
+                nom = c.get("nom") or "Contact"
+                titre = c.get("titre") or ""
+                entreprise = c.get("entreprise") or ""
+                url = c.get("profil_url") or ""
+                message = c.get("message") or ""
+                type_action = c.get("type_action") or "invitation"
+
+                with st.container():
+                    st.markdown(f"### {icon} {nom}")
+                    sub = " • ".join([x for x in [titre, entreprise, c.get('source','')] if x])
+                    st.caption(sub)
+                    st.markdown(f"**Action :** {'💬 Message' if type_action=='message' else '📨 Invitation'}")
+
+                    if url:
+                        st.markdown(f"🔗 [Ouvrir le profil LinkedIn]({url})")
+                    st.text_area("✉️ Message prêt (copiez-le)", value=message,
+                                 height=110, key=f"msg_{cid}")
+
+                    b1, b2 = st.columns(2)
+                    with b1:
+                        if statut != "contacte":
+                            if st.button("✅ Marquer contacté", key=f"ct_{cid}", type="primary",
+                                         use_container_width=True):
+                                db.update_contact_reseau(cid, "contacte")
+                                st.rerun()
+                    with b2:
+                        if st.button("🗑️ Retirer", key=f"rm_{cid}", use_container_width=True):
+                            db.delete_contact_reseau(cid)
+                            st.rerun()
+                    st.markdown("---")
 
 # ============================================================
 # PAGE: LIVRABLES (résultats de tous les agents)

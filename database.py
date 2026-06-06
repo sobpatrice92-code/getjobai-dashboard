@@ -110,6 +110,36 @@ class SupabaseClient:
         except Exception:
             return False
 
+    def get_contacts_reseau(self, user_id: str, limit: int = 200) -> List[Dict]:
+        """Contacts réseau LinkedIn à contacter (mode semi-auto)."""
+        url = (f"{self.url}/rest/v1/contacts_reseau?user_id=eq.{user_id}"
+               f"&order=created_at.desc&limit={limit}")
+        try:
+            r = httpx.get(url, headers=self.headers, timeout=10)
+            if r.status_code == 200:
+                return r.json()
+        except Exception as e:
+            st.error(f"Erreur get_contacts_reseau: {e}")
+        return []
+
+    def update_contact_reseau(self, contact_id: str, statut: str) -> bool:
+        url = f"{self.url}/rest/v1/contacts_reseau?id=eq.{contact_id}"
+        h = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            r = httpx.patch(url, headers=h, json={"statut": statut}, timeout=10)
+            return r.status_code in (200, 204)
+        except Exception:
+            return False
+
+    def delete_contact_reseau(self, contact_id: str) -> bool:
+        url = f"{self.url}/rest/v1/contacts_reseau?id=eq.{contact_id}"
+        h = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            r = httpx.delete(url, headers=h, timeout=10)
+            return r.status_code in (200, 204)
+        except Exception:
+            return False
+
     def get_livrables(self, user_id: str, limit: int = 100) -> List[Dict]:
         """Récupérer les livrables (résultats d'agents) d'un utilisateur."""
         url = (f"{self.url}/rest/v1/livrables?user_id=eq.{user_id}"
