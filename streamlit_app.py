@@ -566,13 +566,6 @@ elif page == "🤖 Agents IA":
             "stats": "Spécialisé: Stages Coop génie civil"
         },
         {
-            "name": "Smart Apply",
-            "desc": "Candidature automatique intelligente",
-            "icon": "📤",
-            "color": "warning",
-            "stats": "Taux d'envoi: 95% • Email + LinkedIn + ATS"
-        },
-        {
             "name": "Networking Agent",
             "desc": "Messages LinkedIn automatisés",
             "icon": "🤝",
@@ -659,7 +652,6 @@ elif page == "🤖 Agents IA":
         "Job Hunter": "job_hunter",
         "Indeed Agent": "indeed_agent",
         "COOP Hunter": "coop_hunter",
-        "Smart Apply": "smart_apply_agent",
         "Networking Agent": "networking_agent",
         "Follow-up Engine": "followup_engine",
         "Préparer Candidatures": "candidature_prep",
@@ -831,7 +823,6 @@ elif page == "📅 Planificateur":
         "Job Hunter": "job_hunter",
         "Indeed Agent": "indeed_agent",
         "COOP Hunter": "coop_hunter",
-        "Smart Apply": "smart_apply_agent",
         "Networking Agent": "networking_agent",
         "Follow-up Engine": "followup_engine",
         "Préparer Candidatures": "candidature_prep",
