@@ -773,6 +773,13 @@ elif page == "📦 Livrables":
                     if t == "entretien" and guide:
                         with st.expander("📖 Lire mon guide d'entretien (plein écran)", expanded=False):
                             st.markdown(guide)
+                        st.download_button(
+                            "📥 Télécharger le guide",
+                            data=guide,
+                            file_name=f"guide_entretien_{(liv.get('created_at') or '')[:10]}.md",
+                            mime="text/markdown",
+                            key=f"dl_{liv.get('id')}",
+                        )
                     else:
                         with st.expander("Détail"):
                             output = contenu.get("output", "") if isinstance(contenu, dict) else str(contenu)
