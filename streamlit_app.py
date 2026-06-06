@@ -609,10 +609,10 @@ elif page == "🤖 Agents IA":
         },
         {
             "name": "Postuler (Copilote)",
-            "desc": "Envoie les candidatures APPROUVÉES par email (délais humains, 25/jour)",
+            "desc": "Postule aux candidatures APPROUVÉES : email RH + LinkedIn Easy Apply",
             "icon": "🚀",
             "color": "danger",
-            "stats": "Email réel + CV — uniquement les candidatures que vous avez approuvées"
+            "stats": "Email 25/j + LinkedIn 15/j • simulation humaine • offres approuvées seulement"
         },
         {
             "name": "Immigration Advisor",
