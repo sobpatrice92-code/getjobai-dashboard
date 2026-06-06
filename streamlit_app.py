@@ -365,31 +365,57 @@ elif page == "📤 Candidatures":
         cands = db.get_candidatures_list(st.session_state.user_id)
 
         if not cands:
-            alert("Aucune candidature pour l'instant. Les candidatures apparaîtront ici "
-                  "quand l'agent **Smart Apply** postulera à des offres.", "info")
+            alert("Aucune candidature pour l'instant. Lancez l'agent **📝 Préparer "
+                  "Candidatures** (page 🤖 Agents IA) : il génère vos lettres et les "
+                  "place ici en attente de votre validation.", "info")
         else:
-            st.caption(f"📋 {len(cands)} candidature(s)")
+            statut_icon = {
+                "en_attente": "⏳", "validee": "✔️", "envoyee": "✅",
+                "reponse": "💬", "entretien": "🎯", "refus": "❌",
+            }
+            en_attente_list = [c for c in cands if (c.get("status") or "") == "en_attente"]
+            st.caption(f"📋 {len(cands)} candidature(s) • {len(en_attente_list)} à valider")
             st.markdown("<br>", unsafe_allow_html=True)
 
-            statut_icon = {
-                "en_attente": "⏳", "envoyee": "✅", "reponse": "💬",
-                "entretien": "🎯", "refus": "❌",
-            }
             for c in cands:
+                cid = c.get("id")
                 stt = (c.get("status") or "").lower()
                 icon = next((v for k, v in statut_icon.items() if k in stt), "📄")
                 titre = c.get("job_title") or "Poste"
                 company = c.get("company") or "—"
-                canal = c.get("canal") or ""
-                date = (c.get("created_at") or "")[:10]
+                score = c.get("score_match") or 0
+                lettre = c.get("lettre") or "(pas de lettre)"
+                cv_nom = c.get("cv_nom") or "CV.pdf"
+                url = c.get("job_url") or ""
 
-                col1, col2 = st.columns([8, 2])
-                with col1:
-                    st.markdown(f"**{icon} {titre}** — {company}")
-                    st.caption(f"{canal} • {date}")
-                with col2:
-                    st.markdown(c.get("status", ""))
-                st.markdown("---")
+                with st.container():
+                    st.markdown(f"### {icon} {titre} — {company}")
+                    st.caption(f"Score {score}/100 • Statut: **{c.get('status','')}**"
+                               + (f" • [Voir l'offre]({url})" if url else ""))
+
+                    # Lire la LETTRE
+                    with st.expander("✉️ Lire la lettre de motivation"):
+                        st.write(lettre)
+                    # Voir le CV
+                    st.caption(f"📎 CV joint: **{cv_nom}**")
+
+                    # Actions de validation (seulement si en attente)
+                    if stt == "en_attente":
+                        b1, b2, b3 = st.columns(3)
+                        with b1:
+                            if st.button("✔️ Valider", key=f"val_{cid}", type="primary", use_container_width=True):
+                                db.update_candidature_status(cid, "validee")
+                                st.success("Candidature validée (prête à envoyer)")
+                                st.rerun()
+                        with b2:
+                            if st.button("✏️ Marquer envoyée", key=f"env_{cid}", use_container_width=True):
+                                db.update_candidature_status(cid, "envoyee")
+                                st.rerun()
+                        with b3:
+                            if st.button("❌ Rejeter", key=f"rej_{cid}", use_container_width=True):
+                                db.delete_candidature(cid)
+                                st.rerun()
+                    st.markdown("---")
 
 # ============================================================
 # PAGE: AGENTS IA
@@ -519,6 +545,13 @@ elif page == "🤖 Agents IA":
             "stats": "Relances J+7, J+14, J+21"
         },
         {
+            "name": "Préparer Candidatures",
+            "desc": "Génère vos lettres (à valider, SANS envoi)",
+            "icon": "📝",
+            "color": "success",
+            "stats": "Mode validation: vous lisez avant d'envoyer"
+        },
+        {
             "name": "Immigration Advisor",
             "desc": "Conseils immigration Canada (PVT, RP, Arrima)",
             "icon": "🍁",
@@ -566,6 +599,7 @@ elif page == "🤖 Agents IA":
         "Smart Apply": "smart_apply_agent",
         "Networking Agent": "networking_agent",
         "Follow-up Engine": "followup_engine",
+        "Préparer Candidatures": "candidature_prep",
         "Immigration Advisor": "immigration_advisor",
         "Post LinkedIn": "linkedin_agent",
         "Profil LinkedIn 10/10": "profile_optimizer",
@@ -722,6 +756,7 @@ elif page == "📅 Planificateur":
         "Smart Apply": "smart_apply_agent",
         "Networking Agent": "networking_agent",
         "Follow-up Engine": "followup_engine",
+        "Préparer Candidatures": "candidature_prep",
         "Immigration Advisor": "immigration_advisor",
         "Post LinkedIn": "linkedin_agent",
         "Profil LinkedIn 10/10": "profile_optimizer",

@@ -80,6 +80,25 @@ class SupabaseClient:
             st.error(f"Erreur get_candidatures_list: {e}")
         return []
 
+    def update_candidature_status(self, cand_id: str, status: str) -> bool:
+        """Changer le statut d'une candidature (en_attente -> validee / refus)."""
+        url = f"{self.url}/rest/v1/candidatures?id=eq.{cand_id}"
+        h = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            r = httpx.patch(url, headers=h, json={"status": status}, timeout=10)
+            return r.status_code in (200, 204)
+        except Exception:
+            return False
+
+    def delete_candidature(self, cand_id: str) -> bool:
+        url = f"{self.url}/rest/v1/candidatures?id=eq.{cand_id}"
+        h = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            r = httpx.delete(url, headers=h, timeout=10)
+            return r.status_code in (200, 204)
+        except Exception:
+            return False
+
     def get_livrables(self, user_id: str, limit: int = 100) -> List[Dict]:
         """Récupérer les livrables (résultats d'agents) d'un utilisateur."""
         url = (f"{self.url}/rest/v1/livrables?user_id=eq.{user_id}"
