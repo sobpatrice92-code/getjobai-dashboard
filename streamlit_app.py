@@ -372,7 +372,7 @@ elif page == "📤 Candidatures":
                   "place ici en attente de votre validation.", "info")
         else:
             statut_icon = {
-                "en_attente": "⏳", "validee": "✔️", "envoyee": "✅", "recue": "📬",
+                "en_attente": "⏳", "validee": "✔️", "a_envoyer": "📨", "sans_email": "✉️", "envoyee": "✅", "recue": "📬",
                 "reponse": "💬", "entretien": "🎯", "refus": "❌",
             }
             en_attente_list = [c for c in cands if (c.get("status") or "") == "en_attente"]
@@ -406,6 +406,19 @@ elif page == "📤 Candidatures":
                             st.text(cv_offre)
                         else:
                             st.info("CV non disponible. Ajoutez-le dans Paramètres.")
+
+                    # MODE COPILOTE : approuver -> l'agent enverra par email
+                    if stt in ("en_attente", "validee"):
+                        if st.button("🚀 Approuver & Postuler (email auto)", key=f"appr_{cid}",
+                                     type="primary"):
+                            db.update_candidature_status(cid, "a_envoyer")
+                            st.success("✅ Approuvée ! Lancez l'agent 🚀 Postuler (Copilote) "
+                                       "pour l'envoyer.")
+                            st.rerun()
+                    elif stt == "a_envoyer":
+                        st.info("📨 Approuvée — en file d'envoi. Lancez 🚀 Postuler (Copilote).")
+                    elif stt == "sans_email":
+                        st.warning("✉️ Aucun email RH trouvé — à postuler manuellement (voir l'offre).")
 
                     # Suivi du cycle de vie réel : Envoyée → Réponse (Refus | Entretien)
                     st.caption("📊 Statut de la candidature :")
@@ -595,6 +608,13 @@ elif page == "🤖 Agents IA":
             "stats": "Détecte accusés de réception et réponses automatiquement"
         },
         {
+            "name": "Postuler (Copilote)",
+            "desc": "Envoie les candidatures APPROUVÉES par email (délais humains, 25/jour)",
+            "icon": "🚀",
+            "color": "danger",
+            "stats": "Email réel + CV — uniquement les candidatures que vous avez approuvées"
+        },
+        {
             "name": "Immigration Advisor",
             "desc": "Conseils immigration Canada (PVT, RP, Arrima)",
             "icon": "🍁",
@@ -645,6 +665,7 @@ elif page == "🤖 Agents IA":
         "Préparer Candidatures": "candidature_prep",
         "Préparer mon Entretien": "entretien_prep",
         "Suivi Boîte Mail": "mail_tracker",
+        "Postuler (Copilote)": "candidature_send",
         "Immigration Advisor": "immigration_advisor",
         "Post LinkedIn": "linkedin_agent",
         "Profil LinkedIn 10/10": "profile_optimizer",
@@ -816,6 +837,7 @@ elif page == "📅 Planificateur":
         "Préparer Candidatures": "candidature_prep",
         "Préparer mon Entretien": "entretien_prep",
         "Suivi Boîte Mail": "mail_tracker",
+        "Postuler (Copilote)": "candidature_send",
         "Immigration Advisor": "immigration_advisor",
         "Post LinkedIn": "linkedin_agent",
         "Profil LinkedIn 10/10": "profile_optimizer",
