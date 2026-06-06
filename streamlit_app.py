@@ -1098,6 +1098,22 @@ elif page == "👑 Admin":
                                 st.session_state.user_email = email
                                 st.session_state.user_id = None  # force rechargement
                                 st.rerun()
+                        # Supprimer le compte (sauf admin et soi-même) — avec confirmation
+                        if not u.get("is_admin") and email != st.session_state.user_email:
+                            if st.session_state.get(f"confirm_del_{uid}"):
+                                st.warning("⚠️ Supprimer définitivement ce compte ET ses données ?")
+                                if st.button("✅ Oui, supprimer", key=f"cfm_{uid}"):
+                                    if db.delete_user(uid):
+                                        st.success(f"{email} supprimé")
+                                    st.session_state[f"confirm_del_{uid}"] = False
+                                    st.rerun()
+                                if st.button("Annuler", key=f"cancel_{uid}"):
+                                    st.session_state[f"confirm_del_{uid}"] = False
+                                    st.rerun()
+                            else:
+                                if st.button("🗑️ Supprimer", key=f"del_{uid}"):
+                                    st.session_state[f"confirm_del_{uid}"] = True
+                                    st.rerun()
                     st.markdown("---")
 
         except Exception as e:

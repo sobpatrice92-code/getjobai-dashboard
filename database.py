@@ -174,6 +174,25 @@ class SupabaseClient:
         except Exception:
             return False
 
+    def delete_user(self, user_id: str, with_data: bool = True) -> bool:
+        """Supprimer un compte utilisateur (et ses données). Destructif."""
+        h = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            if with_data:
+                # Supprimer les données liées d'abord
+                for table in ["candidatures", "livrables", "schedules", "actions", "jobs"]:
+                    try:
+                        httpx.delete(f"{self.url}/rest/v1/{table}?user_id=eq.{user_id}",
+                                     headers=h, timeout=20)
+                    except Exception:
+                        pass
+            r = httpx.delete(f"{self.url}/rest/v1/users?id=eq.{user_id}",
+                             headers=h, timeout=10)
+            return r.status_code in (200, 204)
+        except Exception as e:
+            st.error(f"Erreur delete_user: {e}")
+            return False
+
     def update_user_status(self, user_id: str, field: str, value: bool) -> bool:
         """Mettre à jour un statut booléen d'un utilisateur (is_whitelisted, is_active...).
         Seuls les champs autorisés sont modifiables (sécurité)."""
