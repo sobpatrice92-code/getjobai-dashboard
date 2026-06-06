@@ -952,7 +952,8 @@ elif page == "⚙️ Paramètres":
         "Configurez votre profil et vos préférences"
     )
 
-    tab1, tab2, tab3, tab4 = st.tabs(["👤 Profil", "🔑 Keywords", "🔔 Notifications", "🔒 Mot de passe"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["👤 Profil", "🔑 Keywords", "🔔 Notifications", "🔒 Mot de passe", "🔗 LinkedIn"])
 
     with tab1:
         st.subheader("Informations Personnelles")
@@ -1011,6 +1012,52 @@ TECHNOLOGUE CONSTRUCTION GENIE CIVIL""",
                 st.success("✅ Mot de passe changé avec succès!")
             else:
                 st.error("Erreur lors du changement de mot de passe.")
+
+    with tab5:
+        st.subheader("🔗 Connexion LinkedIn (pour Networking & Easy Apply)")
+        st.markdown("""
+**Pourquoi ?** Pour que l'agent **Networking** (recherche de recruteurs) et le **LinkedIn
+Easy Apply** fonctionnent, il faut votre session LinkedIn complète. Le cookie `li_at` seul
+ne suffit pas pour la recherche (LinkedIn bloque).
+
+**Comment faire (2 min) :**
+1. Installez l'extension **Cookie-Editor** : https://cookie-editor.com/
+2. Allez sur **linkedin.com** (connecté à votre compte)
+3. Cliquez l'icône **Cookie-Editor** → bouton **Export** (en haut à droite) → **Export as JSON**
+4. Collez le bloc JSON ci-dessous, puis **Enregistrer**
+
+⚠️ Ces cookies donnent accès à votre LinkedIn — ils sont stockés **dans votre compte uniquement**.
+""")
+        if st.session_state.user_id:
+            db = get_supabase_client()
+            cur = db.get_user_settings(st.session_state.user_id)
+            deja = bool(cur.get("linkedin_cookie"))
+            st.caption("✅ Cookies LinkedIn déjà enregistrés" if deja
+                       else "❌ Aucun cookie LinkedIn enregistré pour l'instant")
+
+            cookies_txt = st.text_area(
+                "Cookies LinkedIn (JSON exporté via Cookie-Editor)",
+                placeholder='[{"name":"li_at","value":"...","domain":".linkedin.com",...}, ...]',
+                height=160, key="li_cookies")
+            if st.button("💾 Enregistrer mes cookies LinkedIn", type="primary"):
+                import json as _json
+                try:
+                    data = _json.loads(cookies_txt)
+                    if not isinstance(data, list) or not data:
+                        raise ValueError("format")
+                    # Extraire li_at au passage (pour Easy Apply)
+                    li_at = next((c.get("value") for c in data
+                                  if c.get("name") == "li_at"), "")
+                    ok = db.save_setting(st.session_state.user_id, "linkedin_cookie", cookies_txt.strip())
+                    if li_at:
+                        db.save_setting(st.session_state.user_id, "linkedin_cookie_li_at", li_at)
+                    if ok:
+                        st.success(f"✅ {len(data)} cookies enregistrés ! "
+                                   "L'agent Networking peut maintenant fonctionner.")
+                    else:
+                        st.error("Erreur d'enregistrement.")
+                except Exception:
+                    st.error("❌ JSON invalide. Collez bien l'export complet (commence par `[` ).")
 
 # ============================================================
 # PAGE: ADMIN

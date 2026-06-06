@@ -174,6 +174,34 @@ class SupabaseClient:
         except Exception:
             return False
 
+    def save_setting(self, user_id: str, field: str, value: str) -> bool:
+        """Enregistre un réglage utilisateur (champs autorisés uniquement)."""
+        allowed = {"linkedin_cookie", "linkedin_cookie_li_at", "gmail_address",
+                   "gmail_password", "telephone"}
+        if field not in allowed:
+            st.error(f"Champ non autorisé: {field}")
+            return False
+        url = f"{self.url}/rest/v1/users?id=eq.{user_id}"
+        h = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            r = httpx.patch(url, headers=h, json={field: value}, timeout=10)
+            return r.status_code in (200, 204)
+        except Exception as e:
+            st.error(f"Erreur save_setting: {e}")
+            return False
+
+    def get_user_settings(self, user_id: str) -> Dict:
+        """Récupère les réglages (sans exposer en clair côté affichage)."""
+        url = (f"{self.url}/rest/v1/users?id=eq.{user_id}"
+               "&select=linkedin_cookie,linkedin_cookie_li_at,gmail_address,telephone")
+        try:
+            r = httpx.get(url, headers=self.headers, timeout=10)
+            if r.status_code == 200 and r.json():
+                return r.json()[0]
+        except Exception:
+            pass
+        return {}
+
     def delete_user(self, user_id: str, with_data: bool = True) -> bool:
         """Supprimer un compte utilisateur (et ses données). Destructif."""
         h = {**self.headers, "Prefer": "return=minimal"}
