@@ -4,7 +4,9 @@ GetJobAI Dashboard - Production
 Dashboard professionnel avec UI UX PRO MAX intégré
 """
 import streamlit as st
+import streamlit.components.v1 as components
 import os
+import json
 from datetime import datetime
 
 # Import UI UX PRO MAX
@@ -846,8 +848,24 @@ elif page == "🤝 Réseau":
                             msg = generer_message_linkedin(nom, titre, entreprise)
                             db.update_contact_message(cid, msg)
                             st.rerun()
-                    st.text_area("✉️ Message (copiez-le pour l'envoyer sur LinkedIn)",
+                    st.text_area("✉️ Message (à envoyer sur LinkedIn)",
                                  value=message, height=110, key=f"msg_{cid}")
+
+                    if message:
+                        _safe = json.dumps(message)
+                        components.html(
+                            f"""
+                            <button onclick='navigator.clipboard.writeText({_safe})
+                                .then(()=>{{this.innerHTML="✅ Copié !";
+                                setTimeout(()=>this.innerHTML="📋 Copier le message",1600);}})'
+                                style="background:linear-gradient(135deg,#2563eb,#7c3aed);
+                                color:#fff;border:none;padding:9px 16px;border-radius:8px;
+                                cursor:pointer;font-size:14px;font-weight:600;width:100%;">
+                                📋 Copier le message
+                            </button>
+                            """,
+                            height=48,
+                        )
 
                     b1, b2 = st.columns(2)
                     with b1:
