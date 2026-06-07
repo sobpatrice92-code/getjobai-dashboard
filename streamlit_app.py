@@ -824,9 +824,13 @@ elif page == "🤖 Agents IA":
             img_b64 = st.session_state.get("gen_post_image")
             if img_b64:
                 try:
-                    st.image(base64.b64decode(img_b64),
+                    _img_bytes = base64.b64decode(img_b64)
+                    st.image(_img_bytes,
                              caption="🖼️ Image hyper-réaliste générée (alignée sur le post)",
                              use_container_width=True)
+                    st.download_button("⬇️ Télécharger l'image", data=_img_bytes,
+                                       file_name="post_linkedin.png", mime="image/png",
+                                       use_container_width=True, key="pg_dl_img")
                 except Exception:
                     st.caption("⚠️ Aperçu image indisponible.")
                 if st.button("🔄 Régénérer l'image", key="pg_regen_img"):
