@@ -26,7 +26,7 @@ from database import get_supabase_client
 
 # Import Authentification + Assistant IA
 from auth import login_screen, set_password
-from chatbot import chatbot_page, generer_message_linkedin
+from chatbot import chatbot_page, generer_message_linkedin, generer_post_linkedin
 
 # Configuration
 st.set_page_config(
@@ -670,10 +670,10 @@ elif page == "🤖 Agents IA":
         },
         {
             "name": "Post LinkedIn",
-            "desc": "Publie un post LinkedIn (⚠️ publie pour de vrai)",
+            "desc": "Génère un post engageant (vous copiez et publiez vous-même)",
             "icon": "📝",
             "color": "info",
-            "stats": "Posts engageants pour votre réseau"
+            "stats": "Texte prêt à coller • 0 risque • vous gardez le contrôle"
         },
         {
             "name": "Profil LinkedIn 10/10",
@@ -725,7 +725,12 @@ elif page == "🤖 Agents IA":
             st.caption(f"📊 {agent['stats']}")
 
             if st.button(f"🚀 Lancer {agent['name']}", key=f"launch_{i}", use_container_width=True):
-                if st.session_state.user_id:
+                # Post LinkedIn = génération manuelle dans le Dashboard (pas de publication auto)
+                if agent["name"] == "Post LinkedIn":
+                    st.session_state.show_post_gen = True
+                    st.session_state.pop("gen_post_text", None)
+                    st.rerun()
+                elif st.session_state.user_id:
                     try:
                         db = get_supabase_client()
                         agent_type = agent_mapping.get(agent["name"], "unknown")
@@ -749,6 +754,86 @@ elif page == "🤖 Agents IA":
                     st.error("User ID manquant - impossible de lancer l'agent")
 
             st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Générateur de post LinkedIn (manuel — vous copiez et publiez) ──────────
+    if st.session_state.get("show_post_gen"):
+        st.markdown("---")
+        section_header("📝 Post LinkedIn", "Générez un post, copiez-le, publiez-le vous-même sur LinkedIn")
+
+        cga, cgb, cgc = st.columns([2, 1, 1])
+        with cga:
+            pg_secteur = st.text_input("Secteur / métier", value="génie civil / construction",
+                                       key="pg_secteur")
+        with cgb:
+            pg_ville = st.text_input("Ville", value="Ottawa", key="pg_ville")
+        with cgc:
+            pg_langue = st.selectbox("Langue", ["fr", "en"], key="pg_langue",
+                                     format_func=lambda x: "🇫🇷 Français" if x == "fr" else "🇬🇧 English")
+        pg_theme = st.text_input("Thème (optionnel — laissez vide pour un thème automatique)",
+                                 value="", key="pg_theme")
+
+        c_gen, c_close = st.columns([3, 1])
+        with c_gen:
+            if st.button("✨ Générer le post", type="primary", use_container_width=True):
+                with st.spinner("Génération du post…"):
+                    st.session_state.gen_post_text = generer_post_linkedin(
+                        secteur=pg_secteur, ville=pg_ville, langue=pg_langue,
+                        theme=pg_theme or None,
+                    )
+        with c_close:
+            if st.button("✖ Fermer", use_container_width=True):
+                st.session_state.show_post_gen = False
+                st.session_state.pop("gen_post_text", None)
+                st.rerun()
+
+        post_txt = st.session_state.get("gen_post_text", "")
+        if post_txt:
+            # On peut relire/modifier le texte avant publication
+            post_edit = st.text_area("Post généré (vous pouvez le modifier avant de valider)",
+                                     value=post_txt, height=320, key="pg_output")
+
+            cpub, ccopy = st.columns([2, 1])
+            with cpub:
+                if st.button("✅ Approuver et publier sur LinkedIn", type="primary",
+                             use_container_width=True, key="pg_publish"):
+                    if st.session_state.user_id:
+                        try:
+                            db = get_supabase_client()
+                            action = db.create_action(
+                                user_id=st.session_state.user_id,
+                                agent_name="linkedin_agent",
+                                params={"approved_post": post_edit, "source": "dashboard_post"},
+                            )
+                            if action and action.get("id"):
+                                st.session_state.monitor_action_id = action["id"]
+                                st.session_state.monitor_agent = "Post LinkedIn"
+                                st.session_state.show_post_gen = False
+                                st.session_state.pop("gen_post_text", None)
+                                st.rerun()
+                            else:
+                                st.error("❌ Échec du lancement de la publication.")
+                        except Exception as e:
+                            st.error(f"❌ Erreur: {e}")
+                    else:
+                        st.error("User ID manquant.")
+            with ccopy:
+                _safe_post = json.dumps(post_edit)
+                components.html(
+                    f"""
+                    <button onclick='navigator.clipboard.writeText({_safe_post})
+                        .then(()=>{{this.innerHTML="✅ Copié !";
+                        setTimeout(()=>this.innerHTML="📋 Copier",1600);}})'
+                        style="background:linear-gradient(135deg,#2563eb,#7c3aed);
+                        color:#fff;border:none;padding:11px 16px;border-radius:8px;
+                        cursor:pointer;font-size:15px;font-weight:600;width:100%;">
+                        📋 Copier
+                    </button>
+                    """,
+                    height=52,
+                )
+            st.caption("✅ « Approuver et publier » → l'agent publie le post sur LinkedIn pour vous "
+                       "(rien n'est publié sans votre validation). 📋 « Copier » reste dispo si vous "
+                       "préférez le coller vous-même.")
 
     # Afficher actions récentes
     section_header("📋 Actions Récentes", "Dernières exécutions d'agents")
