@@ -266,10 +266,23 @@ def _person_desc(genre="", peau=""):
     return (f"a {p} {g}" if p else f"a {g}").strip()
 
 
-def generer_image_post(post_text, secteur="", genre="", peau=""):
-    """Génère une image hyper-réaliste (gpt-image-1) alignée sur le contenu du post
-    et sur l'apparence de l'utilisateur (sexe + couleur de peau).
-    Retourne l'image en base64 (string) ou None."""
+def _photo_vers_png(photo_b64):
+    """Normalise une photo (b64, JPG/PNG) en PNG carré ≤1024 pour l'API images.edit."""
+    import base64, io as _io
+    from PIL import Image
+    img = Image.open(_io.BytesIO(base64.b64decode(photo_b64))).convert("RGB")
+    img.thumbnail((1024, 1024))
+    buf = _io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    buf.name = "ref.png"
+    return buf
+
+
+def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
+    """Génère une image hyper-réaliste (gpt-image-1) alignée sur le contenu du post.
+    Si photo_b64 est fourni (post qui met l'utilisateur en avant), l'image S'INSPIRE de
+    sa photo de profil (ressemblance). Retourne l'image en base64 (string) ou None."""
     client = _get_client()
     if client is None:
         return None
@@ -281,8 +294,7 @@ def generer_image_post(post_text, secteur="", genre="", peau=""):
             messages=[{"role": "user", "content": (
                 f"À partir de ce post LinkedIn (profil : {secteur}), décris EN ANGLAIS, en UNE "
                 f"phrase, une scène PHOTOGRAPHIQUE hyper-réaliste et professionnelle qui illustre "
-                f"le message (chantier OU bureau de gestion de projet selon le contenu). "
-                f"La personne principale est {person}. "
+                f"le message. La personne principale est {person}. "
                 f"AUCUN texte, logo ou mot dans l'image. Décris uniquement la scène "
                 f"(lieu, personne, action, ambiance).\n\nPOST:\n{post_text[:700]}"
             )}],
@@ -293,6 +305,23 @@ def generer_image_post(post_text, secteur="", genre="", peau=""):
 
     import random
     compo = random.choice(_IMG_COMPOS)
+
+    # Cas « me mettre en avant » : image inspirée de la photo de profil
+    if photo_b64:
+        try:
+            ref = _photo_vers_png(photo_b64)
+            prompt_edit = (
+                f"Hyperrealistic professional photograph featuring THIS exact person. {scene} "
+                "Preserve the person's likeness, face and skin tone from the reference photo. "
+                "Natural lighting, editorial magazine quality, candid and authentic. "
+                "Absolutely NO text, NO words, NO watermark, NO logo."
+            )
+            r = client.images.edit(model="gpt-image-1", image=ref,
+                                    prompt=prompt_edit, size="1024x1024")
+            return r.data[0].b64_json
+        except Exception:
+            pass  # repli : génération normale sans photo
+
     prompt = (
         f"Hyperrealistic professional photograph, {compo}. {scene} "
         f"The main person in the photo is clearly {person}. "

@@ -771,6 +771,7 @@ elif page == "🤖 Agents IA":
         _pref_secteur = (_prefs.get("sector") or _prefs.get("keywords") or "").replace("\n", ", ").strip(", ")
         _pref_ville = _prefs.get("ville") or ""
         _pref_tag = _prefs.get("post_tag") or ""
+        _pref_photo = _prefs.get("photo_b64") or ""
         _pref_lang = {"Français": "fr", "Anglais": "en",
                       "Bilingue (FR + EN)": "fr"}.get(_prefs.get("post_langue"), "fr")
         _pref_editos = [e for e in [_prefs.get("post_edito1"), _prefs.get("post_edito2")]
@@ -794,8 +795,16 @@ elif page == "🤖 Agents IA":
         pg_theme = st.text_input("Thème (optionnel — laissez vide pour un thème automatique)",
                                  value="", key="pg_theme")
 
-        pg_avec_image = st.checkbox("🖼️ Générer aussi une image hyper-réaliste (DALL-E 3) alignée sur le post",
+        pg_avec_image = st.checkbox("🖼️ Générer aussi une image hyper-réaliste alignée sur le post",
                                     value=True, key="pg_avec_image")
+        pg_moi = False
+        if _pref_photo:
+            pg_moi = st.checkbox("🧑 Me mettre en avant (image inspirée de MA photo de profil)",
+                                 value=False, key="pg_moi")
+        else:
+            st.caption("💡 Ajoutez une photo dans **Paramètres → 🎨 Post LinkedIn** pour des images "
+                       "qui vous ressemblent (posts qui vous mettent en avant).")
+        _photo_pour_image = _pref_photo if pg_moi else ""
 
         c_gen, c_close = st.columns([3, 1])
         with c_gen:
@@ -811,7 +820,7 @@ elif page == "🤖 Agents IA":
                     with st.spinner("Génération de l'image hyper-réaliste (gpt-image-1, ~15s)…"):
                         st.session_state.gen_post_image = generer_image_post(
                             st.session_state.gen_post_text, secteur=pg_secteur,
-                            genre=_pref_genre, peau=_pref_peau)
+                            genre=_pref_genre, peau=_pref_peau, photo_b64=_photo_pour_image)
         with c_close:
             if st.button("✖ Fermer", use_container_width=True):
                 st.session_state.show_post_gen = False
@@ -842,7 +851,7 @@ elif page == "🤖 Agents IA":
                     with st.spinner("Nouvelle image (gpt-image-1)…"):
                         st.session_state.gen_post_image = generer_image_post(
                             post_edit, secteur=pg_secteur,
-                            genre=_pref_genre, peau=_pref_peau)
+                            genre=_pref_genre, peau=_pref_peau, photo_b64=_photo_pour_image)
                     st.rerun()
             elif pg_avec_image:
                 st.caption("⚠️ Image non générée (quota OpenAI ou erreur) — le post peut être publié sans image.")
@@ -1428,6 +1437,24 @@ ne suffit pas pour la recherche (LinkedIn bloque).
                 "Personne à taguer à chaque post (optionnel)",
                 value=cur.get("post_tag") or "",
                 placeholder="ex : Fredy Beukam — laissez vide si aucun")
+
+            st.markdown("**🧑 Photo de profil** (pour les posts qui vous mettent en avant — "
+                        "l'image générée vous ressemblera)")
+            if cur.get("photo_b64"):
+                try:
+                    st.image(base64.b64decode(cur["photo_b64"]), width=120,
+                             caption="Photo enregistrée")
+                except Exception:
+                    pass
+            photo_up = st.file_uploader("Téléverser une photo (portrait net, visage visible)",
+                                        type=["jpg", "jpeg", "png"], key="pf_photo")
+            if photo_up is not None:
+                _pb64 = base64.b64encode(photo_up.read()).decode()
+                if st.button("💾 Enregistrer ma photo", key="save_photo"):
+                    if db.update_user(st.session_state.user_id, {"photo_b64": _pb64}):
+                        st.success("✅ Photo enregistrée !")
+                    else:
+                        st.error("Erreur — colonne photo_b64 créée ? (voir SQL)")
 
             if st.button("💾 Sauvegarder mes préférences de post", type="primary"):
                 ok = db.update_user(st.session_state.user_id, {
