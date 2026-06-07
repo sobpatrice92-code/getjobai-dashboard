@@ -1239,45 +1239,88 @@ elif page == "⚙️ Paramètres":
         "Configurez votre profil et vos préférences"
     )
 
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["👤 Profil", "🔑 Keywords", "🔔 Notifications", "🔒 Mot de passe", "🔗 LinkedIn",
-         "🎨 Post LinkedIn"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+        ["👤 Profil", "🔑 Keywords", "📄 Mon CV", "🔔 Notifications", "🔒 Mot de passe",
+         "🔗 LinkedIn", "🎨 Post LinkedIn"])
+
+    # Charger le VRAI profil de l'utilisateur connecté (personnalisé)
+    db = get_supabase_client()
+    _me = db.get_user_by_email(st.session_state.user_email) or {}
 
     with tab1:
         st.subheader("Informations Personnelles")
 
         col1, col2 = st.columns(2)
         with col1:
-            nom = st.text_input("Nom complet", "Patrice Arnold Sob Feukam")
-            email = st.text_input("Email", "sobpatrice92@gmail.com")
-            telephone = st.text_input("Téléphone", "15142364628")
+            nom = st.text_input("Nom complet", _me.get("full_name") or _me.get("nom_complet") or "")
+            email = st.text_input("Email", _me.get("email") or st.session_state.user_email,
+                                  disabled=True)
+            telephone = st.text_input("Téléphone", _me.get("telephone") or "")
 
         with col2:
-            ville = st.text_input("Ville", "Ottawa")
-            province = st.text_input("Province", "Ontario")
-            linkedin = st.text_input("LinkedIn URL", "linkedin.com/in/patrice-arnold-sob-feukam")
+            ville = st.text_input("Ville", _me.get("ville") or "")
+            province = st.text_input("Province", _me.get("province") or "")
+            linkedin = st.text_input("LinkedIn URL", _me.get("linkedin_url") or "")
 
         if st.button("💾 Sauvegarder le Profil", type="primary"):
-            st.success("✅ Profil sauvegardé!")
+            ok = db.update_user(st.session_state.user_id, {
+                "full_name": nom, "nom_complet": nom, "telephone": telephone,
+                "ville": ville, "province": province, "linkedin_url": linkedin,
+            })
+            st.success("✅ Profil sauvegardé!") if ok else st.error("Erreur de sauvegarde.")
 
     with tab2:
         st.subheader("Mots-clés de Recherche")
+        st.caption("Les agents de recherche d'emploi utilisent VOS mots-clés (un par ligne).")
 
         keywords = st.text_area(
             "Keywords (un par ligne)",
-            value="""CHARGE DE PROJET JUNIOR CONSTRUCTION
-COORDONATEUR DES TRAVAUX CONSTRUCTION
-ESTIMATEUR JUNIOR CONSTRUCTION
-SURVEILLANT DE CHANTIER
-TECHNICIEN DE LABORATOIRE
-TECHNOLOGUE CONSTRUCTION GENIE CIVIL""",
-            height=200
+            value=_me.get("keywords") or "",
+            height=200, placeholder="CHARGE DE PROJET CONSTRUCTION\nESTIMATEUR JUNIOR\n...",
         )
 
         if st.button("💾 Sauvegarder les Keywords", type="primary"):
-            st.success("✅ Keywords sauvegardés!")
+            ok = db.update_user(st.session_state.user_id, {"keywords": keywords.strip()})
+            st.success("✅ Keywords sauvegardés!") if ok else st.error("Erreur de sauvegarde.")
 
     with tab3:
+        st.subheader("📄 Mon CV")
+        st.caption("Votre CV sert aux agents (lettres, candidatures, entretien). Personnel à votre compte.")
+
+        _cv_actuel = _me.get("cv_text") or ""
+        _cv_nom = _me.get("cv_filename") or ""
+        if _cv_actuel:
+            st.success(f"✅ CV enregistré : {_cv_nom or 'CV'} ({len(_cv_actuel)} caractères)")
+        else:
+            st.warning("❌ Aucun CV enregistré.")
+
+        up = st.file_uploader("Téléverser votre CV (PDF)", type=["pdf"], key="cv_pdf")
+        if up is not None:
+            try:
+                from pypdf import PdfReader
+                import io as _io
+                reader = PdfReader(_io.BytesIO(up.read()))
+                texte = "\n".join((p.extract_text() or "") for p in reader.pages).strip()
+                if texte:
+                    st.text_area("Aperçu du texte extrait", value=texte[:1500], height=160,
+                                 disabled=True)
+                    if st.button("💾 Enregistrer ce CV", type="primary", key="save_cv_pdf"):
+                        ok = db.update_user(st.session_state.user_id,
+                                            {"cv_text": texte, "cv_filename": up.name})
+                        st.success("✅ CV enregistré!") if ok else st.error("Erreur de sauvegarde.")
+                else:
+                    st.error("Impossible d'extraire le texte (PDF scanné ?). Collez-le ci-dessous.")
+            except Exception as e:
+                st.error(f"Erreur lecture PDF : {e}")
+
+        st.markdown("**Ou collez le texte de votre CV :**")
+        cv_txt = st.text_area("Texte du CV", value=_cv_actuel, height=220, key="cv_texte")
+        if st.button("💾 Enregistrer le CV (texte)", key="save_cv_txt"):
+            ok = db.update_user(st.session_state.user_id,
+                                {"cv_text": cv_txt.strip(), "cv_filename": _cv_nom or "CV.txt"})
+            st.success("✅ CV enregistré!") if ok else st.error("Erreur de sauvegarde.")
+
+    with tab4:
         st.subheader("Notifications Email")
 
         email_notif = st.checkbox("Recevoir rapport après chaque agent", value=True)
@@ -1287,7 +1330,7 @@ TECHNOLOGUE CONSTRUCTION GENIE CIVIL""",
         if st.button("💾 Sauvegarder Notifications", type="primary"):
             st.success("✅ Préférences sauvegardées!")
 
-    with tab4:
+    with tab5:
         st.subheader("Changer mon mot de passe")
         new_pwd = st.text_input("Nouveau mot de passe (min. 6 caractères)", type="password", key="param_new_pwd")
         new_pwd2 = st.text_input("Confirmer le nouveau mot de passe", type="password", key="param_new_pwd2")
@@ -1301,7 +1344,7 @@ TECHNOLOGUE CONSTRUCTION GENIE CIVIL""",
             else:
                 st.error("Erreur lors du changement de mot de passe.")
 
-    with tab5:
+    with tab6:
         st.subheader("🔗 Connexion LinkedIn (pour Networking & Easy Apply)")
         st.markdown("""
 **Pourquoi ?** Pour que l'agent **Networking** (recherche de recruteurs) et le **LinkedIn
@@ -1347,7 +1390,7 @@ ne suffit pas pour la recherche (LinkedIn bloque).
                 except Exception:
                     st.error("❌ JSON invalide. Collez bien l'export complet (commence par `[` ).")
 
-    with tab6:
+    with tab7:
         st.subheader("🎨 Préférences des posts LinkedIn")
         st.caption("Ces réglages personnalisent le texte ET l'image générée (apparence, ton, langue).")
         if st.session_state.user_id:
@@ -1377,12 +1420,14 @@ ne suffit pas pour la recherche (LinkedIn bloque).
                                       if cur.get("post_edito2") in (["(aucune)"] + _EDITOS) else 0)
 
             if st.button("💾 Sauvegarder mes préférences de post", type="primary"):
-                db.save_setting(st.session_state.user_id, "post_genre", genre)
-                db.save_setting(st.session_state.user_id, "post_peau", peau)
-                db.save_setting(st.session_state.user_id, "post_langue", langue_post)
-                db.save_setting(st.session_state.user_id, "post_edito1", edito1)
-                db.save_setting(st.session_state.user_id, "post_edito2", edito2)
-                st.success("✅ Préférences enregistrées ! Elles s'appliquent aux prochains posts générés.")
+                ok = db.update_user(st.session_state.user_id, {
+                    "post_genre": genre, "post_peau": peau, "post_langue": langue_post,
+                    "post_edito1": edito1, "post_edito2": edito2,
+                })
+                if ok:
+                    st.success("✅ Préférences enregistrées ! Elles s'appliquent aux prochains posts.")
+                else:
+                    st.error("Erreur — avez-vous lancé le SQL d'ajout des colonnes post_* ? (voir guide)")
         else:
             st.warning("Connectez-vous pour configurer vos préférences.")
 

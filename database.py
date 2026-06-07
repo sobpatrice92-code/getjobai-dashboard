@@ -230,9 +230,8 @@ class SupabaseClient:
             return False
 
     def get_user_settings(self, user_id: str) -> Dict:
-        """Récupère les réglages (sans exposer en clair côté affichage)."""
-        url = (f"{self.url}/rest/v1/users?id=eq.{user_id}"
-               "&select=linkedin_cookie,linkedin_cookie_li_at,gmail_address,telephone")
+        """Récupère le profil/réglages complets de l'utilisateur (usage interne)."""
+        url = f"{self.url}/rest/v1/users?id=eq.{user_id}&select=*"
         try:
             r = httpx.get(url, headers=self.headers, timeout=10)
             if r.status_code == 200 and r.json():
@@ -240,6 +239,27 @@ class SupabaseClient:
         except Exception:
             pass
         return {}
+
+    def update_user(self, user_id: str, data: Dict) -> bool:
+        """Met à jour les champs de profil d'un utilisateur (liste blanche de sécurité)."""
+        allowed = {"full_name", "nom_complet", "telephone", "ville", "province",
+                   "linkedin_url", "linkedin_profile", "location", "keywords", "sector",
+                   "cv_text", "cv_filename",
+                   "post_genre", "post_peau", "post_langue", "post_edito1", "post_edito2"}
+        payload = {k: v for k, v in data.items() if k in allowed}
+        if not payload:
+            return False
+        url = f"{self.url}/rest/v1/users?id=eq.{user_id}"
+        h = {**self.headers, "Prefer": "return=minimal"}
+        try:
+            r = httpx.patch(url, headers=h, json=payload, timeout=10)
+            if r.status_code in (200, 204):
+                return True
+            st.error(f"Erreur update_user: {r.status_code} {r.text[:200]}")
+            return False
+        except Exception as e:
+            st.error(f"Erreur update_user: {e}")
+            return False
 
     def delete_user(self, user_id: str, with_data: bool = True) -> bool:
         """Supprimer un compte utilisateur (et ses données). Destructif."""
