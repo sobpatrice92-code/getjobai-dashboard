@@ -762,27 +762,31 @@ elif page == "🤖 Agents IA":
         st.markdown("---")
         section_header("📝 Post LinkedIn", "Générez un post, copiez-le, publiez-le vous-même sur LinkedIn")
 
-        # Préférences sauvegardées (Paramètres → 🎨 Post LinkedIn)
+        # Profil + préférences de CHAQUE utilisateur (Paramètres)
         _db_pref = get_supabase_client()
         _prefs = _db_pref.get_user_settings(st.session_state.user_id) or {}
         _pref_genre = _prefs.get("post_genre", "")
         _pref_peau = _prefs.get("post_peau", "")
+        _pref_nom = _prefs.get("full_name") or _prefs.get("nom_complet") or ""
+        _pref_secteur = (_prefs.get("sector") or _prefs.get("keywords") or "").replace("\n", ", ").strip(", ")
+        _pref_ville = _prefs.get("ville") or ""
+        _pref_tag = _prefs.get("post_tag") or ""
         _pref_lang = {"Français": "fr", "Anglais": "en",
                       "Bilingue (FR + EN)": "fr"}.get(_prefs.get("post_langue"), "fr")
         _pref_editos = [e for e in [_prefs.get("post_edito1"), _prefs.get("post_edito2")]
                         if e and e != "(aucune)"]
-        if not _prefs.get("post_peau"):
-            st.info("💡 Astuce : dans **Paramètres → 🎨 Post LinkedIn**, réglez votre sexe et couleur "
-                    "de peau pour que l'image vous ressemble.")
+        if not _pref_secteur:
+            st.warning("⚠️ Renseignez votre **métier / secteur** dans **Paramètres → 👤 Profil** "
+                       "(ou ci-dessous) pour que le post colle à VOTRE profession.")
 
         cga, cgb, cgc = st.columns([2, 1, 1])
         with cga:
             pg_secteur = st.text_input(
-                "Vos compétences / métiers (le post s'aligne dessus)",
-                value="génie civil, gestion de projet, chargé de projet, coordonnateur de travaux",
+                "Votre métier / compétences (le post s'aligne dessus)",
+                value=_pref_secteur, placeholder="ex : infirmière, marketing digital, comptabilité…",
                 key="pg_secteur")
         with cgb:
-            pg_ville = st.text_input("Ville", value="Ottawa", key="pg_ville")
+            pg_ville = st.text_input("Ville", value=_pref_ville, key="pg_ville")
         with cgc:
             pg_langue = st.selectbox("Langue", ["fr", "en"],
                                      index=(0 if _pref_lang == "fr" else 1), key="pg_langue",
@@ -800,6 +804,7 @@ elif page == "🤖 Agents IA":
                     st.session_state.gen_post_text = generer_post_linkedin(
                         secteur=pg_secteur, ville=pg_ville, langue=pg_langue,
                         theme=pg_theme or None, editos=_pref_editos,
+                        nom=_pref_nom, tag_personne=_pref_tag,
                     )
                 st.session_state.pop("gen_post_image", None)
                 if pg_avec_image:
@@ -1266,10 +1271,16 @@ elif page == "⚙️ Paramètres":
             province = st.text_input("Province", _me.get("province") or "")
             linkedin = st.text_input("LinkedIn URL", _me.get("linkedin_url") or "")
 
+        secteur_profil = st.text_input(
+            "Métier / secteur (sert aux posts LinkedIn et à l'IA)",
+            value=_me.get("sector") or "",
+            placeholder="ex : infirmière, génie civil, marketing digital, comptabilité…")
+
         if st.button("💾 Sauvegarder le Profil", type="primary"):
             ok = db.update_user(st.session_state.user_id, {
                 "full_name": nom, "nom_complet": nom, "telephone": telephone,
                 "ville": ville, "province": province, "linkedin_url": linkedin,
+                "sector": secteur_profil,
             })
             st.success("✅ Profil sauvegardé!") if ok else st.error("Erreur de sauvegarde.")
 
@@ -1423,10 +1434,15 @@ ne suffit pas pour la recherche (LinkedIn bloque).
                                       index=(["(aucune)"] + _EDITOS).index(cur.get("post_edito2"))
                                       if cur.get("post_edito2") in (["(aucune)"] + _EDITOS) else 0)
 
+            tag_perso = st.text_input(
+                "Personne à taguer à chaque post (optionnel)",
+                value=cur.get("post_tag") or "",
+                placeholder="ex : Fredy Beukam — laissez vide si aucun")
+
             if st.button("💾 Sauvegarder mes préférences de post", type="primary"):
                 ok = db.update_user(st.session_state.user_id, {
                     "post_genre": genre, "post_peau": peau, "post_langue": langue_post,
-                    "post_edito1": edito1, "post_edito2": edito2,
+                    "post_edito1": edito1, "post_edito2": edito2, "post_tag": tag_perso.strip(),
                 })
                 if ok:
                     st.success("✅ Préférences enregistrées ! Elles s'appliquent aux prochains posts.")

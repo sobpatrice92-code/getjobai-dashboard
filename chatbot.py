@@ -63,16 +63,16 @@ def generer_message_linkedin(nom, titre, entreprise, secteur="génie civil / con
 
 
 _POST_THEMES = [
-    "la coordination de chantier et la gestion des imprévus au quotidien",
-    "la planification et le respect des délais sur un projet de construction",
-    "la gestion des parties prenantes (clients, sous-traitants, équipes)",
-    "l'estimation et le contrôle des coûts sur un projet",
-    "la sécurité et la qualité comme priorités sur un chantier",
-    "la communication entre le bureau et le terrain",
-    "ce que la gestion de projet m'a appris sur le leadership",
-    "comment se démarquer dans le génie civil au Canada",
-    "l'apport des outils numériques (MS Project, BIM, AutoCAD) en gestion de projet",
-    "comment anticiper et résoudre un retard sur un chantier",
+    "comment se démarquer dans votre domaine",
+    "une leçon concrète apprise dans votre métier",
+    "l'importance du réseautage professionnel",
+    "les compétences les plus recherchées dans votre secteur",
+    "un conseil pratique tiré de votre expérience",
+    "l'adaptation et la résilience au travail",
+    "pourquoi la formation continue compte dans votre métier",
+    "comment la technologie transforme votre profession",
+    "un défi récent et comment vous l'avez surmonté",
+    "ce qui vous motive vraiment dans votre travail",
 ]
 
 # Concepts de gestion de projet à mobiliser (posts orientés gestion de projet)
@@ -157,19 +157,26 @@ _EDITO_MAP = {
 }
 
 
-def generer_post_linkedin(secteur="génie civil, gestion de projet, chargé de projet, construction",
-                          ville="Ottawa", province="Ontario", langue="fr",
-                          nom="Patrice", theme=None, editos=None):
-    """Génère un post LinkedIn humanisé (texte seul, sans publication), aligné sur le profil.
-    Aucune dépendance navigateur — GPT-4o + passe humanizer.
-    editos : liste de lignes éditoriales choisies (on en pioche une au hasard pour varier)."""
+def generer_post_linkedin(secteur="", ville="", province="", langue="fr",
+                          nom="", theme=None, editos=None, tag_personne=""):
+    """Génère un post LinkedIn humanisé (texte seul, sans publication), aligné sur le profil
+    de CHAQUE utilisateur. Aucune dépendance navigateur — GPT-4o + passe humanizer.
+    secteur : métier/compétences de l'utilisateur. tag_personne : mention optionnelle à taguer.
+    editos : lignes éditoriales choisies (on en pioche une au hasard pour varier)."""
     import random
     client = _get_client()
+    secteur_in = (secteur or "").strip()
+    secteur = secteur_in or "votre domaine professionnel"
+    nom = (nom or "").strip() or "un professionnel"
+    ville = (ville or "").strip()
+    tag_personne = (tag_personne or "").strip()
     if theme is None or not str(theme).strip():
         theme = random.choice(_POST_THEMES)
-    loc = f"{ville}{', ' + province if province else ''}".strip(", ")
+    loc = f"{ville}{', ' + province if province else ''}".strip(", ") or "votre région"
     is_en = (langue == "en")
-    kws = [k.strip().replace(" ", "") for k in secteur.replace("/", ",").split(",") if k.strip()][:4]
+    # Hashtags depuis le métier RÉEL de l'utilisateur (vide si non renseigné)
+    kws = [k.strip().replace(" ", "") for k in secteur_in.replace("/", ",").split(",")
+           if k.strip()][:4] if secteur_in else []
     ht_user = " ".join(f"#{k.capitalize()}" for k in kws)
     ht_base = (f"#JobSearch #Professional #{ville.replace(' ', '') or 'Canada'}" if is_en
                else f"#Emploi #Professionnel #{ville.replace(' ', '') or 'Canada'}")
@@ -183,13 +190,20 @@ def generer_post_linkedin(secteur="génie civil, gestion de projet, chargé de p
     if client is None:
         return "⚠️ Configurez OPENAI_API_KEY dans Render pour générer des posts."
 
-    concepts = ", ".join(random.sample(_PM_CONCEPTS, 3))
+    # Concepts de gestion de projet UNIQUEMENT si le métier de l'utilisateur s'y rapporte
+    _is_pm = any(w in secteur.lower() for w in
+                 ["projet", "gestion", "construction", "génie civil", "chantier", "pmo", "pmp"])
+    concepts_line = ""
+    if _is_pm:
+        concepts_line = ("- Si le thème s'y prête, mobilise NATURELLEMENT 1 ou 2 concepts reconnus "
+                         f"de gestion de projet parmi : {', '.join(random.sample(_PM_CONCEPTS, 3))} "
+                         "(sans jargon gratuit)\n")
     # Angle = ligne éditoriale choisie par l'utilisateur (variété si plusieurs), sinon aléatoire
     _edito_choices = [_EDITO_MAP[e] for e in (editos or []) if e in _EDITO_MAP]
     angle = random.choice(_edito_choices) if _edito_choices else random.choice(_POST_ANGLES)
 
-    prompt = f"""Tu es {nom}, professionnel basé à {loc}, en recherche d'emploi.
-Ton profil couvre : {secteur}. Tu parles depuis TON vécu sur le terrain et en gestion de projet.
+    prompt = f"""Tu es {nom}, professionnel basé à {loc}.
+Ton métier / tes compétences : {secteur}. Tu écris depuis TON vécu dans CE métier précis.
 
 Thème du post : {theme}
 Angle d'écriture (pour varier à chaque fois) : {angle}
@@ -197,12 +211,11 @@ Angle d'écriture (pour varier à chaque fois) : {angle}
 LANGUE : {lang_instr}
 
 RÈGLES (STRICTES) :
-- Parle à la PREMIÈRE PERSONNE, depuis ton expérience concrète (chantier ET bureau)
-- Aligne le contenu sur tes compétences réelles : {secteur}
-- Si le thème touche la gestion de projet, mobilise NATURELLEMENT 1 ou 2 concepts reconnus parmi : {concepts} (sans jargon gratuit, reste concret)
-- Ton humain et authentique — JAMAIS corporatif, JAMAIS de cliché
-- Détails précis : chiffres, méthodes, outils réels (MS Project, AutoCAD, échéanciers, devis…)
-- ORIGINAL : n'écris jamais un post générique, ancre-le dans une situation précise et unique
+- Parle à la PREMIÈRE PERSONNE, depuis ton expérience concrète dans TON métier ({secteur})
+- N'invente PAS un autre métier — reste strictement dans : {secteur}
+{concepts_line}- Ton humain et authentique — JAMAIS corporatif, JAMAIS de cliché
+- Détails précis et crédibles propres à ce métier (chiffres, méthodes, outils réels du domaine)
+- ORIGINAL : ancre le post dans une situation précise et unique
 - CHAQUE idée sur sa PROPRE LIGNE, une ligne vide entre chaque idée
 - Maximum 4 idées distinctes — texte aéré, lisible sur mobile
 - 1 emoji pertinent par idée clé (maximum 4 emojis au total)
@@ -226,11 +239,11 @@ RÈGLES (STRICTES) :
         # Filet : garantir les hashtags
         if "#" not in post:
             post = post.rstrip() + "\n\n" + hashtags
-        # Toujours taguer Fredy Beukam (inséré juste avant les hashtags)
-        if "Fredy Beukam" not in post:
+        # Tag optionnel (par utilisateur) — inséré juste avant les hashtags
+        if tag_personne and tag_personne not in post:
             lines = post.split("\n")
             idx = next((i for i, l in enumerate(lines) if l.strip().startswith("#")), len(lines))
-            lines.insert(idx, "@Fredy Beukam")
+            lines.insert(idx, f"@{tag_personne}")
             lines.insert(idx + 1, "")
             post = "\n".join(lines)
         # Toujours aérer : une ligne vide entre les blocs (jamais 3+ sauts de suite)
@@ -253,8 +266,7 @@ def _person_desc(genre="", peau=""):
     return (f"a {p} {g}" if p else f"a {g}").strip()
 
 
-def generer_image_post(post_text, secteur="génie civil, gestion de projet, construction",
-                       genre="", peau=""):
+def generer_image_post(post_text, secteur="", genre="", peau=""):
     """Génère une image hyper-réaliste (gpt-image-1) alignée sur le contenu du post
     et sur l'apparence de l'utilisateur (sexe + couleur de peau).
     Retourne l'image en base64 (string) ou None."""
