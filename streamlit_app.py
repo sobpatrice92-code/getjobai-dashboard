@@ -26,7 +26,8 @@ from database import get_supabase_client
 
 # Import Authentification + Assistant IA
 from auth import login_screen, set_password
-from chatbot import chatbot_page, generer_message_linkedin, generer_post_linkedin
+from chatbot import (chatbot_page, generer_message_linkedin, generer_post_linkedin,
+                     generer_image_post)
 
 # Configuration
 st.set_page_config(
@@ -762,8 +763,10 @@ elif page == "🤖 Agents IA":
 
         cga, cgb, cgc = st.columns([2, 1, 1])
         with cga:
-            pg_secteur = st.text_input("Secteur / métier", value="génie civil / construction",
-                                       key="pg_secteur")
+            pg_secteur = st.text_input(
+                "Vos compétences / métiers (le post s'aligne dessus)",
+                value="génie civil, gestion de projet, chargé de projet, coordonnateur de travaux",
+                key="pg_secteur")
         with cgb:
             pg_ville = st.text_input("Ville", value="Ottawa", key="pg_ville")
         with cgc:
@@ -771,6 +774,9 @@ elif page == "🤖 Agents IA":
                                      format_func=lambda x: "🇫🇷 Français" if x == "fr" else "🇬🇧 English")
         pg_theme = st.text_input("Thème (optionnel — laissez vide pour un thème automatique)",
                                  value="", key="pg_theme")
+
+        pg_avec_image = st.checkbox("🖼️ Générer aussi une image hyper-réaliste (DALL-E 3) alignée sur le post",
+                                    value=True, key="pg_avec_image")
 
         c_gen, c_close = st.columns([3, 1])
         with c_gen:
@@ -780,10 +786,16 @@ elif page == "🤖 Agents IA":
                         secteur=pg_secteur, ville=pg_ville, langue=pg_langue,
                         theme=pg_theme or None,
                     )
+                st.session_state.pop("gen_post_image", None)
+                if pg_avec_image:
+                    with st.spinner("Génération de l'image hyper-réaliste (DALL-E 3, ~15s)…"):
+                        st.session_state.gen_post_image = generer_image_post(
+                            st.session_state.gen_post_text, secteur=pg_secteur)
         with c_close:
             if st.button("✖ Fermer", use_container_width=True):
                 st.session_state.show_post_gen = False
                 st.session_state.pop("gen_post_text", None)
+                st.session_state.pop("gen_post_image", None)
                 st.rerun()
 
         post_txt = st.session_state.get("gen_post_text", "")
@@ -791,6 +803,19 @@ elif page == "🤖 Agents IA":
             # On peut relire/modifier le texte avant publication
             post_edit = st.text_area("Post généré (vous pouvez le modifier avant de valider)",
                                      value=post_txt, height=320, key="pg_output")
+
+            # Image générée (DALL-E 3) — affichée pour validation
+            img_url = st.session_state.get("gen_post_image")
+            if img_url:
+                st.image(img_url, caption="🖼️ Image hyper-réaliste générée (alignée sur le post)",
+                         use_container_width=True)
+                if st.button("🔄 Régénérer l'image", key="pg_regen_img"):
+                    with st.spinner("Nouvelle image (DALL-E 3)…"):
+                        st.session_state.gen_post_image = generer_image_post(
+                            post_edit, secteur=pg_secteur)
+                    st.rerun()
+            elif pg_avec_image:
+                st.caption("⚠️ Image non générée (quota OpenAI ou erreur) — le post peut être publié sans image.")
 
             cpub, ccopy = st.columns([2, 1])
             with cpub:
@@ -802,7 +827,9 @@ elif page == "🤖 Agents IA":
                             action = db.create_action(
                                 user_id=st.session_state.user_id,
                                 agent_name="linkedin_agent",
-                                params={"approved_post": post_edit, "source": "dashboard_post"},
+                                params={"approved_post": post_edit,
+                                        "image_url": st.session_state.get("gen_post_image", ""),
+                                        "source": "dashboard_post"},
                             )
                             if action and action.get("id"):
                                 st.session_state.monitor_action_id = action["id"]
