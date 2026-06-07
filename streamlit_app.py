@@ -753,6 +753,21 @@ elif page == "🤝 Réseau":
                   "(page 🤖 Agents IA) : il trouvera des recruteurs et préparera les messages.", "info")
         else:
             st.caption(f"🤝 {len(contacts)} contact(s) • {len(a_faire)} à contacter")
+
+            # Générer TOUS les messages manquants en 1 clic
+            sans_msg = [c for c in contacts if not (c.get("message") or "").strip()]
+            if sans_msg:
+                if st.button(f"✨ Générer TOUS les messages ({len(sans_msg)} manquants)",
+                             type="primary"):
+                    barre = st.progress(0.0)
+                    for idx, c in enumerate(sans_msg):
+                        msg = generer_message_linkedin(
+                            c.get("nom", ""), c.get("titre", ""), c.get("entreprise", ""))
+                        db.update_contact_message(c.get("id"), msg)
+                        barre.progress((idx + 1) / len(sans_msg))
+                    st.success(f"✅ {len(sans_msg)} messages générés !")
+                    st.rerun()
+
             st.markdown("<br>", unsafe_allow_html=True)
 
             for c in contacts:
