@@ -762,6 +762,19 @@ elif page == "🤖 Agents IA":
         st.markdown("---")
         section_header("📝 Post LinkedIn", "Générez un post, copiez-le, publiez-le vous-même sur LinkedIn")
 
+        # Préférences sauvegardées (Paramètres → 🎨 Post LinkedIn)
+        _db_pref = get_supabase_client()
+        _prefs = _db_pref.get_user_settings(st.session_state.user_id) or {}
+        _pref_genre = _prefs.get("post_genre", "")
+        _pref_peau = _prefs.get("post_peau", "")
+        _pref_lang = {"Français": "fr", "Anglais": "en",
+                      "Bilingue (FR + EN)": "fr"}.get(_prefs.get("post_langue"), "fr")
+        _pref_editos = [e for e in [_prefs.get("post_edito1"), _prefs.get("post_edito2")]
+                        if e and e != "(aucune)"]
+        if not _prefs.get("post_peau"):
+            st.info("💡 Astuce : dans **Paramètres → 🎨 Post LinkedIn**, réglez votre sexe et couleur "
+                    "de peau pour que l'image vous ressemble.")
+
         cga, cgb, cgc = st.columns([2, 1, 1])
         with cga:
             pg_secteur = st.text_input(
@@ -771,7 +784,8 @@ elif page == "🤖 Agents IA":
         with cgb:
             pg_ville = st.text_input("Ville", value="Ottawa", key="pg_ville")
         with cgc:
-            pg_langue = st.selectbox("Langue", ["fr", "en"], key="pg_langue",
+            pg_langue = st.selectbox("Langue", ["fr", "en"],
+                                     index=(0 if _pref_lang == "fr" else 1), key="pg_langue",
                                      format_func=lambda x: "🇫🇷 Français" if x == "fr" else "🇬🇧 English")
         pg_theme = st.text_input("Thème (optionnel — laissez vide pour un thème automatique)",
                                  value="", key="pg_theme")
@@ -785,13 +799,14 @@ elif page == "🤖 Agents IA":
                 with st.spinner("Génération du post…"):
                     st.session_state.gen_post_text = generer_post_linkedin(
                         secteur=pg_secteur, ville=pg_ville, langue=pg_langue,
-                        theme=pg_theme or None,
+                        theme=pg_theme or None, editos=_pref_editos,
                     )
                 st.session_state.pop("gen_post_image", None)
                 if pg_avec_image:
-                    with st.spinner("Génération de l'image hyper-réaliste (DALL-E 3, ~15s)…"):
+                    with st.spinner("Génération de l'image hyper-réaliste (gpt-image-1, ~15s)…"):
                         st.session_state.gen_post_image = generer_image_post(
-                            st.session_state.gen_post_text, secteur=pg_secteur)
+                            st.session_state.gen_post_text, secteur=pg_secteur,
+                            genre=_pref_genre, peau=_pref_peau)
         with c_close:
             if st.button("✖ Fermer", use_container_width=True):
                 st.session_state.show_post_gen = False
@@ -817,7 +832,8 @@ elif page == "🤖 Agents IA":
                 if st.button("🔄 Régénérer l'image", key="pg_regen_img"):
                     with st.spinner("Nouvelle image (gpt-image-1)…"):
                         st.session_state.gen_post_image = generer_image_post(
-                            post_edit, secteur=pg_secteur)
+                            post_edit, secteur=pg_secteur,
+                            genre=_pref_genre, peau=_pref_peau)
                     st.rerun()
             elif pg_avec_image:
                 st.caption("⚠️ Image non générée (quota OpenAI ou erreur) — le post peut être publié sans image.")
@@ -1223,8 +1239,9 @@ elif page == "⚙️ Paramètres":
         "Configurez votre profil et vos préférences"
     )
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["👤 Profil", "🔑 Keywords", "🔔 Notifications", "🔒 Mot de passe", "🔗 LinkedIn"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        ["👤 Profil", "🔑 Keywords", "🔔 Notifications", "🔒 Mot de passe", "🔗 LinkedIn",
+         "🎨 Post LinkedIn"])
 
     with tab1:
         st.subheader("Informations Personnelles")
@@ -1329,6 +1346,45 @@ ne suffit pas pour la recherche (LinkedIn bloque).
                         st.error("Erreur d'enregistrement.")
                 except Exception:
                     st.error("❌ JSON invalide. Collez bien l'export complet (commence par `[` ).")
+
+    with tab6:
+        st.subheader("🎨 Préférences des posts LinkedIn")
+        st.caption("Ces réglages personnalisent le texte ET l'image générée (apparence, ton, langue).")
+        if st.session_state.user_id:
+            db = get_supabase_client()
+            cur = db.get_user_settings(st.session_state.user_id) or {}
+
+            _GENRES = ["Homme", "Femme", "Autre / ne pas préciser"]
+            _PEAUX = ["Noire", "Métisse", "Brune / olive", "Blanche", "Ne pas préciser"]
+            _EDITOS = ["Conseil pratique", "Question / débat", "Récit d'expérience",
+                       "Analyse / réflexion", "Coulisses du métier", "Motivation / mindset"]
+            _LANGUES = ["Français", "Anglais", "Bilingue (FR + EN)"]
+
+            colA, colB = st.columns(2)
+            with colA:
+                genre = st.selectbox("Sexe (pour l'image)", _GENRES,
+                                     index=_GENRES.index(cur.get("post_genre")) if cur.get("post_genre") in _GENRES else 0)
+                peau = st.selectbox("Couleur de peau (pour l'image)", _PEAUX,
+                                    index=_PEAUX.index(cur.get("post_peau")) if cur.get("post_peau") in _PEAUX else 0)
+                langue_post = st.selectbox("Langue du post", _LANGUES,
+                                           index=_LANGUES.index(cur.get("post_langue")) if cur.get("post_langue") in _LANGUES else 0)
+            with colB:
+                edito1 = st.selectbox("Ligne éditoriale principale", _EDITOS,
+                                      index=_EDITOS.index(cur.get("post_edito1")) if cur.get("post_edito1") in _EDITOS else 0)
+                edito2 = st.selectbox("Ligne éditoriale secondaire (variété)",
+                                      ["(aucune)"] + _EDITOS,
+                                      index=(["(aucune)"] + _EDITOS).index(cur.get("post_edito2"))
+                                      if cur.get("post_edito2") in (["(aucune)"] + _EDITOS) else 0)
+
+            if st.button("💾 Sauvegarder mes préférences de post", type="primary"):
+                db.save_setting(st.session_state.user_id, "post_genre", genre)
+                db.save_setting(st.session_state.user_id, "post_peau", peau)
+                db.save_setting(st.session_state.user_id, "post_langue", langue_post)
+                db.save_setting(st.session_state.user_id, "post_edito1", edito1)
+                db.save_setting(st.session_state.user_id, "post_edito2", edito2)
+                st.success("✅ Préférences enregistrées ! Elles s'appliquent aux prochains posts générés.")
+        else:
+            st.warning("Connectez-vous pour configurer vos préférences.")
 
 # ============================================================
 # PAGE: ADMIN

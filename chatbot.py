@@ -147,11 +147,22 @@ def _humaniser_texte(client, texte, is_en=False):
         return texte
 
 
+_EDITO_MAP = {
+    "Conseil pratique": "donne des conseils concrets et applicables tout de suite",
+    "Question / débat": "lance un débat : pose une question forte et défends un point de vue",
+    "Récit d'expérience": "raconte une expérience vécue précise, avec un avant/après",
+    "Analyse / réflexion": "propose une analyse réfléchie d'une tendance ou d'un enjeu du métier",
+    "Coulisses du métier": "montre les coulisses concrètes de ton métier au quotidien",
+    "Motivation / mindset": "partage un état d'esprit, une leçon de persévérance, de façon sincère",
+}
+
+
 def generer_post_linkedin(secteur="génie civil, gestion de projet, chargé de projet, construction",
                           ville="Ottawa", province="Ontario", langue="fr",
-                          nom="Patrice", theme=None):
+                          nom="Patrice", theme=None, editos=None):
     """Génère un post LinkedIn humanisé (texte seul, sans publication), aligné sur le profil.
-    Aucune dépendance navigateur — GPT-4o + passe humanizer."""
+    Aucune dépendance navigateur — GPT-4o + passe humanizer.
+    editos : liste de lignes éditoriales choisies (on en pioche une au hasard pour varier)."""
     import random
     client = _get_client()
     if theme is None or not str(theme).strip():
@@ -173,7 +184,9 @@ def generer_post_linkedin(secteur="génie civil, gestion de projet, chargé de p
         return "⚠️ Configurez OPENAI_API_KEY dans Render pour générer des posts."
 
     concepts = ", ".join(random.sample(_PM_CONCEPTS, 3))
-    angle = random.choice(_POST_ANGLES)
+    # Angle = ligne éditoriale choisie par l'utilisateur (variété si plusieurs), sinon aléatoire
+    _edito_choices = [_EDITO_MAP[e] for e in (editos or []) if e in _EDITO_MAP]
+    angle = random.choice(_edito_choices) if _edito_choices else random.choice(_POST_ANGLES)
 
     prompt = f"""Tu es {nom}, professionnel basé à {loc}, en recherche d'emploi.
 Ton profil couvre : {secteur}. Tu parles depuis TON vécu sur le terrain et en gestion de projet.
@@ -228,12 +241,27 @@ RÈGLES (STRICTES) :
         return f"Erreur de génération : {e}"
 
 
-def generer_image_post(post_text, secteur="génie civil, gestion de projet, construction"):
-    """Génère une image hyper-réaliste (gpt-image-1) alignée sur le contenu du post.
+def _person_desc(genre="", peau=""):
+    """Construit la description de la personne (sexe + peau) pour l'image."""
+    g = {"Homme": "man", "Femme": "woman"}.get(genre, "person")
+    p = {
+        "Noire": "Black, dark-skinned",
+        "Métisse": "mixed-race, medium-brown skin",
+        "Brune / olive": "olive-skinned",
+        "Blanche": "white",
+    }.get(peau, "")
+    return (f"a {p} {g}" if p else f"a {g}").strip()
+
+
+def generer_image_post(post_text, secteur="génie civil, gestion de projet, construction",
+                       genre="", peau=""):
+    """Génère une image hyper-réaliste (gpt-image-1) alignée sur le contenu du post
+    et sur l'apparence de l'utilisateur (sexe + couleur de peau).
     Retourne l'image en base64 (string) ou None."""
     client = _get_client()
     if client is None:
         return None
+    person = _person_desc(genre, peau)
     # 1. Dériver une scène visuelle concrète à partir du post
     try:
         desc = client.chat.completions.create(
@@ -242,18 +270,20 @@ def generer_image_post(post_text, secteur="génie civil, gestion de projet, cons
                 f"À partir de ce post LinkedIn (profil : {secteur}), décris EN ANGLAIS, en UNE "
                 f"phrase, une scène PHOTOGRAPHIQUE hyper-réaliste et professionnelle qui illustre "
                 f"le message (chantier OU bureau de gestion de projet selon le contenu). "
+                f"La personne principale est {person}. "
                 f"AUCUN texte, logo ou mot dans l'image. Décris uniquement la scène "
                 f"(lieu, personne, action, ambiance).\n\nPOST:\n{post_text[:700]}"
             )}],
         )
         scene = desc.choices[0].message.content.strip()
     except Exception:
-        scene = f"a professional {secteur} work environment"
+        scene = f"{person}, a professional in a {secteur} work environment"
 
     import random
     compo = random.choice(_IMG_COMPOS)
     prompt = (
         f"Hyperrealistic professional photograph, {compo}. {scene} "
+        f"The main person in the photo is clearly {person}. "
         "Sharp focus, shallow depth of field, editorial magazine quality, "
         "candid and authentic. Absolutely NO text, NO words, NO letters, NO watermark, NO logo."
     )

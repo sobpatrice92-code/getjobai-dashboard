@@ -3,3 +3,4 @@ __pycache__/
 .env
 _test_post_img.png
 _post_img_*.png
+_test_*.png
