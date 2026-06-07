@@ -849,28 +849,18 @@ elif page == "🤖 Agents IA":
 
             cpub, ccopy = st.columns([2, 1])
             with cpub:
-                if st.button("✅ Approuver et publier sur LinkedIn", type="primary",
+                if st.button("✅ Envoyer à mon extension (publier)", type="primary",
                              use_container_width=True, key="pg_publish"):
                     if st.session_state.user_id:
-                        try:
-                            db = get_supabase_client()
-                            action = db.create_action(
-                                user_id=st.session_state.user_id,
-                                agent_name="linkedin_agent",
-                                params={"approved_post": post_edit,
-                                        "image_b64": st.session_state.get("gen_post_image", ""),
-                                        "source": "dashboard_post"},
-                            )
-                            if action and action.get("id"):
-                                st.session_state.monitor_action_id = action["id"]
-                                st.session_state.monitor_agent = "Post LinkedIn"
-                                st.session_state.show_post_gen = False
-                                st.session_state.pop("gen_post_text", None)
-                                st.rerun()
-                            else:
-                                st.error("❌ Échec du lancement de la publication.")
-                        except Exception as e:
-                            st.error(f"❌ Erreur: {e}")
+                        ok = get_supabase_client().create_post_linkedin(
+                            st.session_state.user_id, post_edit,
+                            st.session_state.get("gen_post_image", ""))
+                        if ok:
+                            st.success("✅ Post envoyé à votre extension ! Ouvrez **LinkedIn**, "
+                                       "cliquez **« 📤 Publier (GetJobAI) »** en bas à droite, "
+                                       "vérifiez et publiez.")
+                        else:
+                            st.error("❌ Échec de l'envoi (table posts_linkedin créée ? voir SQL).")
                     else:
                         st.error("User ID manquant.")
             with ccopy:
