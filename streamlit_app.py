@@ -1238,9 +1238,9 @@ elif page == "⚙️ Paramètres":
         "Configurez votre profil et vos préférences"
     )
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
         ["👤 Profil", "🔑 Keywords", "📄 Mon CV", "🔔 Notifications", "🔒 Mot de passe",
-         "🔗 LinkedIn", "🎨 Post LinkedIn"])
+         "🔗 LinkedIn", "🎨 Post LinkedIn", "🧩 Extension"])
 
     # Charger le VRAI profil de l'utilisateur connecté (personnalisé)
     db = get_supabase_client()
@@ -1440,6 +1440,47 @@ ne suffit pas pour la recherche (LinkedIn bloque).
                     st.error("Erreur — avez-vous lancé le SQL d'ajout des colonnes post_* ? (voir guide)")
         else:
             st.warning("Connectez-vous pour configurer vos préférences.")
+
+    with tab8:
+        st.subheader("🧩 Extension GetJobAI pour Chrome")
+        st.caption("Collectez des recruteurs ET publiez vos posts LinkedIn depuis votre vrai "
+                   "navigateur — aucune détection, votre session reste intacte.")
+
+        # Lien store (à renseigner une fois l'extension approuvée par Google)
+        STORE_URL = ""  # ex: https://chrome.google.com/webstore/detail/xxxx
+        if STORE_URL:
+            st.success("✅ Installez l'extension en 1 clic :")
+            st.markdown(f"### 👉 [Installer l'extension GetJobAI]({STORE_URL})")
+        else:
+            st.info("⏳ L'extension est **en cours de validation** sur le Chrome Web Store. "
+                    "En attendant, installez-la en mode développeur (ci-dessous).")
+
+        st.markdown("---")
+        st.markdown("#### 📥 Installation (mode développeur, en attendant le store)")
+        st.markdown("""
+1. Ouvrez **`chrome://extensions`**
+2. En haut à droite, activez **« Mode développeur »**
+3. Cliquez **« Charger l'extension non empaquetée »**
+4. Sélectionnez le dossier de l'extension (fourni par GetJobAI)
+""")
+
+        st.markdown("#### ⚙️ Configuration (1 fois)")
+        st.markdown(f"""
+1. Cliquez l'icône **🧩 GetJobAI** dans la barre d'extensions
+2. Entrez **votre email GetJobAI** : `{st.session_state.user_email}`
+3. Cliquez **💾 Enregistrer**
+""")
+
+        st.markdown("#### 🎯 Utilisation")
+        st.markdown("""
+**Collecter des recruteurs** : sur une recherche LinkedIn → bouton **📥 Collecter** → ils
+arrivent dans 🤝 Réseau.
+
+**Publier un post** : ici → **Agents IA → Post LinkedIn → Générer → Envoyer à l'extension** →
+sur **linkedin.com/feed** → bouton **📤 Publier (GetJobAI)** → vérifiez → **Publier**.
+""")
+        st.success("🛡️ Robuste : ça tourne dans VOTRE navigateur connecté → LinkedIn voit une "
+                   "session normale, jamais de blocage.")
 
 # ============================================================
 # PAGE: ADMIN
