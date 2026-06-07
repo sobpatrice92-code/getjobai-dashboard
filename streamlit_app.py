@@ -40,6 +40,27 @@ st.set_page_config(
 # Injecter animations CSS
 inject_animations()
 
+# ============================================================
+# PERSISTANCE DE SESSION VIA COOKIE
+# (évite de redemander la connexion à chaque rechargement de page)
+# ============================================================
+import hashlib
+
+try:
+    import extra_streamlit_components as stx
+    _cookies = stx.CookieManager(key="gja_cm")
+    _cookie_jar = _cookies.get_all(key="gja_getall") or {}
+except Exception:
+    _cookies = None
+    _cookie_jar = {}
+
+
+def _auth_token(email):
+    """Jeton signé (email + secret serveur) pour valider le cookie."""
+    secret = (os.getenv("SUPABASE_KEY") or "gja_secret_2026")[:24]
+    return hashlib.sha256((email + secret).encode()).hexdigest()[:40]
+
+
 # Initialiser session state
 if 'auth_ok' not in st.session_state:
     st.session_state.auth_ok = False
@@ -54,12 +75,37 @@ if 'real_admin_email' not in st.session_state:
 if 'is_whitelisted' not in st.session_state:
     st.session_state.is_whitelisted = False
 
+# Restaurer la connexion depuis le cookie (persistance entre rechargements)
+if not st.session_state.auth_ok and _cookie_jar:
+    try:
+        tok = _cookie_jar.get("gja_auth")
+        if tok and "|" in tok:
+            em, sig = tok.split("|", 1)
+            if sig == _auth_token(em):
+                st.session_state.auth_ok = True
+                st.session_state.user_email = em
+    except Exception:
+        pass
+
 # ============================================================
 # PORTE D'AUTHENTIFICATION — pas d'accès sans connexion
 # ============================================================
 if not st.session_state.auth_ok:
     login_screen()
     st.stop()
+
+# Écrire le cookie de session après connexion (s'il n'existe pas déjà)
+if st.session_state.auth_ok and st.session_state.user_email and _cookies is not None:
+    try:
+        if _cookie_jar.get("gja_auth") is None:
+            _cookies.set(
+                "gja_auth",
+                f"{st.session_state.user_email}|{_auth_token(st.session_state.user_email)}",
+                key="gja_set",
+                max_age=60 * 60 * 24 * 14,  # 14 jours
+            )
+    except Exception:
+        pass
 
 # Recharger les données user depuis Supabase si besoin (ex: impersonation admin)
 if st.session_state.user_email and not st.session_state.user_id:
@@ -130,6 +176,11 @@ with st.sidebar:
     if st.session_state.user_email:
         st.markdown(f"👤 **{st.session_state.user_email}**")
         if st.button("🚪 Déconnexion"):
+            if _cookies is not None:
+                try:
+                    _cookies.delete("gja_auth", key="gja_del")
+                except Exception:
+                    pass
             st.session_state.auth_ok = False
             st.session_state.user_id = None
             st.session_state.user_email = None
