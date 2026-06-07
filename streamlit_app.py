@@ -7,6 +7,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import os
 import json
+import base64
 from datetime import datetime
 
 # Import UI UX PRO MAX
@@ -804,13 +805,17 @@ elif page == "🤖 Agents IA":
             post_edit = st.text_area("Post généré (vous pouvez le modifier avant de valider)",
                                      value=post_txt, height=320, key="pg_output")
 
-            # Image générée (DALL-E 3) — affichée pour validation
-            img_url = st.session_state.get("gen_post_image")
-            if img_url:
-                st.image(img_url, caption="🖼️ Image hyper-réaliste générée (alignée sur le post)",
-                         use_container_width=True)
+            # Image générée (gpt-image-1, base64) — affichée pour validation
+            img_b64 = st.session_state.get("gen_post_image")
+            if img_b64:
+                try:
+                    st.image(base64.b64decode(img_b64),
+                             caption="🖼️ Image hyper-réaliste générée (alignée sur le post)",
+                             use_container_width=True)
+                except Exception:
+                    st.caption("⚠️ Aperçu image indisponible.")
                 if st.button("🔄 Régénérer l'image", key="pg_regen_img"):
-                    with st.spinner("Nouvelle image (DALL-E 3)…"):
+                    with st.spinner("Nouvelle image (gpt-image-1)…"):
                         st.session_state.gen_post_image = generer_image_post(
                             post_edit, secteur=pg_secteur)
                     st.rerun()
@@ -828,7 +833,7 @@ elif page == "🤖 Agents IA":
                                 user_id=st.session_state.user_id,
                                 agent_name="linkedin_agent",
                                 params={"approved_post": post_edit,
-                                        "image_url": st.session_state.get("gen_post_image", ""),
+                                        "image_b64": st.session_state.get("gen_post_image", ""),
                                         "source": "dashboard_post"},
                             )
                             if action and action.get("id"):

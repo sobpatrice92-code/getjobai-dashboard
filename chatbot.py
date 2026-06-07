@@ -75,6 +75,41 @@ _POST_THEMES = [
     "comment anticiper et résoudre un retard sur un chantier",
 ]
 
+# Concepts de gestion de projet à mobiliser (posts orientés gestion de projet)
+_PM_CONCEPTS = [
+    "le triangle portée-coût-délai (triple contrainte)",
+    "la structure de découpage du projet (WBS)",
+    "le diagramme de Gantt et le chemin critique",
+    "la gestion des risques et le registre des risques",
+    "la gestion des parties prenantes",
+    "les jalons, livrables et le suivi d'avancement",
+    "les standards PMBOK et le rôle du PMO",
+    "la démarche PMP et le référentiel du PMI",
+    "le management de la valeur acquise (EVM)",
+    "les méthodes agiles (Scrum) appliquées à la construction",
+    "le lean construction et la réduction du gaspillage",
+    "le plan de communication projet",
+    "le leadership d'équipe entre bureau et terrain",
+]
+
+# Angles d'écriture (pour ne JAMAIS écrire deux fois la même chose)
+_POST_ANGLES = [
+    "raconte une anecdote précise vécue sur un projet",
+    "partage une erreur passée et la leçon que tu en as tirée",
+    "donne 3 conseils concrets et applicables",
+    "compare une bonne et une mauvaise pratique",
+    "explique ta méthode étape par étape",
+    "pose un problème fréquent puis présente ta solution",
+    "prends position sur une idée reçue du métier",
+]
+
+# Variations de composition photo (pour ne JAMAIS produire deux fois la même image)
+_IMG_COMPOS = [
+    "wide establishing shot", "close-up detail shot", "over-the-shoulder perspective",
+    "candid mid-action moment", "golden hour natural lighting", "modern bright office interior",
+    "active construction site setting", "team collaboration around plans", "low-angle dynamic shot",
+]
+
 # Clichés IA / formules creuses à bannir (cœur de la 'compétence humanizer')
 _CLICHES_BANNIS = (
     "dans un monde où, à l'ère du numérique, je suis ravi/heureux de, force est de constater, "
@@ -137,18 +172,24 @@ def generer_post_linkedin(secteur="génie civil, gestion de projet, chargé de p
     if client is None:
         return "⚠️ Configurez OPENAI_API_KEY dans Render pour générer des posts."
 
+    concepts = ", ".join(random.sample(_PM_CONCEPTS, 3))
+    angle = random.choice(_POST_ANGLES)
+
     prompt = f"""Tu es {nom}, professionnel basé à {loc}, en recherche d'emploi.
 Ton profil couvre : {secteur}. Tu parles depuis TON vécu sur le terrain et en gestion de projet.
 
 Thème du post : {theme}
+Angle d'écriture (pour varier à chaque fois) : {angle}
 
 LANGUE : {lang_instr}
 
 RÈGLES (STRICTES) :
 - Parle à la PREMIÈRE PERSONNE, depuis ton expérience concrète (chantier ET bureau)
 - Aligne le contenu sur tes compétences réelles : {secteur}
+- Si le thème touche la gestion de projet, mobilise NATURELLEMENT 1 ou 2 concepts reconnus parmi : {concepts} (sans jargon gratuit, reste concret)
 - Ton humain et authentique — JAMAIS corporatif, JAMAIS de cliché
 - Détails précis : chiffres, méthodes, outils réels (MS Project, AutoCAD, échéanciers, devis…)
+- ORIGINAL : n'écris jamais un post générique, ancre-le dans une situation précise et unique
 - CHAQUE idée sur sa PROPRE LIGNE, une ligne vide entre chaque idée
 - Maximum 4 idées distinctes — texte aéré, lisible sur mobile
 - 1 emoji pertinent par idée clé (maximum 4 emojis au total)
@@ -187,9 +228,9 @@ RÈGLES (STRICTES) :
         return f"Erreur de génération : {e}"
 
 
-def generer_image_post(post_text, secteur="génie civil / construction"):
-    """Génère une image hyper-réaliste (DALL-E 3) alignée sur le contenu du post.
-    Retourne une URL d'image (valide ~1h) ou None."""
+def generer_image_post(post_text, secteur="génie civil, gestion de projet, construction"):
+    """Génère une image hyper-réaliste (gpt-image-1) alignée sur le contenu du post.
+    Retourne l'image en base64 (string) ou None."""
     client = _get_client()
     if client is None:
         return None
@@ -198,9 +239,10 @@ def generer_image_post(post_text, secteur="génie civil / construction"):
         desc = client.chat.completions.create(
             model="gpt-4o", max_tokens=120, temperature=0.6,
             messages=[{"role": "user", "content": (
-                f"À partir de ce post LinkedIn (secteur : {secteur}), décris EN ANGLAIS, en UNE "
+                f"À partir de ce post LinkedIn (profil : {secteur}), décris EN ANGLAIS, en UNE "
                 f"phrase, une scène PHOTOGRAPHIQUE hyper-réaliste et professionnelle qui illustre "
-                f"le message. AUCUN texte, logo ou mot dans l'image. Décris uniquement la scène "
+                f"le message (chantier OU bureau de gestion de projet selon le contenu). "
+                f"AUCUN texte, logo ou mot dans l'image. Décris uniquement la scène "
                 f"(lieu, personne, action, ambiance).\n\nPOST:\n{post_text[:700]}"
             )}],
         )
@@ -208,17 +250,19 @@ def generer_image_post(post_text, secteur="génie civil / construction"):
     except Exception:
         scene = f"a professional {secteur} work environment"
 
+    import random
+    compo = random.choice(_IMG_COMPOS)
     prompt = (
-        f"Hyperrealistic professional photograph. {scene} "
-        "Natural lighting, sharp focus, shallow depth of field, editorial magazine quality, "
+        f"Hyperrealistic professional photograph, {compo}. {scene} "
+        "Sharp focus, shallow depth of field, editorial magazine quality, "
         "candid and authentic. Absolutely NO text, NO words, NO letters, NO watermark, NO logo."
     )
     try:
         img = client.images.generate(
-            model="dall-e-3", prompt=prompt, size="1024x1024",
-            quality="standard", n=1,
+            model="gpt-image-1", prompt=prompt, size="1024x1024",
+            quality="medium", n=1,
         )
-        return img.data[0].url
+        return img.data[0].b64_json
     except Exception:
         return None
 
