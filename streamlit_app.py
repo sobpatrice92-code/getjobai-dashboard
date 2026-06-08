@@ -484,7 +484,8 @@ elif page == "📤 Candidatures":
 
                     # Suivi du cycle de vie réel : Envoyée → Réponse (Refus | Entretien)
                     st.caption("📊 Statut de la candidature :")
-                    b1, b2, b3, b4, b5 = st.columns(5)
+                    # Rangée 1 (3 boutons) + rangée 2 (2 boutons) — lisible sur mobile
+                    b1, b2, b3 = st.columns(3)
                     with b1:
                         if st.button("⏳ En attente", key=f"s_att_{cid}", use_container_width=True,
                                      disabled=(stt == "en_attente")):
@@ -497,6 +498,7 @@ elif page == "📤 Candidatures":
                         if st.button("❌ Refus", key=f"s_ref_{cid}", use_container_width=True,
                                      disabled=("refus" in stt)):
                             db.update_candidature_status(cid, "refus"); st.rerun()
+                    b4, b5 = st.columns(2)
                     with b4:
                         if st.button("🎯 Entretien !", key=f"s_ent_{cid}", use_container_width=True,
                                      disabled=(stt == "entretien")):
