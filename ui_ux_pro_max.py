@@ -202,18 +202,16 @@ def section_header(title: str, subtitle: str = "", icon: str = ""):
     subtitle_html = f'<p style="color: {colors["text"]}; opacity: 0.7; margin: 0.5rem 0 0 0;">{subtitle}</p>' if subtitle else ""
 
     st.markdown(f"""
-    <div style="
-        margin: 2rem 0 1.5rem 0;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid {colors['primary']};
-    ">
+    <div style="margin: 2rem 0 1.5rem 0; padding-bottom: 0.4rem;">
         <h2 style="
             margin: 0;
             color: {colors['primary']};
             font-size: 1.8rem;
             font-weight: 700;
+            text-shadow: 0 0 14px rgba(30,155,255,0.30);
         ">{icon} {title}</h2>
         {subtitle_html}
+        <div class="holo-section-bar"></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -392,7 +390,99 @@ def inject_animations():
         background: linear-gradient(180deg, #1e9bff, #2dd4bf);
         border-radius: 6px;
     }
+
+    /* ===== PHASE B — effets holographiques avancés ===== */
+    @keyframes holoSweep {
+        0%   { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+    }
+    @keyframes scanline {
+        0%   { transform: translateY(-100%); }
+        100% { transform: translateY(100%); }
+    }
+    @keyframes floatY {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(-6px); }
+    }
+    @keyframes titleGlow {
+        0%, 100% { text-shadow: 0 0 10px rgba(30,155,255,0.35); }
+        50%      { text-shadow: 0 0 22px rgba(45,212,191,0.65); }
+    }
+
+    /* Hero holographique */
+    .holo-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 2.2rem 2.4rem;
+        margin: 0.5rem 0 1.8rem 0;
+        border-radius: 18px;
+        border: 1px solid rgba(45,212,191,0.28);
+        background:
+            linear-gradient(120deg,
+                rgba(30,155,255,0.16) 0%,
+                rgba(45,212,191,0.10) 35%,
+                rgba(13,26,51,0.55) 70%) ,
+            rgba(10,15,30,0.65);
+        background-size: 200% 100%, 100% 100%;
+        animation: holoSweep 9s linear infinite;
+        backdrop-filter: blur(14px);
+        box-shadow: 0 0 30px rgba(30,155,255,0.18), inset 0 0 30px rgba(45,212,191,0.06);
+    }
+    /* Scanlines + grille sur le hero */
+    .holo-hero::before {
+        content: "";
+        position: absolute; inset: 0;
+        background-image:
+            repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(45,212,191,0.05) 3px),
+            linear-gradient(rgba(30,155,255,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(30,155,255,0.06) 1px, transparent 1px);
+        background-size: 100% 3px, 34px 34px, 34px 34px;
+        pointer-events: none;
+    }
+    /* Faisceau de scan qui descend */
+    .holo-hero::after {
+        content: "";
+        position: absolute; left: 0; right: 0; top: 0; height: 40%;
+        background: linear-gradient(180deg, rgba(45,212,191,0.12), transparent);
+        animation: scanline 6s linear infinite;
+        pointer-events: none;
+    }
+    .holo-hero h1 {
+        margin: 0; position: relative; z-index: 1;
+        font-size: 2.1rem; font-weight: 800; letter-spacing: 0.5px;
+        color: #eaf6ff;
+        animation: titleGlow 4s ease-in-out infinite;
+    }
+    .holo-hero p {
+        margin: 0.5rem 0 0 0; position: relative; z-index: 1;
+        color: #9fc7e8; font-size: 1rem;
+    }
+    .holo-dot {
+        display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+        background: #2dd4bf; box-shadow: 0 0 10px #2dd4bf;
+        margin-right: 8px; animation: floatY 3s ease-in-out infinite;
+    }
+
+    /* En-têtes de section : soulignement lumineux animé */
+    .holo-section-bar {
+        height: 2px; margin-top: 0.6rem; border-radius: 2px;
+        background: linear-gradient(90deg, #1e9bff, #2dd4bf, transparent);
+        background-size: 200% 100%;
+        animation: holoSweep 6s linear infinite;
+        box-shadow: 0 0 10px rgba(30,155,255,0.45);
+    }
     </style>
+    """, unsafe_allow_html=True)
+
+
+def hero_holographic(title: str, subtitle: str = ""):
+    """Bannière hero holographique animée (scanlines, lueur, dégradé balayé)."""
+    sub = f'<p>{subtitle}</p>' if subtitle else ""
+    st.markdown(f"""
+    <div class="holo-hero">
+        <h1><span class="holo-dot"></span>{title}</h1>
+        {sub}
+    </div>
     """, unsafe_allow_html=True)
 
 

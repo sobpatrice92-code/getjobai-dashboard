@@ -14,6 +14,7 @@ from datetime import datetime
 from ui_ux_pro_max import (
     inject_animations,
     section_header,
+    hero_holographic,
     stats_grid,
     job_card_pro,
     alert,
@@ -218,9 +219,9 @@ if st.session_state.user_id and not st.session_state.is_admin \
 # ============================================================
 
 if page == "🏠 Dashboard":
-    section_header(
-        "🏠 Tableau de Bord",
-        f"Bienvenue sur GetJobAI - {datetime.now().strftime('%d %B %Y')}"
+    hero_holographic(
+        "GetJobAI — Tableau de Bord",
+        f"Votre recherche d'emploi en pilote automatique · {datetime.now().strftime('%d %B %Y')}"
     )
 
     # Charger stats depuis Supabase
