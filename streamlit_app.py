@@ -1320,11 +1320,30 @@ elif page == "⚙️ Paramètres":
             value=_me.get("sector") or "",
             placeholder="ex : infirmière, génie civil, marketing digital, comptabilité…")
 
+        st.markdown("---")
+        st.markdown("### 🎓 Profil étudiant (pour COOP Hunter)")
+        st.caption("Renseignez ces champs si vous cherchez un stage COOP — ils orientent "
+                   "l'agent vers les bons programmes et employeurs.")
+        ec1, ec2 = st.columns(2)
+        with ec1:
+            ecole = st.text_input("École / Établissement", _me.get("ecole") or "",
+                                  placeholder="ex : Collège La Cité, Université d'Ottawa")
+            programme = st.text_input("Titre du programme d'études", _me.get("programme_etudes") or "",
+                                      placeholder="ex : DEC Techniques de l'informatique")
+        with ec2:
+            session_coop = st.text_input("Session COOP visée (optionnel)", _me.get("session_coop") or "",
+                                         placeholder="ex : Été 2026, Automne 2026")
+        parcours = st.text_area("Parcours scolaire (établissements, diplômes, années)",
+                                _me.get("parcours_scolaire") or "", height=90,
+                                placeholder="ex : DEC en informatique (2024-2026), DES (2024)…")
+
         if st.button("💾 Sauvegarder le Profil", type="primary"):
             ok = db.update_user(st.session_state.user_id, {
                 "full_name": nom, "nom_complet": nom, "telephone": telephone,
                 "ville": ville, "province": province, "linkedin_url": linkedin,
                 "sector": secteur_profil,
+                "ecole": ecole, "programme_etudes": programme,
+                "parcours_scolaire": parcours, "session_coop": session_coop,
             })
             st.success("✅ Profil sauvegardé!") if ok else st.error("Erreur de sauvegarde.")
 
