@@ -521,6 +521,44 @@ def inject_animations():
     }
     [data-testid="stChatInput"] textarea { color: #eaf6ff !important; }
 
+    /* ===== PHASE B sur le contenu (toutes pages) ===== */
+    /* Séparateurs '---' -> ligne néon dégradée */
+    hr {
+        border: none !important;
+        height: 1px !important;
+        margin: 1.2rem 0 !important;
+        background: linear-gradient(90deg, transparent, rgba(30,155,255,0.65), rgba(45,212,191,0.65), transparent) !important;
+        box-shadow: 0 0 8px rgba(30,155,255,0.30) !important;
+    }
+
+    /* Onglets (Paramètres) : barre glass + onglet actif lumineux */
+    .stTabs [role="tablist"] {
+        background: rgba(17,28,52,0.50);
+        border: 1px solid rgba(30,155,255,0.18);
+        border-radius: 12px;
+        padding: 4px;
+        backdrop-filter: blur(8px);
+        gap: 4px;
+    }
+    .stTabs [role="tab"] { border-radius: 8px; padding: 0 14px; }
+    .stTabs [aria-selected="true"] {
+        background: rgba(30,155,255,0.16) !important;
+        box-shadow: 0 0 12px rgba(45,212,191,0.30);
+    }
+
+    /* Barres de progression : dégradé néon */
+    [data-testid="stProgress"] > div > div > div {
+        background: linear-gradient(90deg, #1e9bff, #2dd4bf) !important;
+        box-shadow: 0 0 10px rgba(45,212,191,0.45) !important;
+    }
+
+    /* Images (post LinkedIn, photo) : cadre lumineux */
+    [data-testid="stImage"] img {
+        border-radius: 12px;
+        border: 1px solid rgba(45,212,191,0.30);
+        box-shadow: 0 0 18px rgba(30,155,255,0.15);
+    }
+
     /* Barre de défilement néon */
     ::-webkit-scrollbar { width: 10px; height: 10px; }
     ::-webkit-scrollbar-track { background: #0a0f1e; }
