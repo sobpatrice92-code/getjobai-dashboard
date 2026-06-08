@@ -926,9 +926,10 @@ elif page == "🤖 Agents IA":
                     <button onclick='navigator.clipboard.writeText({_safe_post})
                         .then(()=>{{this.innerHTML="✅ Copié !";
                         setTimeout(()=>this.innerHTML="📋 Copier",1600);}})'
-                        style="background:linear-gradient(135deg,#2563eb,#7c3aed);
-                        color:#fff;border:none;padding:11px 16px;border-radius:8px;
-                        cursor:pointer;font-size:15px;font-weight:600;width:100%;">
+                        style="background:linear-gradient(135deg,#1e9bff,#2dd4bf);
+                        color:#04101f;border:none;padding:11px 16px;border-radius:8px;
+                        cursor:pointer;font-size:15px;font-weight:600;width:100%;
+                        box-shadow:0 0 14px rgba(45,212,191,0.35);">
                         📋 Copier
                     </button>
                     """,
@@ -1046,9 +1047,10 @@ elif page == "🤝 Réseau":
                             <button onclick='navigator.clipboard.writeText({_safe})
                                 .then(()=>{{this.innerHTML="✅ Copié !";
                                 setTimeout(()=>this.innerHTML="📋 Copier le message",1600);}})'
-                                style="background:linear-gradient(135deg,#2563eb,#7c3aed);
-                                color:#fff;border:none;padding:9px 16px;border-radius:8px;
-                                cursor:pointer;font-size:14px;font-weight:600;width:100%;">
+                                style="background:linear-gradient(135deg,#1e9bff,#2dd4bf);
+                                color:#04101f;border:none;padding:9px 16px;border-radius:8px;
+                                cursor:pointer;font-size:14px;font-weight:600;width:100%;
+                                box-shadow:0 0 14px rgba(45,212,191,0.35);">
                                 📋 Copier le message
                             </button>
                             """,
