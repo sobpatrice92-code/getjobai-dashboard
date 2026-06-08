@@ -685,6 +685,27 @@ def inject_animations():
         background: radial-gradient(circle, #2dd4bf, #1e9bff);
         box-shadow: 0 0 18px #2dd4bf; animation: holoCore 1.4s ease-in-out infinite;
     }
+
+    /* ===== RESPONSIVE / MOBILE (≤ 640px) ===== */
+    @media (max-width: 640px) {
+        /* Hero : padding et titres réduits pour ne pas déborder */
+        .holo-hero { padding: 1.4rem 1.2rem !important; border-radius: 14px !important; }
+        .holo-hero h1 { font-size: 1.45rem !important; line-height: 1.2; }
+        .holo-hero p { font-size: 0.85rem !important; }
+        /* Titres de section plus compacts */
+        [data-testid="stMarkdownContainer"] h2 { font-size: 1.3rem !important; }
+        [data-testid="stMarkdownContainer"] h3 { font-size: 1.1rem !important; }
+        /* Loader 3D un peu plus petit */
+        .holo3d { width: 56px !important; height: 56px !important; }
+        /* Allège le flou (perf mobile) + grille plus serrée */
+        [data-testid="stVerticalBlockBorderWrapper"],
+        .holo-hero { backdrop-filter: blur(5px) !important; }
+        [data-testid="stAppViewContainer"] {
+            background-size: 28px 28px, 28px 28px, 100% 100% !important;
+        }
+        /* Cartes/panneaux : padding réduit */
+        [data-testid="stVerticalBlockBorderWrapper"] { padding: 0.2rem !important; }
+    }
     </style>
     """, unsafe_allow_html=True)
 
