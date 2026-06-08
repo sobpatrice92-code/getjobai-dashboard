@@ -262,6 +262,7 @@ class SupabaseClient:
                    "linkedin_url", "linkedin_profile", "location", "keywords", "sector",
                    "cv_text", "cv_filename",
                    "ecole", "programme_etudes", "parcours_scolaire", "session_coop",
+                   "pays_origine", "statut_immigration", "annee_arrivee",
                    "post_genre", "post_peau", "post_langue", "post_edito1", "post_edito2",
                    "post_tag", "photo_b64"}
         payload = {k: v for k, v in data.items() if k in allowed}

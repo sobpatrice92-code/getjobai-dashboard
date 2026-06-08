@@ -1337,6 +1337,21 @@ elif page == "⚙️ Paramètres":
                                 _me.get("parcours_scolaire") or "", height=90,
                                 placeholder="ex : DEC en informatique (2024-2026), DES (2024)…")
 
+        st.markdown("---")
+        st.markdown("### 🍁 Profil immigration (pour Immigration Advisor)")
+        st.caption("Renseignez ces champs pour un rapport d'immigration personnalisé "
+                   "(programmes, démarches et conseils adaptés à VOTRE situation).")
+        im1, im2, im3 = st.columns(3)
+        with im1:
+            pays_origine = st.text_input("Pays d'origine", _me.get("pays_origine") or "",
+                                         placeholder="ex : Cameroun, France, Inde…")
+        with im2:
+            statut_immig = st.text_input("Statut / type de visa actuel", _me.get("statut_immigration") or "",
+                                         placeholder="ex : Permis d'études, PVT, RP, citoyen…")
+        with im3:
+            annee_arrivee = st.text_input("Année d'arrivée au Canada", _me.get("annee_arrivee") or "",
+                                          placeholder="ex : 2023")
+
         if st.button("💾 Sauvegarder le Profil", type="primary"):
             ok = db.update_user(st.session_state.user_id, {
                 "full_name": nom, "nom_complet": nom, "telephone": telephone,
@@ -1344,6 +1359,8 @@ elif page == "⚙️ Paramètres":
                 "sector": secteur_profil,
                 "ecole": ecole, "programme_etudes": programme,
                 "parcours_scolaire": parcours, "session_coop": session_coop,
+                "pays_origine": pays_origine, "statut_immigration": statut_immig,
+                "annee_arrivee": annee_arrivee,
             })
             st.success("✅ Profil sauvegardé!") if ok else st.error("Erreur de sauvegarde.")
 
