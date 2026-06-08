@@ -12,16 +12,16 @@ import streamlit as st
 
 COLOR_SCHEMES = {
     "getjobai": {
-        "primary": "#667eea",
-        "secondary": "#764ba2",
-        "success": "#48bb78",
-        "warning": "#ed8936",
-        "danger": "#f56565",
-        "info": "#4299e1",
-        "light": "#f7fafc",
-        "dark": "#2d3748",
-        "text": "#2d3748",
-        "background": "#ffffff"
+        "primary": "#1e9bff",      # bleu électrique
+        "secondary": "#2dd4bf",    # teal
+        "success": "#2dd4bf",
+        "warning": "#fbbf24",
+        "danger": "#f87171",
+        "info": "#38bdf8",
+        "light": "#16223d",        # surface "claire" = panneau sombre
+        "dark": "#070b16",
+        "text": "#dbeafe",         # texte clair sur fond sombre
+        "background": "#0a0f1e"
     },
     "modern": {
         "primary": "#6366f1",
@@ -60,9 +60,12 @@ def card(title: str, content: str, color: str = "primary", icon: str = "📋"):
         border-left: 4px solid {colors[color]};
         padding: 1rem 1.5rem;
         margin: 1rem 0;
-        background: linear-gradient(135deg, {colors['light']} 0%, #ffffff 100%);
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        background: linear-gradient(135deg, rgba(22,34,61,0.65) 0%, rgba(10,15,30,0.55) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(30,155,255,0.18);
+        border-left: 4px solid {colors[color]};
+        border-radius: 10px;
+        box-shadow: 0 0 18px rgba(30,155,255,0.10), inset 0 0 12px rgba(45,212,191,0.04);
     ">
         <h3 style="margin: 0; color: {colors[color]};">{icon} {title}</h3>
         <p style="margin: 0.5rem 0 0 0; color: {colors['text']};">{content}</p>
@@ -81,10 +84,12 @@ def metric_card(label: str, value: str, delta: str = None, icon: str = "📊"):
 
     st.markdown(f"""
     <div style="
-        background: white;
+        background: linear-gradient(135deg, rgba(22,34,61,0.65) 0%, rgba(10,15,30,0.55) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(30,155,255,0.18);
         padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-radius: 14px;
+        box-shadow: 0 0 18px rgba(30,155,255,0.12), inset 0 0 14px rgba(45,212,191,0.05);
         text-align: center;
     ">
         <div style="font-size: 2rem; margin-bottom: 0.5rem;">{icon}</div>
@@ -239,15 +244,17 @@ def job_card_pro(job: dict):
 
     st.markdown(f"""
     <div style="
-        background: white;
+        background: linear-gradient(135deg, rgba(22,34,61,0.65) 0%, rgba(10,15,30,0.55) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(30,155,255,0.18);
         padding: 1.5rem;
         margin: 1rem 0;
         border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 0 18px rgba(30,155,255,0.10);
         border-left: 4px solid {score_color};
         transition: transform 0.2s, box-shadow 0.2s;
-    " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'"
-       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 12px rgba(0,0,0,0.08)'">
+    " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 28px rgba(30,155,255,0.30)'"
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 0 18px rgba(30,155,255,0.10)'">
 
         <div style="display: flex; justify-content: space-between; align-items: start;">
             <div style="flex: 1;">
@@ -317,6 +324,73 @@ def inject_animations():
 
     .pulse {
         animation: pulse 2s infinite;
+    }
+
+    @keyframes neonPulse {
+        0%, 100% { box-shadow: 0 0 8px rgba(30,155,255,0.35); }
+        50%      { box-shadow: 0 0 22px rgba(45,212,191,0.55); }
+    }
+
+    /* ===== THÈME GLOBAL HOLOGRAPHIQUE (bleu électrique + teal) ===== */
+    /* Fond sombre dégradé + grille high-tech subtile */
+    [data-testid="stAppViewContainer"] {
+        background:
+            linear-gradient(rgba(30,155,255,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(30,155,255,0.04) 1px, transparent 1px),
+            radial-gradient(circle at 18% 0%, #0d1a33 0%, #0a0f1e 45%, #060912 100%);
+        background-size: 42px 42px, 42px 42px, 100% 100%;
+    }
+    [data-testid="stHeader"] { background: transparent; }
+
+    /* Sidebar : panneau translucide + bord néon */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, rgba(13,26,51,0.92) 0%, rgba(8,12,24,0.92) 100%);
+        border-right: 1px solid rgba(45,212,191,0.22);
+        box-shadow: 4px 0 24px rgba(30,155,255,0.08);
+    }
+
+    /* Titres : légère lueur néon */
+    h1, h2, h3 { text-shadow: 0 0 14px rgba(30,155,255,0.25); }
+
+    /* Boutons natifs Streamlit : dégradé bleu→teal + lueur au survol */
+    .stButton > button {
+        background: linear-gradient(135deg, #1e9bff 0%, #2dd4bf 100%);
+        color: #04101f;
+        font-weight: 600;
+        border: 1px solid rgba(45,212,191,0.35);
+        border-radius: 10px;
+        transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 18px rgba(45,212,191,0.55);
+        color: #04101f;
+    }
+
+    /* Champs (input, textarea, select) : panneau sombre + focus bleu */
+    [data-testid="stTextInput"] input,
+    [data-testid="stTextArea"] textarea,
+    [data-baseweb="select"] > div {
+        background-color: rgba(17,28,52,0.85) !important;
+        border: 1px solid rgba(30,155,255,0.22) !important;
+        border-radius: 10px !important;
+        color: #dbeafe !important;
+    }
+    [data-testid="stTextInput"] input:focus,
+    [data-testid="stTextArea"] textarea:focus {
+        border-color: #2dd4bf !important;
+        box-shadow: 0 0 12px rgba(45,212,191,0.35) !important;
+    }
+
+    /* Onglets actifs : accent teal */
+    .stTabs [aria-selected="true"] { color: #2dd4bf !important; }
+
+    /* Barre de défilement néon */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #0a0f1e; }
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #1e9bff, #2dd4bf);
+        border-radius: 6px;
     }
     </style>
     """, unsafe_allow_html=True)
