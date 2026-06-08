@@ -253,7 +253,6 @@ def job_card_pro(job: dict):
         transition: transform 0.2s, box-shadow 0.2s;
     " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 28px rgba(30,155,255,0.30)'"
        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 0 18px rgba(30,155,255,0.10)'">
-
         <div style="display: flex; justify-content: space-between; align-items: start;">
             <div style="flex: 1;">
                 <h3 style="margin: 0; color: {colors['primary']}; font-size: 1.3rem;">{job.get('title', 'N/A')}</h3>
@@ -273,7 +272,6 @@ def job_card_pro(job: dict):
                 {score}<br><span style="font-size: 0.7rem;">/ 100</span>
             </div>
         </div>
-
         <div style="margin-top: 1rem;">
             <a href="{job.get('url', '#')}" target="_blank" style="
                 background: {colors['primary']};
