@@ -566,11 +566,10 @@ def inject_animations():
         border-radius: 14px;
         box-shadow: 0 0 16px rgba(30,155,255,0.08);
         backdrop-filter: blur(8px);
-        transition: box-shadow 0.2s, transform 0.2s;
+        transition: box-shadow 0.2s;
     }
     [data-testid="stVerticalBlockBorderWrapper"]:hover {
-        box-shadow: 0 0 24px rgba(45,212,191,0.22);
-        transform: translateY(-2px);
+        box-shadow: 0 0 22px rgba(45,212,191,0.20);
     }
 
     /* Barre de défilement néon */
