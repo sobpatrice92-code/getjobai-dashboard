@@ -350,19 +350,37 @@ def inject_animations():
     /* Titres : légère lueur néon */
     h1, h2, h3 { text-shadow: 0 0 14px rgba(30,155,255,0.25); }
 
-    /* Boutons natifs Streamlit : dégradé bleu→teal + lueur au survol */
-    .stButton > button {
-        background: linear-gradient(135deg, #1e9bff 0%, #2dd4bf 100%);
-        color: #04101f;
-        font-weight: 600;
-        border: 1px solid rgba(45,212,191,0.35);
-        border-radius: 10px;
-        transition: transform 0.15s, box-shadow 0.2s;
+    /* Boutons natifs (action, download, submit) : sombre + bord néon, lisible */
+    .stButton > button,
+    [data-testid="stDownloadButton"] > button,
+    [data-testid="stFormSubmitButton"] > button,
+    [data-testid="baseButton-primary"],
+    [data-testid="baseButton-secondary"] {
+        background: rgba(30,155,255,0.12) !important;
+        color: #eaf6ff !important;
+        font-weight: 600 !important;
+        border: 1px solid rgba(45,212,191,0.50) !important;
+        border-radius: 10px !important;
+        transition: transform 0.15s, box-shadow 0.2s, background 0.2s !important;
     }
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0 18px rgba(45,212,191,0.55);
-        color: #04101f;
+    .stButton > button *,
+    [data-testid="stDownloadButton"] > button *,
+    [data-testid="stFormSubmitButton"] > button * {
+        color: #eaf6ff !important;
+    }
+    .stButton > button:hover,
+    [data-testid="stDownloadButton"] > button:hover,
+    [data-testid="stFormSubmitButton"] > button:hover,
+    [data-testid="baseButton-primary"]:hover,
+    [data-testid="baseButton-secondary"]:hover {
+        background: linear-gradient(135deg, #1e9bff 0%, #2dd4bf 100%) !important;
+        box-shadow: 0 0 18px rgba(45,212,191,0.55) !important;
+        transform: translateY(-2px) !important;
+    }
+    .stButton > button:hover *,
+    [data-testid="stDownloadButton"] > button:hover *,
+    [data-testid="stFormSubmitButton"] > button:hover * {
+        color: #04101f !important;
     }
 
     /* Champs (input, textarea, select) : panneau sombre + focus bleu */
