@@ -428,6 +428,99 @@ def inject_animations():
         color: #dbeafe !important;
     }
 
+    /* ===== PASSE LISIBILITÉ COMPLÈTE — widgets natifs ===== */
+    /* Libellés de widgets */
+    [data-testid="stWidgetLabel"] p,
+    [data-testid="stWidgetLabel"] label,
+    .stRadio label, .stCheckbox label, .stSelectbox label,
+    .stMultiSelect label, .stSlider label, .stTextArea label,
+    .stTextInput label, .stFileUploader label, .stDateInput label,
+    .stNumberInput label, [data-testid="stSubheader"] {
+        color: #cfe2f5 !important;
+    }
+
+    /* Selectbox / multiselect : valeur affichée */
+    [data-baseweb="select"] div { color: #eaf6ff !important; }
+
+    /* Menu déroulant (popover) : fond sombre + options lisibles */
+    [data-baseweb="popover"], [data-baseweb="menu"], ul[role="listbox"] {
+        background: #0f1a30 !important;
+    }
+    [role="option"], [data-baseweb="menu"] li {
+        background: #0f1a30 !important;
+        color: #dbeafe !important;
+    }
+    [role="option"]:hover, [data-baseweb="menu"] li:hover {
+        background: rgba(30,155,255,0.20) !important;
+    }
+
+    /* Tags multiselect : pastilles teal lisibles */
+    [data-baseweb="tag"] {
+        background: linear-gradient(135deg,#1e9bff,#2dd4bf) !important;
+    }
+    [data-baseweb="tag"], [data-baseweb="tag"] span, [data-baseweb="tag"] svg {
+        color: #04101f !important; fill: #04101f !important;
+    }
+
+    /* Radio / checkbox : texte des options */
+    [data-testid="stRadio"] label, [data-testid="stRadio"] div,
+    [data-testid="stCheckbox"] label, [data-testid="stCheckbox"] div {
+        color: #dbeafe !important;
+    }
+
+    /* Slider : valeur et bornes */
+    [data-testid="stThumbValue"] { color: #2dd4bf !important; }
+    [data-testid="stTickBarMin"], [data-testid="stTickBarMax"] { color: #9fc1e0 !important; }
+
+    /* File uploader : zone de dépôt */
+    [data-testid="stFileUploaderDropzone"] {
+        background: rgba(17,28,52,0.60) !important;
+        border: 1px dashed rgba(45,212,191,0.40) !important;
+    }
+    [data-testid="stFileUploader"] *,
+    [data-testid="stFileUploaderDropzoneInstructions"] * {
+        color: #cfe2f5 !important;
+    }
+
+    /* Blocs de code */
+    [data-testid="stCode"], pre, code {
+        background: #0c1526 !important;
+        color: #d7f0ff !important;
+    }
+
+    /* Dataframe / table */
+    [data-testid="stDataFrame"] { color: #dbeafe !important; }
+    [data-testid="stTable"] th, [data-testid="stTable"] td {
+        color: #dbeafe !important;
+        border-color: rgba(30,155,255,0.20) !important;
+    }
+
+    /* Metric natif (si utilisé) */
+    [data-testid="stMetricValue"] { color: #1e9bff !important; }
+    [data-testid="stMetricLabel"], [data-testid="stMetricLabel"] p { color: #cfe2f5 !important; }
+
+    /* Onglets : inactifs lisibles, actif teal */
+    .stTabs [role="tab"] { color: #9fc1e0 !important; }
+    .stTabs [aria-selected="true"] { color: #2dd4bf !important; }
+
+    /* Liens */
+    a, a:visited { color: #2dd4bf !important; }
+
+    /* Tableaux Markdown */
+    [data-testid="stMarkdownContainer"] table th,
+    [data-testid="stMarkdownContainer"] table td {
+        color: #dbeafe !important;
+        border-color: rgba(30,155,255,0.20) !important;
+    }
+
+    /* Chat (Assistant IA) */
+    [data-testid="stChatMessage"] {
+        background: rgba(17,28,52,0.50) !important;
+        color: #dbeafe !important;
+        border-radius: 12px;
+    }
+    [data-testid="stChatInput"] textarea { color: #eaf6ff !important; }
+
     /* Barre de défilement néon */
     ::-webkit-scrollbar { width: 10px; height: 10px; }
     ::-webkit-scrollbar-track { background: #0a0f1e; }
