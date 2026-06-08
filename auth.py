@@ -136,6 +136,7 @@ def login_screen():
             else:
                 # Connexion réussie
                 st.session_state.auth_ok = True
+                st.session_state.logged_out = False  # réautorise la persistance cookie
                 st.session_state.user_email = user["email"]
                 st.session_state.user_id = user["id"]
                 st.session_state.is_admin = bool(user.get("is_admin"))

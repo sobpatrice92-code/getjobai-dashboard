@@ -80,7 +80,9 @@ if 'is_whitelisted' not in st.session_state:
     st.session_state.is_whitelisted = False
 
 # Restaurer la connexion depuis le cookie (persistance entre rechargements)
-if not st.session_state.auth_ok and _cookie_jar:
+# Sauf juste après une déconnexion : la suppression du cookie côté navigateur
+# n'est effective qu'au rerun suivant, le drapeau évite une reconnexion fantôme.
+if not st.session_state.auth_ok and _cookie_jar and not st.session_state.get("logged_out"):
     try:
         tok = _cookie_jar.get("gja_auth")
         if tok and "|" in tok:
@@ -182,6 +184,7 @@ with st.sidebar:
         if st.button("🚪 Déconnexion"):
             if _cookies is not None:
                 try:
+                    # Supprimer + écraser par une valeur expirée (double sécurité)
                     _cookies.delete("gja_auth", key="gja_del")
                 except Exception:
                     pass
@@ -191,6 +194,7 @@ with st.sidebar:
             st.session_state.is_admin = False
             st.session_state.real_admin_email = None
             st.session_state.is_whitelisted = False
+            st.session_state.logged_out = True  # bloque la restauration par cookie
             st.rerun()
 
 # ============================================================
