@@ -15,6 +15,7 @@ from ui_ux_pro_max import (
     inject_animations,
     section_header,
     hero_holographic,
+    holo_loader_3d,
     stats_grid,
     job_card_pro,
     alert,
@@ -569,30 +570,70 @@ elif page == "🤖 Agents IA":
                           f"border-radius:20px;margin:3px;display:inline-block;"
                           f"font-size:0.85rem;{pulse}'>{et}</span>")
 
-            spinner = "🔄" if statut == "processing" else ("⏳" if statut == "pending" else ("✅" if statut == "completed" else "❌"))
+            # Loader 3D pendant l'exécution, icône finale sinon
+            if statut in ("pending", "processing"):
+                visuel = holo_loader_3d()
+            else:
+                visuel = f"<span style='font-size:2.6rem'>{'✅' if statut=='completed' else '❌'}</span>"
+
+            # Message de l'étape suivante
+            if statut == "pending":
+                prochaine = "Démarrage imminent…"
+            elif statut == "processing":
+                nxt = etapes[actif + 1] if actif + 1 < len(etapes) else "☁️ Finalisation"
+                prochaine = f"➡️ Étape suivante : {nxt}"
+            elif statut == "completed":
+                prochaine = "🎉 Toutes les étapes terminées"
+            else:
+                prochaine = "⛔ Arrêt sur erreur"
+
+            # Où les résultats sont rangés (propre à chaque agent)
+            RESULTS_DEST = {
+                "Job Hunter": "📋 Offres d'Emploi",
+                "Indeed Agent": "📋 Offres d'Emploi",
+                "COOP Hunter": "📋 Offres d'Emploi",
+                "Networking Agent": "🤝 Réseau",
+                "Follow-up Engine": "📧 relances envoyées + 📦 Livrables",
+                "Préparer Candidatures": "📤 Candidatures (à valider)",
+                "Préparer mon Entretien": "📦 Livrables (guide d'entretien)",
+                "Suivi Boîte Mail": "📤 Candidatures (statuts mis à jour)",
+                "Postuler (Copilote)": "📤 Candidatures envoyées + emails RH",
+                "Immigration Advisor": "📦 Livrables + votre email",
+                "Profil LinkedIn 10/10": "📦 Livrables",
+                "ATS Optimizer": "📦 Livrables (CV optimisés)",
+                "Stratégie Carrière": "📦 Livrables",
+            }
+            dest = RESULTS_DEST.get(agent_nom, "📦 Livrables")
+
             st.markdown(f"""
-            <style>@keyframes pulse {{0%,100%{{opacity:1;}}50%{{opacity:0.5;}}}}
-            @keyframes spin {{from{{transform:rotate(0)}}to{{transform:rotate(360deg)}}}}</style>
-            <div style="background:linear-gradient(135deg,#1e293b,#334155);padding:1.5rem;
-                 border-radius:14px;border-left:5px solid {couleur};margin-bottom:1rem;">
-              <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:2rem;{'animation:spin 1.5s linear infinite;display:inline-block;' if statut=='processing' else ''}">{spinner}</span>
+            <div style="background:linear-gradient(135deg, rgba(17,28,52,0.92), rgba(10,15,30,0.92));
+                 padding:1.4rem 1.6rem;border-radius:16px;border:1px solid rgba(45,212,191,0.25);
+                 border-left:5px solid {couleur};margin-bottom:1rem;
+                 box-shadow:0 0 24px rgba(30,155,255,0.14);">
+              <div style="display:flex;align-items:center;gap:18px;">
+                {visuel}
                 <div>
-                  <h3 style="color:white;margin:0;">{agent_nom}</h3>
-                  <p style="color:#cbd5e1;margin:0;font-size:0.9rem;">{libelle}</p>
+                  <h3 style="color:#eaf6ff;margin:0;">{agent_nom}</h3>
+                  <p style="color:#9fc7e8;margin:.2rem 0 0 0;font-size:0.92rem;">{libelle}</p>
+                  <p style="color:#2dd4bf;margin:.35rem 0 0 0;font-size:0.9rem;font-weight:600;">{prochaine}</p>
                 </div>
               </div>
               <div style="margin-top:1rem;">{chips}</div>
+              <div style="margin-top:1rem;padding:.7rem 1rem;border-radius:10px;
+                   background:rgba(30,155,255,0.08);border:1px dashed rgba(45,212,191,0.35);
+                   color:#cfe2f5;font-size:0.9rem;">
+                📍 <strong>Où trouver les résultats :</strong> {dest}
+              </div>
             </div>
             """, unsafe_allow_html=True)
 
             # Logs en direct
-            st.markdown("**📜 Logs en direct**")
+            st.markdown("**📜 Logs en direct (avancement)**")
             st.code(live_log[-2500:] or "En attente de la sortie de l'agent…", language="text")
 
             if statut in ("completed", "failed"):
                 if statut == "completed":
-                    st.success(f"✅ {agent_nom} terminé ! Résultats dans 📦 Livrables et 📋 Offres.")
+                    st.success(f"✅ {agent_nom} terminé ! 📍 Résultats : {dest}")
                 else:
                     st.error(f"❌ {agent_nom} a échoué. Voir les logs ci-dessus.")
                 if st.button("✖️ Fermer le moniteur", key="close_monitor"):

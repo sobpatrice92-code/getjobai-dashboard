@@ -660,8 +660,41 @@ def inject_animations():
         animation: holoSweep 6s linear infinite;
         box-shadow: 0 0 10px rgba(30,155,255,0.45);
     }
+
+    /* ===== LOADER 3D HOLOGRAPHIQUE (exécution d'agent) ===== */
+    @keyframes holoRingX { from{transform:rotateX(0deg) rotateY(62deg);} to{transform:rotateX(360deg) rotateY(62deg);} }
+    @keyframes holoRingY { from{transform:rotateY(0deg) rotateX(62deg);} to{transform:rotateY(360deg) rotateX(62deg);} }
+    @keyframes holoRingZ { from{transform:rotateZ(0deg);} to{transform:rotateZ(360deg);} }
+    @keyframes holoCore  { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.25);opacity:0.7;} }
+    .holo3d {
+        width: 76px; height: 76px; position: relative;
+        transform-style: preserve-3d; perspective: 240px; flex: 0 0 auto;
+    }
+    .holo3d span {
+        position: absolute; inset: 0; border-radius: 50%;
+        border: 2px solid transparent;
+    }
+    .holo3d .r1 { border-top-color:#1e9bff; border-bottom-color:#1e9bff;
+        animation: holoRingX 2s linear infinite; box-shadow: 0 0 12px rgba(30,155,255,0.5); }
+    .holo3d .r2 { border-left-color:#2dd4bf; border-right-color:#2dd4bf;
+        animation: holoRingY 2.6s linear infinite; box-shadow: 0 0 12px rgba(45,212,191,0.5); }
+    .holo3d .r3 { border-top-color:#7c5cff; border-bottom-color:#7c5cff;
+        animation: holoRingZ 1.6s linear infinite; }
+    .holo3d .core {
+        position: absolute; inset: 37%; border-radius: 50%;
+        background: radial-gradient(circle, #2dd4bf, #1e9bff);
+        box-shadow: 0 0 18px #2dd4bf; animation: holoCore 1.4s ease-in-out infinite;
+    }
     </style>
     """, unsafe_allow_html=True)
+
+
+def holo_loader_3d():
+    """Petit loader 3D holographique (anneaux orbitaux + noyau pulsant)."""
+    return (
+        '<div class="holo3d"><span class="r1"></span><span class="r2"></span>'
+        '<span class="r3"></span><span class="core"></span></div>'
+    )
 
 
 def hero_holographic(title: str, subtitle: str = ""):
