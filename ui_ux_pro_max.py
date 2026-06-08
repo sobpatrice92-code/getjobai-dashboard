@@ -392,6 +392,24 @@ def inject_animations():
     /* Texte secondaire / aide des widgets */
     small, .stMarkdown small { color: #9fc1e0 !important; }
 
+    /* Expanders : panneau sombre + texte clair (en-tête et contenu) */
+    [data-testid="stExpander"] details {
+        background: rgba(17,28,52,0.60) !important;
+        border: 1px solid rgba(30,155,255,0.20) !important;
+        border-radius: 10px !important;
+    }
+    [data-testid="stExpander"] summary,
+    [data-testid="stExpander"] summary p,
+    [data-testid="stExpander"] summary span {
+        color: #eaf6ff !important;
+    }
+    [data-testid="stExpander"] summary svg { fill: #2dd4bf !important; }
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"],
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] p,
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] li {
+        color: #dbeafe !important;
+    }
+
     /* Barre de défilement néon */
     ::-webkit-scrollbar { width: 10px; height: 10px; }
     ::-webkit-scrollbar-track { background: #0a0f1e; }
