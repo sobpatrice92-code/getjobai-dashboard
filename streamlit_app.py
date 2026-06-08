@@ -451,7 +451,7 @@ elif page == "📤 Candidatures":
                 cv_nom = c.get("cv_nom") or "CV.pdf"
                 url = c.get("job_url") or ""
 
-                with st.container():
+                with st.container(border=True):
                     st.markdown(f"### {icon} {titre} — {company}")
                     st.caption(f"Score {score}/100 • Statut: **{c.get('status','')}**"
                                + (f" • [Voir l'offre]({url})" if url else ""))
@@ -518,7 +518,6 @@ elif page == "📤 Candidatures":
                                       "Suivez-la dans 🤖 Agents IA, résultat dans 📦 Livrables.", "success")
                             else:
                                 st.error("Échec du lancement.")
-                    st.markdown("---")
 
 # ============================================================
 # PAGE: AGENTS IA
@@ -980,7 +979,7 @@ elif page == "🤝 Réseau":
                 message = c.get("message") or ""
                 type_action = c.get("type_action") or "invitation"
 
-                with st.container():
+                with st.container(border=True):
                     st.markdown(f"### {icon} {nom}")
                     sub = " • ".join([x for x in [titre, entreprise, c.get('source','')] if x])
                     st.caption(sub)
@@ -1024,7 +1023,6 @@ elif page == "🤝 Réseau":
                         if st.button("🗑️ Retirer", key=f"rm_{cid}", use_container_width=True):
                             db.delete_contact_reseau(cid)
                             st.rerun()
-                    st.markdown("---")
 
 # ============================================================
 # PAGE: LIVRABLES (résultats de tous les agents)
@@ -1084,7 +1082,7 @@ elif page == "📦 Livrables":
                 resume = liv.get("resume") or "(pas de résumé)"
                 date = (liv.get("created_at") or "")[:16].replace("T", " ")
 
-                with st.container():
+                with st.container(border=True):
                     st.markdown(f"**{icon} {label}** {statut_badge}")
                     st.caption(f"🤖 {liv.get('agent', '')} • {date}")
                     st.markdown(f"{resume}")
@@ -1106,7 +1104,6 @@ elif page == "📦 Livrables":
                         with st.expander("Détail"):
                             output = contenu.get("output", "") if isinstance(contenu, dict) else str(contenu)
                             st.code(output[-2000:] or "(vide)")
-                    st.markdown("---")
 
 # ============================================================
 # PAGE: PLANIFICATEUR
@@ -1209,27 +1206,27 @@ elif page == "📅 Planificateur":
                 last = s.get("last_run_date") or "jamais"
                 statut = "🟢 Actif" if enabled else "⏸️ En pause"
 
-                col1, col2, col3, col4 = st.columns([4, 3, 2, 2])
-                with col1:
-                    st.markdown(f"**🤖 {agent_name}**")
-                    st.caption(f"Dernier lancement: {last}")
-                with col2:
-                    st.markdown(f"🕐 **{run_time}** • {format_jours(s.get('days'))}")
-                    st.caption(statut)
-                with col3:
-                    if enabled:
-                        if st.button("⏸️ Pause", key=f"pause_{sid}"):
-                            db.toggle_schedule(sid, False)
+                with st.container(border=True):
+                    col1, col2, col3, col4 = st.columns([4, 3, 2, 2])
+                    with col1:
+                        st.markdown(f"**🤖 {agent_name}**")
+                        st.caption(f"Dernier lancement: {last}")
+                    with col2:
+                        st.markdown(f"🕐 **{run_time}** • {format_jours(s.get('days'))}")
+                        st.caption(statut)
+                    with col3:
+                        if enabled:
+                            if st.button("⏸️ Pause", key=f"pause_{sid}"):
+                                db.toggle_schedule(sid, False)
+                                st.rerun()
+                        else:
+                            if st.button("▶️ Activer", key=f"on_{sid}"):
+                                db.toggle_schedule(sid, True)
+                                st.rerun()
+                    with col4:
+                        if st.button("🗑️ Suppr.", key=f"del_{sid}"):
+                            db.delete_schedule(sid)
                             st.rerun()
-                    else:
-                        if st.button("▶️ Activer", key=f"on_{sid}"):
-                            db.toggle_schedule(sid, True)
-                            st.rerun()
-                with col4:
-                    if st.button("🗑️ Suppr.", key=f"del_{sid}"):
-                        db.delete_schedule(sid)
-                        st.rerun()
-                st.markdown("---")
 
 # ============================================================
 # PAGE: ASSISTANT IA
@@ -1571,7 +1568,7 @@ elif page == "👑 Admin":
                 badge_actif = "🟢" if u.get("is_active") else "🔴"
                 badge_appr = "✅ Approuvé" if is_approved else "⏳ En attente"
 
-                with st.container():
+                with st.container(border=True):
                     c1, c2, c3 = st.columns([5, 3, 2])
                     with c1:
                         st.markdown(f"**{badge_actif} {nom}{badge_admin}**")
@@ -1616,7 +1613,6 @@ elif page == "👑 Admin":
                                 if st.button("🗑️ Supprimer", key=f"del_{uid}"):
                                     st.session_state[f"confirm_del_{uid}"] = True
                                     st.rerun()
-                    st.markdown("---")
 
         except Exception as e:
             st.error(f"Erreur page admin: {e}")

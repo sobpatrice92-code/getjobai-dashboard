@@ -559,6 +559,20 @@ def inject_animations():
         box-shadow: 0 0 18px rgba(30,155,255,0.15);
     }
 
+    /* Items de liste (st.container(border=True)) -> panneau glass néon */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: linear-gradient(135deg, rgba(22,34,61,0.55) 0%, rgba(10,15,30,0.42) 100%);
+        border: 1px solid rgba(30,155,255,0.20) !important;
+        border-radius: 14px;
+        box-shadow: 0 0 16px rgba(30,155,255,0.08);
+        backdrop-filter: blur(8px);
+        transition: box-shadow 0.2s, transform 0.2s;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"]:hover {
+        box-shadow: 0 0 24px rgba(45,212,191,0.22);
+        transform: translateY(-2px);
+    }
+
     /* Barre de défilement néon */
     ::-webkit-scrollbar { width: 10px; height: 10px; }
     ::-webkit-scrollbar-track { background: #0a0f1e; }
