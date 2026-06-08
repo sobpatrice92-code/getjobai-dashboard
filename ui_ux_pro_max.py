@@ -383,6 +383,15 @@ def inject_animations():
     /* Onglets actifs : accent teal */
     .stTabs [aria-selected="true"] { color: #2dd4bf !important; }
 
+    /* Légendes (st.caption) : gris trop foncé par défaut -> bleu clair lisible */
+    [data-testid="stCaptionContainer"],
+    [data-testid="stCaptionContainer"] p,
+    [data-testid="stCaptionContainer"] * {
+        color: #9fc1e0 !important;
+    }
+    /* Texte secondaire / aide des widgets */
+    small, .stMarkdown small { color: #9fc1e0 !important; }
+
     /* Barre de défilement néon */
     ::-webkit-scrollbar { width: 10px; height: 10px; }
     ::-webkit-scrollbar-track { background: #0a0f1e; }
