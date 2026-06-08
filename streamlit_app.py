@@ -1250,24 +1250,22 @@ elif page == "📅 Planificateur":
                 statut = "🟢 Actif" if enabled else "⏸️ En pause"
 
                 with st.container(border=True):
-                    col1, col2, col3, col4 = st.columns([4, 3, 2, 2])
-                    with col1:
-                        st.markdown(f"**🤖 {agent_name}**")
-                        st.caption(f"Dernier lancement: {last}")
-                    with col2:
-                        st.markdown(f"🕐 **{run_time}** • {format_jours(s.get('days'))}")
-                        st.caption(statut)
-                    with col3:
+                    # Infos en pleine largeur (lisible sur mobile)
+                    st.markdown(f"**🤖 {agent_name}** — 🕐 **{run_time}** • {format_jours(s.get('days'))}")
+                    st.caption(f"{statut} • Dernier lancement: {last}")
+                    # Boutons sur une rangée de 2
+                    bc1, bc2 = st.columns(2)
+                    with bc1:
                         if enabled:
-                            if st.button("⏸️ Pause", key=f"pause_{sid}"):
+                            if st.button("⏸️ Pause", key=f"pause_{sid}", use_container_width=True):
                                 db.toggle_schedule(sid, False)
                                 st.rerun()
                         else:
-                            if st.button("▶️ Activer", key=f"on_{sid}"):
+                            if st.button("▶️ Activer", key=f"on_{sid}", use_container_width=True):
                                 db.toggle_schedule(sid, True)
                                 st.rerun()
-                    with col4:
-                        if st.button("🗑️ Suppr.", key=f"del_{sid}"):
+                    with bc2:
+                        if st.button("🗑️ Suppr.", key=f"del_{sid}", use_container_width=True):
                             db.delete_schedule(sid)
                             st.rerun()
 
@@ -1612,50 +1610,62 @@ elif page == "👑 Admin":
                 badge_appr = "✅ Approuvé" if is_approved else "⏳ En attente"
 
                 with st.container(border=True):
-                    c1, c2, c3 = st.columns([5, 3, 2])
-                    with c1:
+                    # Infos sur 2 colonnes (reflux propre sur mobile)
+                    ci1, ci2 = st.columns([3, 2])
+                    with ci1:
                         st.markdown(f"**{badge_actif} {nom}{badge_admin}**")
                         st.caption(f"✉️ {email}")
                         st.caption(badge_appr)
-                    with c2:
+                    with ci2:
                         st.markdown(f"📊 **{nb_offres}** offres")
                         if ville:
                             st.caption(f"📍 {ville}")
-                    with c3:
+
+                    # Actions sur une rangée pleine largeur (3 boutons)
+                    ac1, ac2, ac3 = st.columns(3)
+                    with ac1:
                         # Approuver / Révoquer (sauf pour les admins, toujours approuvés)
                         if not u.get("is_admin"):
                             if is_approved:
-                                if st.button("🚫 Révoquer", key=f"revoke_{uid}"):
+                                if st.button("🚫 Révoquer", key=f"revoke_{uid}", use_container_width=True):
                                     if db.update_user_status(uid, "is_whitelisted", False):
                                         st.success(f"{email} révoqué")
                                         st.rerun()
                             else:
-                                if st.button("✅ Approuver", key=f"approve_{uid}", type="primary"):
+                                if st.button("✅ Approuver", key=f"approve_{uid}", type="primary", use_container_width=True):
                                     if db.update_user_status(uid, "is_whitelisted", True):
                                         st.success(f"{email} approuvé")
                                         st.rerun()
+                    with ac2:
                         # Consulter ce compte (sauf le sien)
                         if email != st.session_state.user_email:
-                            if st.button("👁️ Voir", key=f"view_{uid}"):
+                            if st.button("👁️ Voir", key=f"view_{uid}", use_container_width=True):
                                 st.session_state.user_email = email
                                 st.session_state.user_id = None  # force rechargement
                                 st.rerun()
-                        # Supprimer le compte (sauf admin et soi-même) — avec confirmation
+                    with ac3:
+                        # Supprimer (sauf admin et soi-même) — déclenche la confirmation
                         if not u.get("is_admin") and email != st.session_state.user_email:
-                            if st.session_state.get(f"confirm_del_{uid}"):
-                                st.warning("⚠️ Supprimer définitivement ce compte ET ses données ?")
-                                if st.button("✅ Oui, supprimer", key=f"cfm_{uid}"):
-                                    if db.delete_user(uid):
-                                        st.success(f"{email} supprimé")
-                                    st.session_state[f"confirm_del_{uid}"] = False
-                                    st.rerun()
-                                if st.button("Annuler", key=f"cancel_{uid}"):
-                                    st.session_state[f"confirm_del_{uid}"] = False
-                                    st.rerun()
-                            else:
-                                if st.button("🗑️ Supprimer", key=f"del_{uid}"):
+                            if not st.session_state.get(f"confirm_del_{uid}"):
+                                if st.button("🗑️ Supprimer", key=f"del_{uid}", use_container_width=True):
                                     st.session_state[f"confirm_del_{uid}"] = True
                                     st.rerun()
+
+                    # Confirmation de suppression — pleine largeur
+                    if (not u.get("is_admin") and email != st.session_state.user_email
+                            and st.session_state.get(f"confirm_del_{uid}")):
+                        st.warning("⚠️ Supprimer définitivement ce compte ET ses données ?")
+                        cc1, cc2 = st.columns(2)
+                        with cc1:
+                            if st.button("✅ Oui, supprimer", key=f"cfm_{uid}", use_container_width=True):
+                                if db.delete_user(uid):
+                                    st.success(f"{email} supprimé")
+                                st.session_state[f"confirm_del_{uid}"] = False
+                                st.rerun()
+                        with cc2:
+                            if st.button("Annuler", key=f"cancel_{uid}", use_container_width=True):
+                                st.session_state[f"confirm_del_{uid}"] = False
+                                st.rerun()
 
         except Exception as e:
             st.error(f"Erreur page admin: {e}")
