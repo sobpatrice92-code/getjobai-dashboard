@@ -420,10 +420,22 @@ def inject_animations():
         color: #eaf6ff !important;
     }
     [data-testid="stExpander"] summary svg { fill: #2dd4bf !important; }
+    [data-testid="stExpander"] summary strong,
+    [data-testid="stExpander"] summary b { color: #eaf6ff !important; }
+    /* Contenu déplié : forcer la couleur claire sur TOUS les éléments de texte */
     [data-testid="stExpander"] [data-testid="stExpanderDetails"],
     [data-testid="stExpander"] [data-testid="stExpanderDetails"] p,
-    [data-testid="stExpander"] [data-testid="stExpanderDetails"] li {
-        color: #dbeafe !important;
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] li,
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] span,
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] div,
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] strong,
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] b,
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] em {
+        color: #eaf6ff !important;
+    }
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] strong,
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] b {
+        color: #7fe3d4 !important;   /* libellés en gras → teal lisible */
     }
 
     /* ===== PASSE LISIBILITÉ COMPLÈTE — widgets natifs ===== */
