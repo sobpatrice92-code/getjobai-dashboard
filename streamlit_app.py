@@ -46,6 +46,48 @@ st.set_page_config(
 # Injecter animations CSS
 inject_animations()
 
+
+# ============================================================
+# GÉNÉRATION PDF (lettre / CV) pour postuler manuellement
+# ============================================================
+@st.cache_data(show_spinner=False)
+def texte_vers_pdf(texte: str, titre: str = "") -> bytes:
+    """Convertit un texte (lettre ou CV) en PDF propre, exportable. Mis en cache
+    par contenu → ne régénère pas à chaque rerun."""
+    from io import BytesIO
+    from reportlab.lib.pagesizes import letter as _letter
+    from reportlab.lib.units import cm
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from xml.sax.saxutils import escape as _xesc
+
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=_letter, topMargin=1.6 * cm,
+                            bottomMargin=1.6 * cm, leftMargin=2 * cm, rightMargin=2 * cm)
+    styles = getSampleStyleSheet()
+    h = ParagraphStyle("h", parent=styles["Heading2"], textColor="#0f5ea8", fontSize=12,
+                       spaceBefore=8, spaceAfter=4)
+    body = ParagraphStyle("b", parent=styles["Normal"], fontSize=10.5, leading=15)
+    story = []
+    if titre:
+        story.append(Paragraph(_xesc(titre), styles["Heading1"]))
+        story.append(Spacer(1, 8))
+    for ligne in (texte or "").split("\n"):
+        l = ligne.rstrip()
+        if not l.strip():
+            story.append(Spacer(1, 6))
+        elif l.isupper() and 3 < len(l) < 60:
+            story.append(Paragraph(_xesc(l), h))
+        else:
+            story.append(Paragraph(_xesc(l), body))
+    doc.build(story)
+    return buf.getvalue()
+
+
+def _nom_fichier(s: str) -> str:
+    import re as _re
+    return _re.sub(r"[^A-Za-z0-9_-]", "_", (s or "doc").replace(" ", "_"))[:40].strip("_") or "doc"
+
 # ============================================================
 # PERSISTANCE DE SESSION VIA COOKIE
 # (évite de redemander la connexion à chaque rechargement de page)
@@ -470,6 +512,24 @@ elif page == "📤 Candidatures":
                         else:
                             st.info("CV non disponible. Ajoutez-le dans Paramètres.")
 
+                    # TÉLÉCHARGER en PDF (pour postuler manuellement)
+                    base = _nom_fichier(f"{company}_{titre}")
+                    dlL, dlCV = st.columns(2)
+                    with dlL:
+                        if lettre and lettre != "(pas de lettre)":
+                            st.download_button(
+                                "📥 Lettre (PDF)",
+                                data=texte_vers_pdf(lettre, f"Lettre de motivation — {titre}"),
+                                file_name=f"Lettre_{base}.pdf", mime="application/pdf",
+                                key=f"dlL_{cid}", use_container_width=True)
+                    with dlCV:
+                        if cv_offre:
+                            st.download_button(
+                                "📥 CV (PDF)",
+                                data=texte_vers_pdf(cv_offre, "Curriculum Vitae"),
+                                file_name=f"CV_{base}.pdf", mime="application/pdf",
+                                key=f"dlCV_{cid}", use_container_width=True)
+
                     # MODE COPILOTE : approuver -> l'agent enverra par email
                     if stt in ("en_attente", "validee"):
                         if st.button("🚀 Approuver & Postuler (email auto)", key=f"appr_{cid}",
@@ -481,7 +541,9 @@ elif page == "📤 Candidatures":
                     elif stt == "a_envoyer":
                         st.info("📨 Approuvée — en file d'envoi. Lancez 🚀 Postuler (Copilote).")
                     elif stt == "sans_email":
-                        st.warning("✉️ Aucun email RH trouvé — à postuler manuellement (voir l'offre).")
+                        st.warning("✉️ Aucun email RH trouvé — **à postuler manuellement** : "
+                                   "téléchargez la **lettre** et le **CV en PDF** ci-dessus, "
+                                   "ouvrez l'offre, et déposez-les sur le formulaire de l'employeur.")
 
                     # Suivi du cycle de vie réel : Envoyée → Réponse (Refus | Entretien)
                     st.caption("📊 Statut de la candidature :")
