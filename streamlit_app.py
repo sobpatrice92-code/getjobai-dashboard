@@ -159,6 +159,7 @@ with st.sidebar:
     # Navigation
     nav_options = [
         "🏠 Dashboard",
+        "📖 Guide",
         "📋 Offres d'Emploi",
         "📤 Candidatures",
         "🤖 Agents IA",
@@ -968,6 +969,214 @@ elif page == "🤖 Agents IA":
             st.error(f"Erreur chargement actions: {e}")
     else:
         st.warning("Connectez-vous pour voir vos actions")
+
+# ============================================================
+# PAGE: GUIDE D'UTILISATION
+# ============================================================
+
+elif page == "📖 Guide":
+    hero_holographic(
+        "📖 Guide d'utilisation",
+        "Comprenez chaque agent : ce qu'il fait, quand l'utiliser, et où trouver vos résultats"
+    )
+
+    st.markdown("""
+    <div style="background:linear-gradient(135deg, rgba(30,155,255,0.10), rgba(45,212,191,0.08));
+         padding:1.2rem 1.4rem;border-radius:14px;border:1px solid rgba(45,212,191,0.30);
+         margin-bottom:1.2rem;color:#dceefb;">
+      <strong>🚀 En 3 étapes :</strong><br>
+      <b>1.</b> Remplissez votre profil dans <b>⚙️ Paramètres</b> (CV, mots-clés, ville, secteur…) —
+      c'est ce qui personnalise <u>tous</u> les agents.<br>
+      <b>2.</b> Allez dans <b>🤖 Agents IA</b> et cliquez <b>Lancer</b> sur l'agent voulu.
+      Une animation 3D vous montre l'avancement en direct.<br>
+      <b>3.</b> Récupérez le résultat à l'endroit indiqué (📋 Offres, 📤 Candidatures, 🤝 Réseau,
+      📦 Livrables) — et un <b>rapport détaillé arrive par email</b>.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Données du guide : un dictionnaire par agent
+    GUIDE = [
+        {
+            "cat": "🔎 Trouver des offres",
+            "items": [
+                {
+                    "icon": "🎯", "nom": "Job Hunter",
+                    "fait": "Cherche des offres d'emploi sur LinkedIn et le Guichet-Emplois "
+                            "du Canada (Job Bank), filtrées selon vos mots-clés et votre ville.",
+                    "quand": "Pour alimenter votre liste d'offres avec des postes récents et ciblés.",
+                    "prerequis": "Paramètres → Mots-clés métier, Ville, Province.",
+                    "ou": "📋 Offres d'Emploi",
+                },
+                {
+                    "icon": "🔍", "nom": "Indeed Agent (multi-sources)",
+                    "fait": "Comme Job Hunter mais ratisse plusieurs plateformes à la fois "
+                            "(LinkedIn, Job Bank, Talent.com, Charity Village).",
+                    "quand": "Quand vous voulez un maximum d'offres en un seul lancement.",
+                    "prerequis": "Paramètres → Mots-clés métier, Ville.",
+                    "ou": "📋 Offres d'Emploi",
+                },
+                {
+                    "icon": "🎓", "nom": "COOP Hunter (stages étudiants)",
+                    "fait": "Agent spécial étudiants : trouve des stages COOP/alternance via "
+                            "portails universitaires, sites de la fonction publique et entreprises "
+                            "ciblées selon votre formation. Peut préparer la candidature (CV + lettre ATS).",
+                    "quand": "Si vous êtes étudiant·e à la recherche d'un stage.",
+                    "prerequis": "Paramètres → champs étudiants (École, Programme, "
+                                 "Parcours scolaire, Ville, Province).",
+                    "ou": "📋 Offres d'Emploi + 📤 Candidatures",
+                },
+            ],
+        },
+        {
+            "cat": "📨 Postuler & suivre",
+            "items": [
+                {
+                    "icon": "📝", "nom": "Préparer Candidatures",
+                    "fait": "Génère vos lettres de motivation personnalisées pour les offres "
+                            "retenues — SANS rien envoyer. Vous relisez avant.",
+                    "quand": "Après avoir trouvé des offres, pour préparer vos dossiers.",
+                    "prerequis": "Paramètres → CV. Des offres dans 📋 Offres d'Emploi.",
+                    "ou": "📤 Candidatures (statut « à valider »)",
+                },
+                {
+                    "icon": "🚀", "nom": "Postuler (Copilote)",
+                    "fait": "Envoie réellement vos candidatures APPROUVÉES : email au RH + "
+                            "LinkedIn Easy Apply, avec simulation humaine (limites 25 emails/j, "
+                            "15 LinkedIn/j).",
+                    "quand": "Une fois que vous avez approuvé des candidatures préparées.",
+                    "prerequis": "Des candidatures au statut « approuvée ». Paramètres → CV, email.",
+                    "ou": "📤 Candidatures (passe en « envoyée ») + emails RH",
+                },
+                {
+                    "icon": "📬", "nom": "Suivi Boîte Mail",
+                    "fait": "Lit votre Gmail et met à jour automatiquement le statut de vos "
+                            "candidatures (accusé de réception, refus, invitation à un entretien).",
+                    "quand": "Régulièrement, pour garder vos statuts à jour sans effort.",
+                    "prerequis": "Connexion Gmail (Paramètres).",
+                    "ou": "📤 Candidatures (statuts mis à jour)",
+                },
+                {
+                    "icon": "📧", "nom": "Follow-up Engine (relances)",
+                    "fait": "Envoie des relances polies aux recruteurs à J+7, J+14 et J+21 "
+                            "après une candidature restée sans réponse.",
+                    "quand": "En continu, pour ne jamais laisser une candidature s'éteindre.",
+                    "prerequis": "Des candidatures envoyées avec un email de contact.",
+                    "ou": "📧 Relances envoyées + 📦 Livrables",
+                },
+            ],
+        },
+        {
+            "cat": "🎯 Se préparer & se démarquer",
+            "items": [
+                {
+                    "icon": "🎙️", "nom": "Préparer mon Entretien",
+                    "fait": "Crée un guide d'entretien personnalisé : pitch, questions probables, "
+                            "réponses suggérées et conseils, basé sur votre CV et l'offre.",
+                    "quand": "Dès que vous décrochez un entretien.",
+                    "prerequis": "Paramètres → CV.",
+                    "ou": "📦 Livrables (guide d'entretien)",
+                },
+                {
+                    "icon": "🤖", "nom": "ATS Optimizer",
+                    "fait": "Réécrit votre CV pour passer les filtres automatiques (ATS) : "
+                            "bons mots-clés et format lisible par les robots.",
+                    "quand": "Si vos candidatures restent sans réponse — souvent un filtre ATS.",
+                    "prerequis": "Paramètres → CV.",
+                    "ou": "📦 Livrables (CV optimisé)",
+                },
+                {
+                    "icon": "⭐", "nom": "Profil LinkedIn 10/10",
+                    "fait": "Analyse experte (niveau RH) de votre profil LinkedIn et propose "
+                            "headline, résumé et mots-clés pour viser la note 10/10.",
+                    "quand": "Pour rendre votre profil attractif aux recruteurs.",
+                    "prerequis": "Paramètres → importez l'export PDF de votre profil LinkedIn.",
+                    "ou": "📦 Livrables",
+                },
+                {
+                    "icon": "🧭", "nom": "Stratégie Carrière",
+                    "fait": "Construit un plan de carrière personnalisé : objectifs et feuille de "
+                            "route. Fonctionne même sans offre précise.",
+                    "quand": "Pour prendre du recul et définir votre trajectoire.",
+                    "prerequis": "Paramètres → CV (une offre est optionnelle).",
+                    "ou": "📦 Livrables",
+                },
+            ],
+        },
+        {
+            "cat": "🤝 Réseau & présence",
+            "items": [
+                {
+                    "icon": "🤝", "nom": "Networking Agent",
+                    "fait": "Trouve des contacts pertinents (recruteurs, hiring managers et "
+                            "employés des entreprises où vous avez postulé) et prépare des messages "
+                            "LinkedIn. Vous envoyez en 1 clic — aucun risque pour votre compte.",
+                    "quand": "Pour développer votre réseau autour de vos candidatures.",
+                    "prerequis": "Paramètres → Mots-clés, Ville. Idéalement des candidatures existantes.",
+                    "ou": "🤝 Réseau",
+                },
+                {
+                    "icon": "📝", "nom": "Post LinkedIn",
+                    "fait": "Génère un post LinkedIn engageant, prêt à coller. Vous le publiez "
+                            "vous-même (ou via l'extension Chrome) — vous gardez le contrôle.",
+                    "quand": "Pour entretenir votre visibilité auprès des recruteurs.",
+                    "prerequis": "Paramètres → ligne éditoriale, langue (optionnel).",
+                    "ou": "Texte affiché dans la page (bouton copier)",
+                },
+            ],
+        },
+        {
+            "cat": "🍁 Installation au Canada",
+            "items": [
+                {
+                    "icon": "🍁", "nom": "Immigration Advisor",
+                    "fait": "Rapport complet pour nouveaux arrivants : équivalences de diplômes, "
+                            "ordres professionnels, mise en valeur des acquis, CV canadien (ATS) + "
+                            "lettre, vie pratique (épiceries, carte santé), et checklist détaillée "
+                            "des premiers jours (où aller, documents, rendez-vous).",
+                    "quand": "Si vous immigrez ou venez d'arriver au Canada.",
+                    "prerequis": "Paramètres → Statut d'immigration, Date d'entrée, Pays d'origine, "
+                                 "Province, CV.",
+                    "ou": "📦 Livrables + rapport par email (CV et lettre en PDF)",
+                },
+            ],
+        },
+    ]
+
+    for groupe in GUIDE:
+        st.markdown(f"### {groupe['cat']}")
+        for a in groupe["items"]:
+            with st.expander(f"{a['icon']}  {a['nom']}"):
+                st.markdown(f"**Ce qu'il fait —** {a['fait']}")
+                st.markdown(f"**Quand l'utiliser —** {a['quand']}")
+                st.markdown(f"**Pré-requis —** {a['prerequis']}")
+                st.markdown(
+                    f"<div style='margin-top:.5rem;padding:.5rem .8rem;border-radius:8px;"
+                    f"background:rgba(45,212,191,0.10);border:1px dashed rgba(45,212,191,0.40);"
+                    f"color:#bff0e6;'>📍 <b>Où trouver le résultat :</b> {a['ou']}</div>",
+                    unsafe_allow_html=True,
+                )
+        st.markdown("")
+
+    st.markdown("---")
+    st.markdown("### 🛠️ Bon à savoir")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(
+            "**📅 Planificateur** — programmez un agent pour qu'il tourne tout seul "
+            "chaque jour à l'heure choisie.\n\n"
+            "**💬 Assistant IA** — posez vos questions sur votre recherche d'emploi."
+        )
+    with c2:
+        st.markdown(
+            "**🧩 Extension Chrome** — publie vos posts et collecte les contacts "
+            "directement depuis votre navigateur LinkedIn connecté (sans risque).\n\n"
+            "**📧 Rapports email** — chaque agent vous envoie un compte-rendu détaillé."
+        )
+    alert(
+        "Astuce : plus votre profil dans ⚙️ Paramètres est complet, plus les agents "
+        "sont précis et personnalisés. Commencez toujours par là.",
+        "info",
+    )
 
 # ============================================================
 # PAGE: RÉSEAU (networking semi-auto)
