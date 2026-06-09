@@ -60,6 +60,11 @@ def texte_vers_pdf(texte: str, titre: str = "") -> bytes:
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from xml.sax.saxutils import escape as _xesc
+    import re as _re
+
+    # Nettoyage markdown léger (guides/rapports peuvent contenir ** ou #)
+    texte = _re.sub(r"\*\*|`", "", texte or "")
+    texte = _re.sub(r"^#{1,6}\s*", "", texte, flags=_re.M)
 
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=_letter, topMargin=1.6 * cm,
@@ -1450,20 +1455,38 @@ elif page == "📦 Livrables":
                     # Contenu en PLEINE LARGEUR (lisible en grand)
                     contenu = liv.get("contenu_json") or {}
                     guide = contenu.get("guide", "") if isinstance(contenu, dict) else ""
+                    output = contenu.get("output", "") if isinstance(contenu, dict) else str(contenu)
+                    doc_txt = guide or output          # contenu principal du livrable
                     if t == "entretien" and guide:
                         with st.expander("📖 Lire mon guide d'entretien (plein écran)", expanded=False):
                             st.markdown(guide)
-                        st.download_button(
-                            "📥 Télécharger le guide",
-                            data=guide,
-                            file_name=f"guide_entretien_{(liv.get('created_at') or '')[:10]}.md",
-                            mime="text/markdown",
-                            key=f"dl_{liv.get('id')}",
-                        )
                     else:
                         with st.expander("Détail"):
-                            output = contenu.get("output", "") if isinstance(contenu, dict) else str(contenu)
                             st.code(output[-2000:] or "(vide)")
+
+                    # Téléchargement : PDF (+ markdown pour le guide d'entretien)
+                    if doc_txt.strip():
+                        date10 = (liv.get("created_at") or "")[:10]
+                        cols_dl = st.columns(2 if (t == "entretien" and guide) else 1)
+                        with cols_dl[0]:
+                            st.download_button(
+                                "📥 Télécharger en PDF",
+                                data=texte_vers_pdf(doc_txt, label),
+                                file_name=f"{_nom_fichier(label)}_{date10}.pdf",
+                                mime="application/pdf",
+                                key=f"dlpdf_{liv.get('id')}",
+                                use_container_width=True,
+                            )
+                        if t == "entretien" and guide:
+                            with cols_dl[1]:
+                                st.download_button(
+                                    "📥 Markdown (.md)",
+                                    data=guide,
+                                    file_name=f"guide_entretien_{date10}.md",
+                                    mime="text/markdown",
+                                    key=f"dl_{liv.get('id')}",
+                                    use_container_width=True,
+                                )
 
 # ============================================================
 # PAGE: PLANIFICATEUR
