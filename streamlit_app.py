@@ -672,7 +672,7 @@ elif page == "🤖 Agents IA":
         },
         {
             "name": "Orchestrateur",
-            "desc": "Diversifie la recherche sur d'autres plateformes (The Muse, Remotive, RemoteOK, Jobicy…)",
+            "desc": "Diversifie la recherche : fonction publique fédérale (GC Jobs) + The Muse, Remotive, RemoteOK, Jobicy",
             "icon": "🧭",
             "color": "info",
             "stats": "Complémentaire à Job Hunter & Indeed • transparent sur les sources bloquées"
@@ -1037,10 +1037,11 @@ elif page == "📖 Guide":
                 {
                     "icon": "🧭", "nom": "Orchestrateur (sources complémentaires)",
                     "fait": "Diversifie votre recherche sur des plateformes que Job Hunter et "
-                            "Indeed Agent ne couvrent pas (The Muse, Remotive, RemoteOK, Jobicy…). "
-                            "Il score chaque offre selon votre CV, prépare les meilleures en "
-                            "candidatures (à valider → Copilote), et reste transparent : il indique "
-                            "les sources bloquées (ex. Glassdoor) et n'invente jamais une offre.",
+                            "Indeed Agent ne couvrent pas : fonction publique fédérale (GC Jobs), "
+                            "The Muse, Remotive, RemoteOK, Jobicy. Il score chaque offre selon votre "
+                            "CV, prépare les meilleures en candidatures (à valider → Copilote), et "
+                            "reste transparent : il indique les sources bloquées (ex. Glassdoor, "
+                            "Jobillico) et n'invente jamais une offre.",
                     "quand": "Pour élargir vos résultats au-delà de LinkedIn/Indeed/Job Bank.",
                     "prerequis": "Paramètres → Ville, Mots-clés (ou CV).",
                     "ou": "📋 Offres d'Emploi + 📤 Candidatures (à valider)",
