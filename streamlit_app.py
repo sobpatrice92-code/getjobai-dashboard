@@ -595,6 +595,7 @@ elif page == "🤖 Agents IA":
                 "Job Hunter": "📋 Offres d'Emploi",
                 "Indeed Agent": "📋 Offres d'Emploi",
                 "COOP Hunter": "📋 Offres d'Emploi",
+                "Orchestrateur": "📋 Offres d'Emploi + 📤 Candidatures (à valider)",
                 "Networking Agent": "🤝 Réseau",
                 "Follow-up Engine": "📧 relances envoyées + 📦 Livrables",
                 "Préparer Candidatures": "📤 Candidatures (à valider)",
@@ -668,6 +669,13 @@ elif page == "🤖 Agents IA":
             "icon": "🎓",
             "color": "success",
             "stats": "Spécialisé: Stages Coop génie civil"
+        },
+        {
+            "name": "Orchestrateur",
+            "desc": "Diversifie la recherche sur d'autres plateformes (The Muse, Remotive, RemoteOK, Jobicy…)",
+            "icon": "🧭",
+            "color": "info",
+            "stats": "Complémentaire à Job Hunter & Indeed • transparent sur les sources bloquées"
         },
         {
             "name": "Networking Agent",
@@ -756,6 +764,7 @@ elif page == "🤖 Agents IA":
         "Job Hunter": "job_hunter",
         "Indeed Agent": "indeed_agent",
         "COOP Hunter": "coop_hunter",
+        "Orchestrateur": "chercheur_offres",
         "Networking Agent": "networking_agent",
         "Follow-up Engine": "followup_engine",
         "Préparer Candidatures": "candidature_prep",
@@ -1024,6 +1033,17 @@ elif page == "📖 Guide":
                     "prerequis": "Paramètres → champs étudiants (École, Programme, "
                                  "Parcours scolaire, Ville, Province).",
                     "ou": "📋 Offres d'Emploi + 📤 Candidatures",
+                },
+                {
+                    "icon": "🧭", "nom": "Orchestrateur (sources complémentaires)",
+                    "fait": "Diversifie votre recherche sur des plateformes que Job Hunter et "
+                            "Indeed Agent ne couvrent pas (The Muse, Remotive, RemoteOK, Jobicy…). "
+                            "Il score chaque offre selon votre CV, prépare les meilleures en "
+                            "candidatures (à valider → Copilote), et reste transparent : il indique "
+                            "les sources bloquées (ex. Glassdoor) et n'invente jamais une offre.",
+                    "quand": "Pour élargir vos résultats au-delà de LinkedIn/Indeed/Job Bank.",
+                    "prerequis": "Paramètres → Ville, Mots-clés (ou CV).",
+                    "ou": "📋 Offres d'Emploi + 📤 Candidatures (à valider)",
                 },
             ],
         },
@@ -1374,6 +1394,7 @@ elif page == "📅 Planificateur":
         "Job Hunter": "job_hunter",
         "Indeed Agent": "indeed_agent",
         "COOP Hunter": "coop_hunter",
+        "Orchestrateur": "chercheur_offres",
         "Networking Agent": "networking_agent",
         "Follow-up Engine": "followup_engine",
         "Préparer Candidatures": "candidature_prep",
