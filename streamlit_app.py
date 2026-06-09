@@ -1179,6 +1179,29 @@ elif page == "📖 Guide":
         st.markdown("")
 
     st.markdown("---")
+    st.markdown("### 🚀 Une offre trouvée — comment postuler ?")
+    st.markdown(
+        "<div style='background:linear-gradient(135deg, rgba(30,155,255,0.10), "
+        "rgba(45,212,191,0.08));padding:1.1rem 1.3rem;border-radius:14px;"
+        "border:1px solid rgba(45,212,191,0.30);color:#dceefb;'>"
+        "Les agents de recherche (Job Hunter, Indeed, <b>Orchestrateur</b>, COOP) "
+        "préparent déjà les meilleures offres en <b>candidatures « à valider »</b> "
+        "(lettre + CV adapté). Pour postuler :<br><br>"
+        "<b>1.</b> Allez dans <b>📤 Candidatures</b> et relisez la lettre + le CV.<br>"
+        "<b>2.</b> Cliquez <b>« 🚀 Approuver &amp; Postuler (email auto) »</b> sur celles "
+        "qui vous intéressent.<br>"
+        "<b>3.</b> Lancez <b>🤖 Agents IA › 🚀 Postuler (Copilote)</b> : il envoie "
+        "réellement (email RH + LinkedIn Easy Apply).<br><br>"
+        "<span style='color:#2dd4bf;font-weight:600;'>🧭 Recherche → 📤 Candidatures "
+        "(Approuver) → 🚀 Postuler (Copilote)</span><br>"
+        "<span style='font-size:0.85rem;color:#9fc7e8;'>Les autres offres de "
+        "📋 Offres d'Emploi : postulez via leur lien, ou lancez 📝 Préparer "
+        "Candidatures pour en générer d'autres.</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
     st.markdown("### 🛠️ Bon à savoir")
     c1, c2 = st.columns(2)
     with c1:
