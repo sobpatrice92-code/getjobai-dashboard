@@ -1485,6 +1485,36 @@ ne suffit pas pour la recherche (LinkedIn bloque).
                 except Exception:
                     st.error("❌ JSON invalide. Collez bien l'export complet (commence par `[` ).")
 
+            st.markdown("---")
+            st.markdown("### 📄 Votre profil LinkedIn (pour l'analyse 10/10 approfondie)")
+            st.caption("Exportez votre profil : LinkedIn → votre profil → bouton **Ressources** "
+                       "(ou **More/Plus**) → **Enregistrer au format PDF**. Importez ce PDF ici "
+                       "(ou collez le texte). L'agent **Profil LinkedIn 10/10** l'analysera en "
+                       "profondeur avec l'œil d'un expert RH.")
+            st.caption("✅ Profil LinkedIn déjà importé" if (_me.get("linkedin_profile") or "").strip()
+                       else "❌ Aucun profil importé pour l'instant")
+            up_li = st.file_uploader("Importer le PDF de votre profil LinkedIn", type=["pdf"], key="li_pdf")
+            li_paste = st.text_area("…ou collez le texte de votre profil LinkedIn", height=140, key="li_txt")
+            if st.button("💾 Enregistrer mon profil LinkedIn", key="save_li_profile"):
+                texte = (li_paste or "").strip()
+                if up_li is not None and not texte:
+                    try:
+                        import io
+                        from pypdf import PdfReader
+                        reader = PdfReader(io.BytesIO(up_li.read()))
+                        texte = "\n".join((p.extract_text() or "") for p in reader.pages).strip()
+                    except Exception as e:
+                        st.error(f"Lecture du PDF impossible : {e}")
+                if texte:
+                    ok = db.update_user(st.session_state.user_id, {"linkedin_profile": texte[:12000]})
+                    if ok:
+                        st.success(f"✅ Profil LinkedIn enregistré ({len(texte)} car) — "
+                                   "l'agent Profil 10/10 fera une analyse approfondie.")
+                    else:
+                        st.error("Erreur d'enregistrement.")
+                else:
+                    st.warning("Importez un PDF ou collez le texte de votre profil LinkedIn.")
+
     with tab7:
         st.subheader("🎨 Préférences des posts LinkedIn")
         st.caption("Ces réglages personnalisent le texte ET l'image générée (apparence, ton, langue).")
