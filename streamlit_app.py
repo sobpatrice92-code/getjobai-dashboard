@@ -1341,16 +1341,25 @@ elif page == "⚙️ Paramètres":
         st.markdown("### 🍁 Profil immigration (pour Immigration Advisor)")
         st.caption("Renseignez ces champs pour un rapport d'immigration personnalisé "
                    "(programmes, démarches et conseils adaptés à VOTRE situation).")
+        STATUTS_CA = [
+            "Nouvel arrivant", "Résident permanent (RP)", "Permis de travail",
+            "Permis d'études (étudiant)", "Réfugié / demandeur d'asile",
+            "Citoyen canadien", "Autre",
+        ]
+        _cur_statut = (_me.get("statut_immigration") or "").strip()
+        _opts = STATUTS_CA if (not _cur_statut or _cur_statut in STATUTS_CA) else [_cur_statut] + STATUTS_CA
         im1, im2, im3 = st.columns(3)
         with im1:
             pays_origine = st.text_input("Pays d'origine", _me.get("pays_origine") or "",
                                          placeholder="ex : Cameroun, France, Inde…")
         with im2:
-            statut_immig = st.text_input("Statut / type de visa actuel", _me.get("statut_immigration") or "",
-                                         placeholder="ex : Permis d'études, PVT, RP, citoyen…")
+            statut_immig = st.selectbox(
+                "Statut au Canada",
+                _opts,
+                index=(_opts.index(_cur_statut) if _cur_statut in _opts else 0))
         with im3:
-            annee_arrivee = st.text_input("Année d'arrivée au Canada", _me.get("annee_arrivee") or "",
-                                          placeholder="ex : 2023")
+            annee_arrivee = st.text_input("Date d'entrée au Canada", _me.get("annee_arrivee") or "",
+                                          placeholder="ex : 2024 ou 03/2024")
 
         if st.button("💾 Sauvegarder le Profil", type="primary"):
             ok = db.update_user(st.session_state.user_id, {
