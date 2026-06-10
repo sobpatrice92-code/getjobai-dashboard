@@ -547,12 +547,36 @@ elif page == "📤 Candidatures":
             }
             # Classement hiérarchique : les plus récentes en premier (date + heure)
             cands = sorted(cands, key=lambda c: c.get("created_at") or "", reverse=True)
+
+            # Filtre par statut : retrouver Réponses, Entretiens, etc. d'un clic
+            GROUPES = {
+                "Toutes": None,
+                "⏳ À valider": ("en_attente", "validee"),
+                "📨 À envoyer": ("a_envoyer", "sans_email"),
+                "✅ Envoyées": ("envoyee", "recue"),
+                "💬 Réponses": ("reponse",),
+                "🎯 Entretiens": ("entretien",),
+                "❌ Refus": ("refus",),
+            }
+            def _match_grp(c, toks):
+                if toks is None:
+                    return True
+                stt = (c.get("status") or "").lower()
+                return any(t in stt for t in toks)
+            options = ["Toutes"] + [g for g in GROUPES if g != "Toutes"
+                                    and any(_match_grp(c, GROUPES[g]) for c in cands)]
+            labels = {g: (f"{g} ({sum(1 for c in cands if _match_grp(c, GROUPES[g]))})"
+                          if g != "Toutes" else f"Toutes ({len(cands)})") for g in options}
+            choix = st.radio("Filtrer par statut", options,
+                             format_func=lambda g: labels[g], horizontal=True)
+
+            vis = [c for c in cands if _match_grp(c, GROUPES[choix])]
             en_attente_list = [c for c in cands if (c.get("status") or "") == "en_attente"]
-            st.caption(f"📋 {len(cands)} candidature(s) • {len(en_attente_list)} à valider "
+            st.caption(f"📋 {len(vis)} candidature(s) affichée(s) • {len(en_attente_list)} à valider "
                        "• triées des plus récentes aux plus anciennes")
             st.markdown("<br>", unsafe_allow_html=True)
 
-            for c in cands:
+            for c in vis:
                 cid = c.get("id")
                 stt = (c.get("status") or "").lower()
                 icon = next((v for k, v in statut_icon.items() if k in stt), "📄")
