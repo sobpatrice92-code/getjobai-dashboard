@@ -111,6 +111,42 @@ def _fmt_dt(iso: str) -> str:
     except Exception:
         return str(iso)[:16].replace("T", " ")
 
+# action_type (Supabase) -> (icône, nom lisible de l'agent)
+AGENT_LABELS = {
+    "job_hunter": ("📋", "Job Hunter"),
+    "indeed_agent": ("🔎", "Indeed Agent"),
+    "coop_hunter": ("🎓", "COOP Hunter"),
+    "chercheur_offres": ("🧭", "Orchestrateur"),
+    "networking_agent": ("🤝", "Networking Agent"),
+    "followup_engine": ("📧", "Follow-up Engine"),
+    "candidature_prep": ("📝", "Préparer Candidatures"),
+    "entretien_prep": ("🎙️", "Préparer mon Entretien"),
+    "mail_tracker": ("📬", "Suivi Boîte Mail"),
+    "candidature_send": ("🚀", "Postuler (Copilote)"),
+    "immigration_advisor": ("🍁", "Immigration Advisor"),
+    "linkedin_agent": ("📝", "Post LinkedIn"),
+    "profile_optimizer": ("⭐", "Profil LinkedIn 10/10"),
+    "ats_optimizer": ("🤖", "ATS Optimizer"),
+    "career_strategy_agent": ("🧭", "Stratégie Carrière"),
+}
+
+def _agent_label(action: dict):
+    """(icône, nom) lisible d'une action — jamais 'Unknown'."""
+    at = (action.get("action_type") or action.get("agent_name") or "").strip()
+    if at in AGENT_LABELS:
+        return AGENT_LABELS[at]
+    return ("🤖", at.replace("_", " ").title() if at else "Agent")
+
+# statut Supabase -> (libellé FR, progression 0..1)
+_STATUT_INFO = {
+    "pending":    ("⏳ En file d'attente", 0.10),
+    "queued":     ("⏳ En file d'attente", 0.10),
+    "processing": ("🔄 En cours d'exécution", 0.55),
+    "running":    ("🔄 En cours d'exécution", 0.55),
+    "completed":  ("✅ Terminé", 1.0),
+    "failed":     ("❌ Échec", 1.0),
+}
+
 # ============================================================
 # PERSISTANCE DE SESSION VIA COOKIE
 # (évite de redemander la connexion à chaque rechargement de page)
@@ -1055,19 +1091,15 @@ elif page == "🤖 Agents IA":
 
             if actions:
                 for action in actions:
-                    status_icon = {
-                        "pending": "⏳",
-                        "running": "🔄",
-                        "completed": "✅",
-                        "failed": "❌"
-                    }.get(action.get("status", "pending"), "⏳")
+                    stt = (action.get("status") or "pending").lower()
+                    libelle, prog = _STATUT_INFO.get(stt, ("⏳ " + stt, 0.10))
+                    icon, nom = _agent_label(action)
 
-                    col_icon, col_info = st.columns([1, 11])
-                    with col_icon:
-                        st.markdown(f"### {status_icon}")
-                    with col_info:
-                        st.markdown(f"**{action.get('agent_name', 'Unknown')}** - {action.get('status', 'pending')}")
-                        st.caption(f"Créé: {action.get('created_at', 'N/A')}")
+                    with st.container(border=True):
+                        st.markdown(f"**{icon} {nom}** — {libelle}")
+                        st.progress(prog, text=libelle)
+                        date_aff = _fmt_dt(action.get("created_at"))
+                        st.caption(f"🕒 {date_aff}" if date_aff else "")
             else:
                 st.info("Aucune action récente")
         except Exception as e:
