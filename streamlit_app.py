@@ -501,8 +501,29 @@ elif page == "📋 Offres d'Emploi":
         if not results:
             alert("Aucune offre ne correspond à vos filtres. Ajustez les critères.", "warning")
         else:
-            for offre in results[:100]:
+            # URLs déjà en candidatures → éviter de re-préparer
+            cand_urls = {c.get("job_url") for c in db.get_candidatures_list(st.session_state.user_id)}
+            for idx, offre in enumerate(results[:100]):
                 job_card_pro(offre)
+                ourl = offre.get("url") or ""
+                key = offre.get("id") or f"{idx}"
+                if ourl and ourl in cand_urls:
+                    st.caption("✅ Déjà en 📤 Candidatures (en attente de validation)")
+                else:
+                    if st.button("📝 Préparer en candidature", key=f"prep_off_{key}",
+                                 use_container_width=True):
+                        db.create_action(st.session_state.user_id, "candidature_prep", {
+                            "job_url": ourl,
+                            "job_id": str(offre.get("id") or ""),
+                            "job_title": offre.get("title") or "",
+                            "company": offre.get("company") or "",
+                            "location": offre.get("location") or "",
+                            "score": offre.get("score") or 0,
+                        })
+                        st.success("✅ Lancé ! Lettre + CV adapté en préparation → "
+                                   "retrouvez-la dans 📤 Candidatures (statut « en attente ») "
+                                   "pour l'approuver.")
+                st.markdown("<br>", unsafe_allow_html=True)
 
 # ============================================================
 # PAGE: CANDIDATURES
