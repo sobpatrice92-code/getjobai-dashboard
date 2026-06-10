@@ -202,11 +202,17 @@ if not st.session_state.auth_ok and _cookie_jar and not st.session_state.get("lo
 # ============================================================
 try:
     import linkedin_oauth
-    if st.query_params.get("code") or st.query_params.get("error"):
+    _qp_code = st.query_params.get("code")
+    _qp_err = st.query_params.get("error")
+    # VERROU anti-double-échange : un code OAuth ne doit être échangé qu'UNE fois.
+    # Streamlit ré-exécute le script ; sans ce verrou, le 2e échange réutilise le
+    # code → LinkedIn renvoie 400 ET RÉVOQUE le jeton émis au 1er échange.
+    if _qp_err or (_qp_code and st.session_state.get("_li_done_code") != _qp_code):
+        if _qp_code:
+            st.session_state["_li_done_code"] = _qp_code   # poser le verrou AVANT
         _res = linkedin_oauth.handle_callback(get_supabase_client())
         if _res:
-            ok, msg = _res
-            st.session_state["_li_oauth_msg"] = msg
+            st.session_state["_li_oauth_msg"] = _res[1]
 except Exception as _e:
     st.session_state["_li_oauth_msg"] = f"Erreur callback LinkedIn : {str(_e)[:200]}"
 
