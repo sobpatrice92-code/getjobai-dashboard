@@ -1143,6 +1143,35 @@ elif page == "🤖 Agents IA":
                     else:
                         st.error(f"❌ Échec API : {info}")
 
+                # --- Planifier la publication (date + heure, heure de l'Est) ---
+                with st.expander("📅 Planifier la publication (au lieu de publier maintenant)"):
+                    from datetime import date as _date, time as _time, datetime as _dtmod
+                    cD, cH = st.columns(2)
+                    with cD:
+                        d_pub = st.date_input("Date", min_value=_date.today(), key="pg_sched_date")
+                    with cH:
+                        h_pub = st.time_input("Heure (heure de l'Est)", value=_time(9, 0), key="pg_sched_time")
+                    if st.button("📅 Planifier ce post", use_container_width=True, key="pg_sched_btn"):
+                        try:
+                            from zoneinfo import ZoneInfo
+                            dt_local = _dtmod.combine(d_pub, h_pub, tzinfo=ZoneInfo("America/Toronto"))
+                        except Exception:
+                            from datetime import timezone as _tz
+                            dt_local = _dtmod.combine(d_pub, h_pub, tzinfo=_tz.utc)
+                        from datetime import timezone as _tz2
+                        if dt_local <= _dtmod.now(dt_local.tzinfo):
+                            st.warning("⚠️ Choisissez une date/heure dans le futur.")
+                        else:
+                            iso_utc = dt_local.astimezone(_tz2.utc).isoformat()
+                            okp = _db.create_scheduled_post(
+                                st.session_state.user_id, post_edit,
+                                st.session_state.get("gen_post_image", ""), iso_utc)
+                            if okp:
+                                st.success(f"✅ Post planifié pour le {_fmt_dt(iso_utc)} — "
+                                           "il sera publié automatiquement (texte + image).")
+                            else:
+                                st.error("❌ Échec de la planification (colonne scheduled_at créée ? voir SQL).")
+
             cpub, ccopy = st.columns([2, 1])
             with cpub:
                 if st.button("📤 Envoyer à mon extension (repli manuel)",

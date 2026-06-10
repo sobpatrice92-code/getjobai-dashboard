@@ -138,6 +138,24 @@ class SupabaseClient:
             st.error(f"Erreur create_post_linkedin: {e}")
             return False
 
+    def create_scheduled_post(self, user_id: str, texte: str, image_b64: str,
+                              scheduled_at_iso: str) -> bool:
+        """Enregistre un post à publier AUTOMATIQUEMENT à une date/heure (UTC ISO)
+        via l'API LinkedIn (statut 'scheduled' → le worker le publie le moment venu)."""
+        url = f"{self.url}/rest/v1/posts_linkedin"
+        h = {**self.headers, "Content-Type": "application/json", "Prefer": "return=minimal"}
+        body = {"user_id": user_id, "texte": texte, "image_b64": image_b64 or "",
+                "statut": "scheduled", "scheduled_at": scheduled_at_iso}
+        try:
+            r = httpx.post(url, headers=h, json=body, timeout=15)
+            if r.status_code in (200, 201, 204):
+                return True
+            st.error(f"Erreur create_scheduled_post: {r.status_code} {r.text[:200]}")
+            return False
+        except Exception as e:
+            st.error(f"Erreur create_scheduled_post: {e}")
+            return False
+
     def update_contact_message(self, contact_id: str, message: str) -> bool:
         url = f"{self.url}/rest/v1/contacts_reseau?id=eq.{contact_id}"
         h = {**self.headers, "Prefer": "return=minimal"}
