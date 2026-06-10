@@ -186,7 +186,7 @@ def publish(access_token: str, member_id: str, texte: str, image_b64: str = "") 
     base_h = {
         "Authorization": f"Bearer {access_token}",
         "X-Restli-Protocol-Version": "2.0.0",
-        "LinkedIn-Version": "202405",
+        "LinkedIn-Version": os.getenv("LINKEDIN_API_VERSION", "202506"),
     }
     image_urn = None
     if image_b64:
