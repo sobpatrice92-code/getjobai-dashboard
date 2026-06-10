@@ -257,7 +257,7 @@ def job_card_pro(job: dict):
             <div style="flex: 1;">
                 <h3 style="margin: 0; color: {colors['primary']}; font-size: 1.3rem;">{job.get('title', 'N/A')}</h3>
                 <p style="margin: 0.5rem 0; color: {colors['text']}; font-size: 1.1rem; font-weight: 500;">🏢 {job.get('company', 'N/A')}</p>
-                <p style="margin: 0.25rem 0; color: {colors['text']}; opacity: 0.7;">📍 {job.get('location', 'N/A')} | 🌐 {job.get('source', 'N/A')}</p>
+                <p style="margin: 0.25rem 0; color: {colors['text']}; opacity: 0.7;">📍 {job.get('location', 'N/A')} | 🌐 {job.get('source', 'N/A')}{(" | 🕒 " + job['_date_aff']) if job.get('_date_aff') else ""}</p>
             </div>
             <div style="
                 background: {score_color};

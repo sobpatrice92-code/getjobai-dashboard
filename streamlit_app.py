@@ -426,12 +426,14 @@ elif page == "📋 Offres d'Emploi":
         sources_dispo = sorted({j.get("source", "") for j in all_jobs if j.get("source")})
 
         # Filtres
-        col1, col2, col3 = st.columns([3, 2, 3])
+        col1, col2, col3, col4 = st.columns([3, 2, 2, 3])
         with col1:
             sel_sources = st.multiselect("Sources", sources_dispo, default=[])
         with col2:
             score_min = st.slider("Score minimum", 0, 100, 0)
         with col3:
+            tri = st.selectbox("Trier par", ["🕒 Plus récentes", "🎯 Meilleur score"])
+        with col4:
             search = st.text_input("🔍 Rechercher", placeholder="Titre ou entreprise...")
 
         # Appliquer les filtres
@@ -448,12 +450,16 @@ elif page == "📋 Offres d'Emploi":
                     continue
             # Normaliser le score (job_card_pro plante si None)
             j["score"] = score
+            j["_date_aff"] = _fmt_dt(j.get("scraped_at"))
             results.append(j)
 
-        # Trier par score décroissant
-        results.sort(key=lambda x: x.get("score") or 0, reverse=True)
+        # Tri hiérarchique : plus récentes (scraped_at) OU meilleur score
+        if tri == "🎯 Meilleur score":
+            results.sort(key=lambda x: x.get("score") or 0, reverse=True)
+        else:
+            results.sort(key=lambda x: x.get("scraped_at") or "", reverse=True)
 
-        st.caption(f"📊 {len(results)} offre(s) affichée(s)")
+        st.caption(f"📊 {len(results)} offre(s) affichée(s) • {tri.lower()}")
         st.markdown("<br>", unsafe_allow_html=True)
 
         if not results:
@@ -1455,7 +1461,9 @@ elif page == "📦 Livrables":
                 ["Tous"] + [TYPE_INFO.get(t, ("📦", t))[1] for t in types_presents]
             )
 
-            st.caption(f"📊 {len(livrables)} livrable(s)")
+            # Classement hiérarchique : les plus récents en premier
+            livrables = sorted(livrables, key=lambda l: l.get("created_at") or "", reverse=True)
+            st.caption(f"📊 {len(livrables)} livrable(s) • des plus récents aux plus anciens")
             st.markdown("<br>", unsafe_allow_html=True)
 
             for liv in livrables:
@@ -1468,11 +1476,11 @@ elif page == "📦 Livrables":
                 statut = liv.get("statut", "")
                 statut_badge = "✅" if statut == "termine" else ("❌" if statut == "echec" else "⏳")
                 resume = liv.get("resume") or "(pas de résumé)"
-                date = (liv.get("created_at") or "")[:16].replace("T", " ")
+                date = _fmt_dt(liv.get("created_at"))
 
                 with st.container(border=True):
                     st.markdown(f"**{icon} {label}** {statut_badge}")
-                    st.caption(f"🤖 {liv.get('agent', '')} • {date}")
+                    st.caption(f"🤖 {liv.get('agent', '')} • 🕒 {date}")
                     st.markdown(f"{resume}")
 
                     # Contenu en PLEINE LARGEUR (lisible en grand)
