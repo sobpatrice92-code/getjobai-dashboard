@@ -1114,10 +1114,12 @@ elif page == "🤖 Agents IA":
             _db = get_supabase_client()
             _li = _lio.get_status(_db, st.session_state.user_id) if st.session_state.user_id else {"connected": False}
             if _lio.is_configured():
+                _au = _lio.build_authorize_url(st.session_state.user_id)
                 if _li.get("connected"):
                     st.success("🔗 LinkedIn connecté — publication automatique disponible.")
+                    st.link_button("🔄 Reconnecter LinkedIn (si le jeton est révoqué/expiré)",
+                                   _au, use_container_width=True)
                 else:
-                    _au = _lio.build_authorize_url(st.session_state.user_id)
                     st.warning("🔗 LinkedIn non connecté. Connectez-le **une fois** pour publier "
                                "automatiquement (sans extension).")
                     st.link_button("🔗 Connecter LinkedIn", _au, use_container_width=True)
