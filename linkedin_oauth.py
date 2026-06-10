@@ -242,6 +242,12 @@ def handle_callback(db):
     échange le code et stocke le jeton. Retourne (ok, message) ou None si pas un retour OAuth."""
     import streamlit as st
     qp = st.query_params
+    # LinkedIn a renvoyé une erreur (ex: scope/produit non activé) ?
+    err = qp.get("error")
+    if err:
+        desc = qp.get("error_description", "")
+        st.query_params.clear()
+        return (False, f"LinkedIn a refusé l'autorisation : {err} — {desc}")
     code = qp.get("code")
     state = qp.get("state")
     if not code or not state:
@@ -251,14 +257,27 @@ def handle_callback(db):
         return (False, "État OAuth invalide (lien expiré ou falsifié). Réessayez.")
     try:
         token = exchange_code(code)
-        access = token.get("access_token")
-        if not access:
-            return (False, f"Échec de l'échange du code : {token}")
-        member_id = get_member_id(access)
-        if not member_id:
-            return (False, "Impossible de lire l'identifiant LinkedIn (scope manquant ?).")
-        store_token(db, user_id, token, member_id)
+    except httpx.HTTPStatusError as e:
         st.query_params.clear()
-        return (True, "✅ LinkedIn connecté ! Vos posts pourront être publiés automatiquement.")
+        return (False, f"Échec échange du code (HTTP {e.response.status_code}) : {e.response.text[:200]}")
     except Exception as e:
-        return (False, f"Erreur connexion LinkedIn : {str(e)[:150]}")
+        st.query_params.clear()
+        return (False, f"Échec échange du code : {str(e)[:200]}")
+    access = token.get("access_token")
+    if not access:
+        st.query_params.clear()
+        return (False, f"Pas d'access_token reçu : {token}")
+    try:
+        member_id = get_member_id(access)
+    except httpx.HTTPStatusError as e:
+        st.query_params.clear()
+        return (False, f"userinfo refusé (HTTP {e.response.status_code}) — produit « Sign In with LinkedIn using OpenID Connect » manquant ? {e.response.text[:150]}")
+    except Exception as e:
+        st.query_params.clear()
+        return (False, f"userinfo erreur : {str(e)[:150]}")
+    if not member_id:
+        st.query_params.clear()
+        return (False, "Identifiant LinkedIn (sub) vide — scope openid/profile manquant.")
+    store_token(db, user_id, token, member_id)
+    st.query_params.clear()
+    return (True, "✅ LinkedIn connecté ! Vos posts pourront être publiés automatiquement.")

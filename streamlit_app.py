@@ -202,13 +202,13 @@ if not st.session_state.auth_ok and _cookie_jar and not st.session_state.get("lo
 # ============================================================
 try:
     import linkedin_oauth
-    if st.query_params.get("code") and st.query_params.get("state"):
+    if st.query_params.get("code") or st.query_params.get("error"):
         _res = linkedin_oauth.handle_callback(get_supabase_client())
         if _res:
             ok, msg = _res
             st.session_state["_li_oauth_msg"] = msg
-except Exception:
-    pass
+except Exception as _e:
+    st.session_state["_li_oauth_msg"] = f"Erreur callback LinkedIn : {str(_e)[:200]}"
 
 # ============================================================
 # PORTE D'AUTHENTIFICATION — pas d'accès sans connexion
