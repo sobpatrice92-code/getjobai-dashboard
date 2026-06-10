@@ -125,6 +125,7 @@ AGENT_LABELS = {
     "candidature_send": ("🚀", "Postuler (Copilote)"),
     "immigration_advisor": ("🍁", "Immigration Advisor"),
     "linkedin_agent": ("📝", "Post LinkedIn"),
+    "publish_linkedin": ("🚀", "Publier LinkedIn (auto)"),
     "profile_optimizer": ("⭐", "Profil LinkedIn 10/10"),
     "ats_optimizer": ("🤖", "ATS Optimizer"),
     "career_strategy_agent": ("🧭", "Stratégie Carrière"),
@@ -197,6 +198,19 @@ if not st.session_state.auth_ok and _cookie_jar and not st.session_state.get("lo
         pass
 
 # ============================================================
+# RETOUR OAUTH LINKEDIN (?code&state) — traité avant la porte d'auth
+# ============================================================
+try:
+    import linkedin_oauth
+    if st.query_params.get("code") and st.query_params.get("state"):
+        _res = linkedin_oauth.handle_callback(get_supabase_client())
+        if _res:
+            ok, msg = _res
+            st.session_state["_li_oauth_msg"] = msg
+except Exception:
+    pass
+
+# ============================================================
 # PORTE D'AUTHENTIFICATION — pas d'accès sans connexion
 # ============================================================
 if not st.session_state.auth_ok:
@@ -215,6 +229,11 @@ if st.session_state.auth_ok and st.session_state.user_email and _cookies is not 
             )
     except Exception:
         pass
+
+# Message de retour de connexion LinkedIn (OAuth)
+_lim = st.session_state.pop("_li_oauth_msg", None)
+if _lim:
+    (st.success if _lim.startswith("✅") else st.error)(_lim)
 
 # Recharger les données user depuis Supabase si besoin (ex: impersonation admin)
 if st.session_state.user_email and not st.session_state.user_id:
@@ -1090,9 +1109,35 @@ elif page == "🤖 Agents IA":
             elif pg_avec_image:
                 st.caption("⚠️ Image non générée (quota OpenAI ou erreur) — le post peut être publié sans image.")
 
+            # --- Connexion LinkedIn (API officielle) : statut + bouton ---
+            import linkedin_oauth as _lio
+            _db = get_supabase_client()
+            _li = _lio.get_status(_db, st.session_state.user_id) if st.session_state.user_id else {"connected": False}
+            if _lio.is_configured():
+                if _li.get("connected"):
+                    st.success("🔗 LinkedIn connecté — publication automatique disponible.")
+                else:
+                    _au = _lio.build_authorize_url(st.session_state.user_id)
+                    st.warning("🔗 LinkedIn non connecté. Connectez-le **une fois** pour publier "
+                               "automatiquement (sans extension).")
+                    st.link_button("🔗 Connecter LinkedIn", _au, use_container_width=True)
+
+            # --- Publier : API officielle (auto) prioritaire, extension en repli ---
+            if _lio.is_configured() and _li.get("connected"):
+                if st.button("🚀 Publier maintenant sur LinkedIn (API)", type="primary",
+                             use_container_width=True, key="pg_publish_api"):
+                    with st.spinner("Publication via l'API officielle LinkedIn…"):
+                        ok, info = _lio.publish_for_user(
+                            _db, st.session_state.user_id, post_edit,
+                            st.session_state.get("gen_post_image", ""))
+                    if ok:
+                        st.success("✅ Post publié sur LinkedIn ! (texte + image)")
+                    else:
+                        st.error(f"❌ Échec API : {info}")
+
             cpub, ccopy = st.columns([2, 1])
             with cpub:
-                if st.button("✅ Envoyer à mon extension (publier)", type="primary",
+                if st.button("📤 Envoyer à mon extension (repli manuel)",
                              use_container_width=True, key="pg_publish"):
                     if st.session_state.user_id:
                         ok = get_supabase_client().create_post_linkedin(
@@ -1620,6 +1665,7 @@ elif page == "📅 Planificateur":
         "Postuler (Copilote)": "candidature_send",
         "Immigration Advisor": "immigration_advisor",
         "Post LinkedIn": "linkedin_agent",
+        "Publier LinkedIn (auto)": "publish_linkedin",
         "Profil LinkedIn 10/10": "profile_optimizer",
         "ATS Optimizer": "ats_optimizer",
         "Stratégie Carrière": "career_strategy_agent",
