@@ -93,6 +93,24 @@ def _nom_fichier(s: str) -> str:
     import re as _re
     return _re.sub(r"[^A-Za-z0-9_-]", "_", (s or "doc").replace(" ", "_"))[:40].strip("_") or "doc"
 
+_MOIS_FR = ["", "janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.",
+            "août", "sept.", "oct.", "nov.", "déc."]
+
+def _fmt_dt(iso: str) -> str:
+    """Date+heure lisible (heure de l'Est) à partir d'un timestamp ISO Supabase (UTC)."""
+    if not iso:
+        return ""
+    try:
+        dt = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+        try:
+            from zoneinfo import ZoneInfo
+            dt = dt.astimezone(ZoneInfo("America/Toronto"))
+        except Exception:
+            pass
+        return f"{dt.day} {_MOIS_FR[dt.month]} {dt.year} à {dt:%H:%M}"
+    except Exception:
+        return str(iso)[:16].replace("T", " ")
+
 # ============================================================
 # PERSISTANCE DE SESSION VIA COOKIE
 # (évite de redemander la connexion à chaque rechargement de page)
@@ -485,8 +503,11 @@ elif page == "📤 Candidatures":
                 "en_attente": "⏳", "validee": "✔️", "a_envoyer": "📨", "sans_email": "✉️", "envoyee": "✅", "recue": "📬",
                 "reponse": "💬", "entretien": "🎯", "refus": "❌",
             }
+            # Classement hiérarchique : les plus récentes en premier (date + heure)
+            cands = sorted(cands, key=lambda c: c.get("created_at") or "", reverse=True)
             en_attente_list = [c for c in cands if (c.get("status") or "") == "en_attente"]
-            st.caption(f"📋 {len(cands)} candidature(s) • {len(en_attente_list)} à valider")
+            st.caption(f"📋 {len(cands)} candidature(s) • {len(en_attente_list)} à valider "
+                       "• triées des plus récentes aux plus anciennes")
             st.markdown("<br>", unsafe_allow_html=True)
 
             for c in cands:
@@ -500,9 +521,11 @@ elif page == "📤 Candidatures":
                 cv_nom = c.get("cv_nom") or "CV.pdf"
                 url = c.get("job_url") or ""
 
+                date_aff = _fmt_dt(c.get("created_at"))
                 with st.container(border=True):
                     st.markdown(f"### {icon} {titre} — {company}")
-                    st.caption(f"Score {score}/100 • Statut: **{c.get('status','')}**"
+                    st.caption((f"🕒 {date_aff} • " if date_aff else "")
+                               + f"Score {score}/100 • Statut: **{c.get('status','')}**"
                                + (f" • [Voir l'offre]({url})" if url else ""))
 
                     # Lire la LETTRE
