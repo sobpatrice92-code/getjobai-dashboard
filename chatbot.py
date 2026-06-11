@@ -16,10 +16,13 @@ SYSTEM_PROMPT = (
     "« prépare une candidature », « prépare mon entretien chez X pour le poste Y », "
     "« envoie mes candidatures approuvées », « publie mon post »), appelle "
     "`lancer_agent` avec le bon agent (et job_title/company si pertinent), puis "
-    "confirme à l'utilisateur en lui disant où voir le résultat dans le Dashboard.\n"
+    "confirme à l'utilisateur en lui disant TOUJOURS et EXPLICITEMENT où voir le "
+    "résultat (la page exacte du Dashboard retournée par l'outil) et où suivre "
+    "l'avancement (🏠 Dashboard → Actions Récentes).\n"
     "Si la demande est vague, pose une question avant de lancer. Pour une simple "
     "question de conseil, réponds normalement sans lancer d'agent.\n"
-    "Réponds en français, concret et bienveillant, sans clichés."
+    "Réponds en français, concret et bienveillant, sans clichés. Sois CONCIS "
+    "(2-4 phrases) car ta réponse peut être lue à voix haute."
 )
 
 # Agents que l'assistant peut déclencher (action_type Supabase -> description)
@@ -65,6 +68,25 @@ TOOLS = [{
 }]
 
 
+# Où l'utilisateur retrouve le résultat de chaque agent (page du Dashboard)
+AGENT_DESTINATION = {
+    "job_hunter": "📋 Offres d'Emploi",
+    "chercheur_offres": "📋 Offres d'Emploi (+ 📤 Candidatures à valider)",
+    "coop_hunter": "📋 Offres d'Emploi",
+    "candidature_prep": "📤 Candidatures (statut « à valider »)",
+    "candidature_send": "📤 Candidatures (statut « envoyée ») + une copie dans votre boîte mail",
+    "entretien_prep": "📦 Livrables → 🎙️ Préparation entretien",
+    "followup_engine": "📤 Candidatures + votre boîte mail (relances)",
+    "networking_agent": "🤝 Réseau",
+    "immigration_advisor": "📦 Livrables",
+    "profile_optimizer": "📦 Livrables",
+    "ats_optimizer": "📦 Livrables",
+    "career_strategy_agent": "📦 Livrables",
+    "mail_tracker": "📤 Candidatures (statuts mis à jour)",
+    "publish_linkedin": "votre profil LinkedIn",
+}
+
+
 def _executer_agent(user_id, args):
     """Crée l'action correspondante dans Supabase. Retourne un message pour l'IA."""
     agent = (args or {}).get("agent")
@@ -73,16 +95,33 @@ def _executer_agent(user_id, args):
     if not user_id:
         return "Utilisateur non identifié — connexion requise."
     params = {k: args[k] for k in ("job_title", "company") if args.get(k)}
+    dest = AGENT_DESTINATION.get(agent, "le Dashboard")
     try:
         from database import get_supabase_client
         res = get_supabase_client().create_action(user_id, agent, params)
         if res:
             return (f"Action '{agent}' lancée avec succès" +
                     (f" ({params})" if params else "") +
-                    ". Le résultat apparaîtra dans le Dashboard une fois terminé.")
+                    f". IMPORTANT: indique à l'utilisateur que le résultat apparaîtra dans : "
+                    f"« {dest} » (et son avancement dans « 🏠 Dashboard → Actions Récentes »).")
         return f"Échec du lancement de '{agent}'."
     except Exception as e:
         return f"Erreur lancement '{agent}': {str(e)[:120]}"
+
+
+def _synthese_vocale(client, texte):
+    """Génère l'audio (MP3) de la réponse via OpenAI TTS. Retourne les bytes ou None."""
+    if not texte:
+        return None
+    try:
+        # nettoyer le markdown pour une lecture fluide
+        import re
+        propre = re.sub(r"[*#`_>\-]{1,}", " ", texte)
+        propre = re.sub(r"\s+", " ", propre).strip()[:900]
+        r = client.audio.speech.create(model="tts-1", voice="alloy", input=propre)
+        return r.content
+    except Exception:
+        return None
 
 
 def _transcrire(client, audio_file):
@@ -478,16 +517,32 @@ def chatbot_page():
     # Saisie utilisateur
     user_id = st.session_state.get("user_id")
 
-    # 🎤 Commande vocale : enregistrer puis transcrire (Whisper)
+    def _capter_audio(widget):
+        """Transcrit un nouvel enregistrement (évite de retraiter le même)."""
+        if widget is None:
+            return None
+        sig = (getattr(widget, "size", None), getattr(widget, "name", ""))
+        if st.session_state.get("_last_audio_sig") == sig:
+            return None
+        st.session_state["_last_audio_sig"] = sig
+        with st.spinner("Transcription de votre voix…"):
+            return _transcrire(client, widget)
+
+    # Barre d'outils : 🎤 Parler (popover) + 🔊 Réponse vocale
     voice_prompt = None
-    if hasattr(st, "audio_input"):
-        audio = st.audio_input("🎤 Commande vocale (parlez, puis arrêtez l'enregistrement)")
-        if audio is not None:
-            sig = (getattr(audio, "size", None), getattr(audio, "name", ""))
-            if st.session_state.get("_last_audio_sig") != sig:
-                st.session_state["_last_audio_sig"] = sig
-                with st.spinner("Transcription de votre voix…"):
-                    voice_prompt = _transcrire(client, audio)
+    c_mic, c_voix = st.columns([1, 1])
+    with c_mic:
+        if hasattr(st, "popover") and hasattr(st, "audio_input"):
+            with st.popover("🎤 Parler", use_container_width=True):
+                st.caption("Parlez votre demande, puis **arrêtez** l'enregistrement.")
+                voice_prompt = _capter_audio(
+                    st.audio_input("Commande vocale", label_visibility="collapsed"))
+        elif hasattr(st, "audio_input"):
+            voice_prompt = _capter_audio(st.audio_input("🎤 Commande vocale"))
+    with c_voix:
+        st.session_state["_voice_reply"] = st.toggle(
+            "🔊 Réponse vocale", value=st.session_state.get("_voice_reply", False),
+            help="L'assistant lit sa réponse à voix haute.")
 
     typed = st.chat_input("Demandez une action ou posez une question…")
     prompt = typed or voice_prompt
@@ -500,6 +555,11 @@ def chatbot_page():
             with st.spinner("…"):
                 reply = _run_assistant(client, user_id, st.session_state.chat_messages)
             st.markdown(reply)
+            # 🔊 Lire la réponse à voix haute si activé
+            if st.session_state.get("_voice_reply"):
+                audio_bytes = _synthese_vocale(client, reply)
+                if audio_bytes:
+                    st.audio(audio_bytes, format="audio/mp3", autoplay=True)
 
         st.session_state.chat_messages.append({"role": "assistant", "content": reply})
 
