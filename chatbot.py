@@ -8,13 +8,114 @@ import streamlit as st
 
 SYSTEM_PROMPT = (
     "Tu es l'assistant IA de GetJobAI, une plateforme d'aide à la recherche "
-    "d'emploi au Canada. Tu aides l'utilisateur sur : rédaction et amélioration "
-    "de CV, lettres de motivation, préparation aux entretiens, optimisation de "
-    "profil LinkedIn, stratégie de candidature, et immigration au Canada "
-    "(PVT, résidence permanente, Arrima, Entrée Express). "
-    "Réponds en français, de façon concrète, structurée et bienveillante. "
-    "Écris naturellement, sans clichés ni formules toutes faites."
+    "d'emploi au Canada. Tu aides l'utilisateur sur : CV, lettres de motivation, "
+    "entretiens, profil LinkedIn, stratégie de candidature, immigration au Canada "
+    "(PVT, résidence permanente, Arrima, Entrée Express).\n\n"
+    "TU PEUX AUSSI LANCER LES AGENTS pour l'utilisateur via l'outil `lancer_agent`. "
+    "Dès qu'il demande une ACTION concrète (ex. « trouve-moi des offres », "
+    "« prépare une candidature », « prépare mon entretien chez X pour le poste Y », "
+    "« envoie mes candidatures approuvées », « publie mon post »), appelle "
+    "`lancer_agent` avec le bon agent (et job_title/company si pertinent), puis "
+    "confirme à l'utilisateur en lui disant où voir le résultat dans le Dashboard.\n"
+    "Si la demande est vague, pose une question avant de lancer. Pour une simple "
+    "question de conseil, réponds normalement sans lancer d'agent.\n"
+    "Réponds en français, concret et bienveillant, sans clichés."
 )
+
+# Agents que l'assistant peut déclencher (action_type Supabase -> description)
+AGENTS_LANCABLES = {
+    "job_hunter": "Chercher des offres (LinkedIn, Job Bank, Talent.com) dans la zone de l'utilisateur",
+    "chercheur_offres": "Orchestrateur : recherche multi-plateformes diversifiée",
+    "coop_hunter": "Chercher des stages / emplois COOP pour étudiants",
+    "candidature_prep": "Préparer des candidatures (lettre + CV adapté) à valider",
+    "candidature_send": "Postuler aux candidatures APPROUVÉES (Copilote : email au RH)",
+    "entretien_prep": "Préparer un guide d'entretien ciblé (utiliser job_title + company)",
+    "followup_engine": "Relancer les candidatures sans réponse",
+    "networking_agent": "Développer le réseau LinkedIn (messages de connexion)",
+    "immigration_advisor": "Conseils d'immigration au Canada",
+    "profile_optimizer": "Optimiser le profil LinkedIn",
+    "ats_optimizer": "Optimiser le CV pour les ATS",
+    "career_strategy_agent": "Élaborer une stratégie de carrière",
+    "mail_tracker": "Suivre la boîte mail (réponses recruteurs)",
+    "publish_linkedin": "Publier le post LinkedIn en attente",
+}
+
+TOOLS = [{
+    "type": "function",
+    "function": {
+        "name": "lancer_agent",
+        "description": "Lance un agent GetJobAI (crée une action exécutée en arrière-plan par le worker). À utiliser pour toute ACTION concrète demandée par l'utilisateur.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "agent": {
+                    "type": "string",
+                    "enum": list(AGENTS_LANCABLES.keys()),
+                    "description": "Agent à lancer. " + " | ".join(
+                        f"{k}: {v}" for k, v in AGENTS_LANCABLES.items()),
+                },
+                "job_title": {"type": "string",
+                              "description": "Titre du poste (entretien_prep ou candidature ciblée)"},
+                "company": {"type": "string",
+                            "description": "Nom de l'entreprise (entretien_prep)"},
+            },
+            "required": ["agent"],
+        },
+    },
+}]
+
+
+def _executer_agent(user_id, args):
+    """Crée l'action correspondante dans Supabase. Retourne un message pour l'IA."""
+    agent = (args or {}).get("agent")
+    if agent not in AGENTS_LANCABLES:
+        return f"Agent inconnu : {agent}"
+    if not user_id:
+        return "Utilisateur non identifié — connexion requise."
+    params = {k: args[k] for k in ("job_title", "company") if args.get(k)}
+    try:
+        from database import get_supabase_client
+        res = get_supabase_client().create_action(user_id, agent, params)
+        if res:
+            return (f"Action '{agent}' lancée avec succès" +
+                    (f" ({params})" if params else "") +
+                    ". Le résultat apparaîtra dans le Dashboard une fois terminé.")
+        return f"Échec du lancement de '{agent}'."
+    except Exception as e:
+        return f"Erreur lancement '{agent}': {str(e)[:120]}"
+
+
+def _run_assistant(client, user_id, chat_messages):
+    """Boucle conversation + appels d'outils (function calling)."""
+    import json
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for m in chat_messages:
+        if m.get("role") in ("user", "assistant") and m.get("content"):
+            messages.append({"role": m["role"], "content": m["content"]})
+    try:
+        for _ in range(4):  # au plus 4 tours d'outils
+            resp = client.chat.completions.create(
+                model="gpt-4o", messages=messages, tools=TOOLS,
+                tool_choice="auto", temperature=0.7)
+            m = resp.choices[0].message
+            if not m.tool_calls:
+                return m.content or ""
+            messages.append({
+                "role": "assistant", "content": m.content or "",
+                "tool_calls": [{"id": tc.id, "type": "function",
+                                "function": {"name": tc.function.name,
+                                             "arguments": tc.function.arguments}}
+                               for tc in m.tool_calls]})
+            for tc in m.tool_calls:
+                try:
+                    args = json.loads(tc.function.arguments or "{}")
+                except Exception:
+                    args = {}
+                result = _executer_agent(user_id, args)
+                messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
+        return "J'ai lancé les actions demandées — vérifiez le Dashboard."
+    except Exception as e:
+        return f"Erreur: {e}"
 
 
 def _get_client():
@@ -341,7 +442,9 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
 def chatbot_page():
     """Affiche la page de l'assistant IA conversationnel."""
     st.markdown("### 💬 Assistant IA")
-    st.caption("Posez vos questions sur le CV, les lettres, les entretiens, l'immigration…")
+    st.caption("Demandez une action (« trouve-moi des offres », « prépare une candidature », "
+               "« prépare mon entretien chez X ») ou posez vos questions. L'assistant peut "
+               "lancer les agents pour vous.")
 
     client = _get_client()
     if client is None:
@@ -361,33 +464,19 @@ def chatbot_page():
             st.markdown(msg["content"])
 
     # Saisie utilisateur
-    prompt = st.chat_input("Votre question…")
+    user_id = st.session_state.get("user_id")
+    prompt = st.chat_input("Demandez une action ou posez une question…")
     if prompt:
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            placeholder = st.empty()
-            full = ""
-            try:
-                stream = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[{"role": "system", "content": SYSTEM_PROMPT}]
-                             + st.session_state.chat_messages,
-                    stream=True,
-                    temperature=0.7,
-                )
-                for chunk in stream:
-                    delta = chunk.choices[0].delta.content or ""
-                    full += delta
-                    placeholder.markdown(full + "▌")
-                placeholder.markdown(full)
-            except Exception as e:
-                full = f"Erreur: {e}"
-                placeholder.error(full)
+            with st.spinner("…"):
+                reply = _run_assistant(client, user_id, st.session_state.chat_messages)
+            st.markdown(reply)
 
-        st.session_state.chat_messages.append({"role": "assistant", "content": full})
+        st.session_state.chat_messages.append({"role": "assistant", "content": reply})
 
     # Bouton effacer
     if st.session_state.chat_messages:
