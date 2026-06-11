@@ -85,6 +85,18 @@ def _executer_agent(user_id, args):
         return f"Erreur lancement '{agent}': {str(e)[:120]}"
 
 
+def _transcrire(client, audio_file):
+    """Transcrit l'audio du micro (WAV) en texte via Whisper. Retourne le texte ou None."""
+    try:
+        data = audio_file.getvalue() if hasattr(audio_file, "getvalue") else audio_file.read()
+        tr = client.audio.transcriptions.create(
+            model="whisper-1", file=("commande.wav", data), language="fr")
+        return (tr.text or "").strip()
+    except Exception as e:
+        st.error(f"Transcription impossible : {str(e)[:150]}")
+        return None
+
+
 def _run_assistant(client, user_id, chat_messages):
     """Boucle conversation + appels d'outils (function calling)."""
     import json
@@ -465,7 +477,20 @@ def chatbot_page():
 
     # Saisie utilisateur
     user_id = st.session_state.get("user_id")
-    prompt = st.chat_input("Demandez une action ou posez une question…")
+
+    # 🎤 Commande vocale : enregistrer puis transcrire (Whisper)
+    voice_prompt = None
+    if hasattr(st, "audio_input"):
+        audio = st.audio_input("🎤 Commande vocale (parlez, puis arrêtez l'enregistrement)")
+        if audio is not None:
+            sig = (getattr(audio, "size", None), getattr(audio, "name", ""))
+            if st.session_state.get("_last_audio_sig") != sig:
+                st.session_state["_last_audio_sig"] = sig
+                with st.spinner("Transcription de votre voix…"):
+                    voice_prompt = _transcrire(client, audio)
+
+    typed = st.chat_input("Demandez une action ou posez une question…")
+    prompt = typed or voice_prompt
     if prompt:
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
