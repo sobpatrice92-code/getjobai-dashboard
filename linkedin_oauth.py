@@ -10,6 +10,7 @@ Secrets lus depuis l'environnement (Render) :
   LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET, LINKEDIN_REDIRECT_URI
 """
 import os
+import time
 import hmac
 import base64
 import hashlib
@@ -37,22 +38,76 @@ def is_configured() -> bool:
     return bool(cid and secret)
 
 
-# --- state signé (anti-CSRF / anti-forge : lie le retour au bon user_id) ---
+# --- Chiffrement des jetons au repos (defense-in-depth) ---------------------
+# Les jetons LinkedIn sont écrits dans la table `users`, lisible avec la clé
+# anon (présente côté extension). On les chiffre avec une clé serveur SEULE
+# (LINKEDIN_TOKEN_KEY, sur Render) : une fuite de la clé anon ne donne alors
+# que du chiffré inutilisable. Rétro-compatible : sans clé → stockage en clair
+# (comportement actuel), et la lecture passe les anciens jetons en clair tels
+# quels (migration transparente au prochain refresh).
+_ENC_PREFIX = "enc:"
+
+
+def _fernet():
+    key = os.getenv("LINKEDIN_TOKEN_KEY", "")
+    if not key:
+        return None
+    try:
+        from cryptography.fernet import Fernet
+        return Fernet(key.encode() if isinstance(key, str) else key)
+    except Exception:
+        return None
+
+
+def enc_token(s):
+    if not s:
+        return s
+    f = _fernet()
+    if not f:
+        return s  # pas de clé → clair (aucune régression)
+    try:
+        return _ENC_PREFIX + f.encrypt(s.encode()).decode()
+    except Exception:
+        return s
+
+
+def dec_token(s):
+    if not s or not str(s).startswith(_ENC_PREFIX):
+        return s  # ancien jeton en clair → tel quel
+    f = _fernet()
+    if not f:
+        return None  # chiffré mais clé absente → inutilisable
+    try:
+        return f.decrypt(str(s)[len(_ENC_PREFIX):].encode()).decode()
+    except Exception:
+        return None
+
+
+# --- state signé (anti-CSRF : lie le retour au bon user_id + horodatage) ---
+# Format : <b64(user_id)>.<timestamp>.<sig>. La signature couvre user_id ET le
+# timestamp, ce qui rend le state à usage limité dans le temps (pas rejouable
+# indéfiniment). Le lien au compte connecté est en plus revérifié côté callback.
 def _sign(user_id: str) -> str:
     _, secret, _ = _cfg()
     key = (secret or "gja").encode()
     raw = base64.urlsafe_b64encode(user_id.encode()).decode().rstrip("=")
-    sig = hmac.new(key, raw.encode(), hashlib.sha256).hexdigest()[:16]
-    return f"{raw}.{sig}"
+    ts = str(int(time.time()))
+    msg = f"{raw}.{ts}".encode()
+    sig = hmac.new(key, msg, hashlib.sha256).hexdigest()[:32]
+    return f"{raw}.{ts}.{sig}"
 
 
-def verify_state(state: str):
+def verify_state(state: str, max_age: int = 900):
+    """Vérifie la signature ET l'âge du state. Retourne user_id ou None."""
     try:
-        raw, sig = state.split(".", 1)
+        raw, ts, sig = state.split(".", 2)
         _, secret, _ = _cfg()
         key = (secret or "gja").encode()
-        good = hmac.new(key, raw.encode(), hashlib.sha256).hexdigest()[:16]
+        good = hmac.new(key, f"{raw}.{ts}".encode(), hashlib.sha256).hexdigest()[:32]
         if not hmac.compare_digest(sig, good):
+            return None
+        age = int(time.time()) - int(ts)
+        if age < -60 or age > max_age:   # expiré (ou horloge incohérente)
             return None
         pad = "=" * (-len(raw) % 4)
         return base64.urlsafe_b64decode(raw + pad).decode()
@@ -99,11 +154,16 @@ def store_token(db, user_id: str, token: dict, member_id: str, member_name: str 
     expires = (datetime.now(timezone.utc)
                + timedelta(seconds=int(token.get("expires_in", 0)))).isoformat()
     patch = {
-        "linkedin_oauth_token": token.get("access_token"),
-        "linkedin_oauth_refresh": token.get("refresh_token"),
+        "linkedin_oauth_token": enc_token(token.get("access_token")),
         "linkedin_oauth_expires": expires,
-        "linkedin_member_id": member_id,
     }
+    # Ne JAMAIS écraser le refresh_token / member_id par une valeur vide :
+    # un refresh LinkedIn ne renvoie pas toujours de nouveau refresh_token,
+    # et le perdrait sinon (reconnexion forcée plus tard).
+    if token.get("refresh_token"):
+        patch["linkedin_oauth_refresh"] = enc_token(token.get("refresh_token"))
+    if member_id:
+        patch["linkedin_member_id"] = member_id
     url = f"{db.url}/rest/v1/users?id=eq.{user_id}"
     h = {**db.headers, "Content-Type": "application/json", "Prefer": "return=minimal"}
     r = httpx.patch(url, headers=h, json=patch, timeout=15)
@@ -133,7 +193,7 @@ def _valid_token(db, user_id: str):
     if r.status_code != 200 or not r.json():
         return None, None
     row = r.json()[0]
-    token = row.get("linkedin_oauth_token")
+    token = dec_token(row.get("linkedin_oauth_token"))
     member = row.get("linkedin_member_id")
     exp = row.get("linkedin_oauth_expires")
     if not token or not member:
@@ -141,7 +201,7 @@ def _valid_token(db, user_id: str):
     # Rafraîchir si expiré (marge 1 jour)
     try:
         if exp and datetime.fromisoformat(exp.replace("Z", "+00:00")) < datetime.now(timezone.utc) + timedelta(days=1):
-            new = _refresh(db, user_id, row.get("linkedin_oauth_refresh"))
+            new = _refresh(db, user_id, dec_token(row.get("linkedin_oauth_refresh")))
             if new:
                 token = new
     except Exception:
@@ -237,9 +297,14 @@ def publish_for_user(db, user_id: str, texte: str, image_b64: str = "") -> tuple
     return publish(token, member, texte, image_b64)
 
 
-def handle_callback(db):
+def handle_callback(db, session_user_id: str = None):
     """À appeler au chargement de l'app. Si on revient de LinkedIn (?code&state),
-    échange le code et stocke le jeton. Retourne (ok, message) ou None si pas un retour OAuth."""
+    échange le code et stocke le jeton. Retourne (ok, message) ou None si pas un retour OAuth.
+
+    `session_user_id` = l'utilisateur ACTUELLEMENT connecté au dashboard. Le jeton
+    n'est stocké que si le state (signé) désigne bien ce même utilisateur : sans ce
+    contrôle, un attaquant pourrait faire lier le LinkedIn d'une victime à son propre
+    compte (account-linking CSRF) et publier en son nom."""
     import streamlit as st
     qp = st.query_params
     # LinkedIn a renvoyé une erreur (ex: scope/produit non activé) ?
@@ -254,7 +319,13 @@ def handle_callback(db):
         return None
     user_id = verify_state(state)
     if not user_id:
+        st.query_params.clear()
         return (False, "État OAuth invalide (lien expiré ou falsifié). Réessayez.")
+    # Liaison à la session : le state doit désigner l'utilisateur connecté.
+    if not session_user_id or str(user_id) != str(session_user_id):
+        st.query_params.clear()
+        return (False, "Connexion LinkedIn refusée : reconnectez-vous au dashboard, "
+                       "puis relancez « Connecter LinkedIn ».")
     try:
         token = exchange_code(code)
     except httpx.HTTPStatusError as e:

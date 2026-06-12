@@ -210,7 +210,17 @@ try:
     if _qp_err or (_qp_code and st.session_state.get("_li_done_code") != _qp_code):
         if _qp_code:
             st.session_state["_li_done_code"] = _qp_code   # poser le verrou AVANT
-        _res = linkedin_oauth.handle_callback(get_supabase_client())
+        # Identité de la session courante (restaurée du cookie) — sert à lier le
+        # retour OAuth au bon compte. user_id n'est résolu qu'ensuite : on le
+        # récupère ici depuis l'email connecté si besoin.
+        _sess_uid = st.session_state.get("user_id")
+        if not _sess_uid and st.session_state.get("user_email"):
+            try:
+                _u = get_supabase_client().get_user_by_email(st.session_state.user_email)
+                _sess_uid = _u["id"] if _u else None
+            except Exception:
+                _sess_uid = None
+        _res = linkedin_oauth.handle_callback(get_supabase_client(), session_user_id=_sess_uid)
         if _res:
             st.session_state["_li_oauth_msg"] = _res[1]
 except Exception as _e:
@@ -589,7 +599,7 @@ elif page == "📤 Candidatures":
         else:
             statut_icon = {
                 "en_attente": "⏳", "validee": "✔️", "a_envoyer": "📨", "sans_email": "✉️",
-                "easyapply": "📝", "envoyee": "✅", "recue": "📬",
+                "easyapply": "📝", "envoi_en_cours": "📤", "envoyee": "✅", "recue": "📬",
                 "reponse": "💬", "entretien": "🎯", "refus": "❌",
             }
             # Classement hiérarchique : les plus récentes en premier (date + heure)
@@ -601,7 +611,7 @@ elif page == "📤 Candidatures":
                 "⏳ À valider": ("en_attente", "validee"),
                 "📨 À envoyer": ("a_envoyer", "sans_email"),
                 "📝 Easy Apply (LinkedIn)": ("easyapply",),
-                "✅ Envoyées": ("envoyee", "recue"),
+                "✅ Envoyées": ("envoyee", "recue", "envoi_en_cours"),
                 "💬 Réponses": ("reponse",),
                 "🎯 Entretiens": ("entretien",),
                 "❌ Refus": ("refus",),

@@ -4,3 +4,4 @@ openai>=1.30.0
 extra-streamlit-components>=0.1.60
 pypdf>=4.0.0
 reportlab>=4.0.0
+cryptography>=42.0.0
