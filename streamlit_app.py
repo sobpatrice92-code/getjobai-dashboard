@@ -588,7 +588,8 @@ elif page == "📤 Candidatures":
                   "place ici en attente de votre validation.", "info")
         else:
             statut_icon = {
-                "en_attente": "⏳", "validee": "✔️", "a_envoyer": "📨", "sans_email": "✉️", "envoyee": "✅", "recue": "📬",
+                "en_attente": "⏳", "validee": "✔️", "a_envoyer": "📨", "sans_email": "✉️",
+                "easyapply": "📝", "envoyee": "✅", "recue": "📬",
                 "reponse": "💬", "entretien": "🎯", "refus": "❌",
             }
             # Classement hiérarchique : les plus récentes en premier (date + heure)
@@ -599,6 +600,7 @@ elif page == "📤 Candidatures":
                 "Toutes": None,
                 "⏳ À valider": ("en_attente", "validee"),
                 "📨 À envoyer": ("a_envoyer", "sans_email"),
+                "📝 Easy Apply (LinkedIn)": ("easyapply",),
                 "✅ Envoyées": ("envoyee", "recue"),
                 "💬 Réponses": ("reponse",),
                 "🎯 Entretiens": ("entretien",),
