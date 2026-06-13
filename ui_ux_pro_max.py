@@ -776,3 +776,105 @@ if __name__ == "__main__":
         "source": "LinkedIn",
         "url": "https://linkedin.com/jobs/123"
     })
+
+
+# ============================================================
+# SURCOUCHE VISUELLE « NEO-GLASS » (CSS uniquement — aucune logique modifiée)
+# ============================================================
+
+def inject_neo_glass():
+    """Raffinement visuel Neo-Glass : police Inter/Poppins, cartes en verre
+    dépoli RÉACTIVES (hover lift + glow), boutons premium animés, fade-in du
+    contenu, scrollbar fine. 100 % CSS — aucune fonction ni API touchée."""
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
+
+    /* ----- Typographie Inter / Poppins ----- */
+    html, body, .stApp, .stMarkdown, p, span, div, label,
+    input, textarea, button, select, [data-testid="stWidgetLabel"] {
+        font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+    }
+    h1, h2, h3, h4 {
+        font-family: 'Poppins', 'Inter', sans-serif !important;
+        letter-spacing: .2px;
+    }
+
+    /* ----- Fade-in doux du contenu à chaque (re)chargement ----- */
+    [data-testid="stAppViewContainer"] .main .block-container {
+        animation: gjaFadeUp .55s cubic-bezier(.22,.61,.36,1);
+    }
+    @keyframes gjaFadeUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    /* ----- CARTES (st.container(border=True)) : verre dépoli réactif ----- */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: linear-gradient(150deg, rgba(30,41,75,0.55) 0%, rgba(12,18,38,0.45) 100%) !important;
+        backdrop-filter: blur(14px) saturate(120%);
+        -webkit-backdrop-filter: blur(14px) saturate(120%);
+        border: 1px solid rgba(120,160,255,0.16) !important;
+        border-radius: 18px !important;
+        box-shadow: 0 8px 30px rgba(4,8,20,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+        transition: transform .25s cubic-bezier(.22,.61,.36,1), box-shadow .25s, border-color .25s;
+        will-change: transform;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"]:hover {
+        transform: translateY(-4px);
+        border-color: rgba(45,212,191,0.45) !important;
+        box-shadow: 0 14px 40px rgba(4,8,20,0.55), 0 0 26px rgba(91,124,255,0.22);
+    }
+
+    /* ----- Boutons : transitions + appel à l'action lumineux (primary) ----- */
+    .stButton > button {
+        border-radius: 12px !important;
+        transition: transform .18s, box-shadow .25s, background .25s !important;
+    }
+    .stButton > button[kind="primary"],
+    [data-testid="baseButton-primary"] {
+        background: linear-gradient(135deg, #5b7cff 0%, #9b6bff 50%, #2dd4bf 100%) !important;
+        border: none !important;
+        color: #fff !important;
+        box-shadow: 0 6px 20px rgba(91,124,255,0.35);
+        animation: gjaGlow 3.5s ease-in-out infinite;
+    }
+    .stButton > button[kind="primary"] *,
+    [data-testid="baseButton-primary"] * { color: #fff !important; }
+    .stButton > button[kind="primary"]:hover,
+    [data-testid="baseButton-primary"]:hover {
+        transform: translateY(-2px) scale(1.015);
+        box-shadow: 0 10px 30px rgba(155,107,255,0.5) !important;
+    }
+    @keyframes gjaGlow {
+        0%,100% { box-shadow: 0 6px 20px rgba(91,124,255,0.35); }
+        50%     { box-shadow: 0 8px 28px rgba(45,212,191,0.45); }
+    }
+
+    /* ----- Link buttons (Connecter LinkedIn, etc.) ----- */
+    [data-testid="stLinkButton"] a {
+        border-radius: 12px !important;
+        transition: transform .18s, box-shadow .25s !important;
+    }
+    [data-testid="stLinkButton"] a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 18px rgba(45,212,191,0.4) !important;
+    }
+
+    /* ----- Navigation sidebar : pastilles réactives ----- */
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        border-radius: 10px; padding: 2px 6px;
+        transition: background .2s, transform .15s;
+    }
+    [data-testid="stSidebar"] [role="radiogroup"] label:hover {
+        background: rgba(91,124,255,0.12);
+        transform: translateX(3px);
+    }
+
+    /* ----- Scrollbar fine et discrète ----- */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: rgba(91,124,255,0.35); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(45,212,191,0.5); }
+    ::-webkit-scrollbar-track { background: transparent; }
+    </style>
+    """, unsafe_allow_html=True)
