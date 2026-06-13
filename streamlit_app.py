@@ -282,6 +282,21 @@ if st.session_state.user_email and not st.session_state.user_id:
 # SIDEBAR - NAVIGATION
 # ============================================================
 
+
+@st.cache_resource
+def _build_info():
+    """Commit Git déployé + heure de démarrage du process (≈ déploiement).
+    Capturé UNE seule fois par process (cache_resource) → stable entre les reruns,
+    et rafraîchi automatiquement à chaque nouveau déploiement Render."""
+    commit = (os.getenv("RENDER_GIT_COMMIT", "") or "")[:7] or "local"
+    try:
+        from zoneinfo import ZoneInfo
+        ts = datetime.now(ZoneInfo("America/Toronto")).strftime("%Y-%m-%d %H:%M")
+    except Exception:
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+    return commit, ts
+
+
 with st.sidebar:
     # Logo
     st.markdown(f"""
@@ -342,6 +357,11 @@ with st.sidebar:
             st.session_state.is_whitelisted = False
             st.session_state.logged_out = True  # bloque la restauration par cookie
             st.rerun()
+
+    # Marqueur de build : vérifier d'un coup d'œil le commit déployé sur Render
+    _b_commit, _b_time = _build_info()
+    st.markdown("---")
+    st.caption(f"🔖 build `{_b_commit}` · {_b_time}")
 
 # ============================================================
 # BARRIÈRE D'ACCÈS — utilisateurs non approuvés
