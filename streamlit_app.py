@@ -208,8 +208,6 @@ try:
     # Streamlit ré-exécute le script ; sans ce verrou, le 2e échange réutilise le
     # code → LinkedIn renvoie 400 ET RÉVOQUE le jeton émis au 1er échange.
     if _qp_err or (_qp_code and st.session_state.get("_li_done_code") != _qp_code):
-        if _qp_code:
-            st.session_state["_li_done_code"] = _qp_code   # poser le verrou AVANT
         # Identité de la session courante (restaurée du cookie) — sert à lier le
         # retour OAuth au bon compte. user_id n'est résolu qu'ensuite : on le
         # récupère ici depuis l'email connecté si besoin.
@@ -220,9 +218,18 @@ try:
                 _sess_uid = _u["id"] if _u else None
             except Exception:
                 _sess_uid = None
-        _res = linkedin_oauth.handle_callback(get_supabase_client(), session_user_id=_sess_uid)
-        if _res:
-            st.session_state["_li_oauth_msg"] = _res[1]
+        # Le composant cookies est ASYNCHRONE : au 1er run après le retour LinkedIn,
+        # la session peut ne pas être encore restaurée (_sess_uid inconnu). Dans ce
+        # cas on NE consomme PAS le code (pas de verrou, pas d'échange) : on réessaie
+        # au rerun suivant, une fois la session prête. Sinon la liaison C1 rejetterait
+        # à tort une reconnexion légitime. (Le cas d'erreur LinkedIn n'a pas besoin
+        # de session : on le traite tout de suite.)
+        if _qp_err or _sess_uid:
+            if _qp_code:
+                st.session_state["_li_done_code"] = _qp_code   # verrou anti-double-échange
+            _res = linkedin_oauth.handle_callback(get_supabase_client(), session_user_id=_sess_uid)
+            if _res:
+                st.session_state["_li_oauth_msg"] = _res[1]
 except Exception as _e:
     st.session_state["_li_oauth_msg"] = f"Erreur callback LinkedIn : {str(_e)[:200]}"
 
