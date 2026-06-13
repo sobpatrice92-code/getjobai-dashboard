@@ -73,28 +73,45 @@ def card(title: str, content: str, color: str = "primary", icon: str = "📋"):
     """, unsafe_allow_html=True)
 
 
-def metric_card(label: str, value: str, delta: str = None, icon: str = "📊"):
-    """Métrique stylée avec delta"""
-    colors = COLOR_SCHEMES["getjobai"]
+# Palette d'accents Neo-Glass pour les cartes stats (bleu/violet/vert/orange…)
+_ACCENTS = {
+    "blue":   ("#1e9bff", "#3b82f6"),
+    "purple": ("#9b6bff", "#7c3aed"),
+    "green":  ("#22c55e", "#10b981"),
+    "orange": ("#f59e0b", "#fb923c"),
+    "cyan":   ("#2dd4bf", "#06b6d4"),
+}
 
+
+def metric_card(label: str, value: str, delta: str = None, icon: str = "📊", accent: str = "blue"):
+    """Métrique Neo-Glass : badge d'icône coloré + valeur + delta, avec glow et
+    hover (couleur d'accent par carte). 'accent' ∈ blue|purple|green|orange|cyan."""
+    a1, a2 = _ACCENTS.get(accent, _ACCENTS["blue"])
     delta_html = ""
     if delta:
-        delta_color = colors["success"] if delta.startswith("+") else colors["danger"]
-        delta_html = f'<div style="color: {delta_color}; font-size: 0.9rem; margin-top: 0.5rem;">{delta}</div>'
+        delta_html = f'<div style="color:#9fc1e0;font-size:0.82rem;margin-top:0.55rem;">{delta}</div>'
 
     st.markdown(f"""
     <div style="
-        background: linear-gradient(135deg, rgba(22,34,61,0.65) 0%, rgba(10,15,30,0.55) 100%);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(30,155,255,0.18);
-        padding: 1.5rem;
-        border-radius: 14px;
-        box-shadow: 0 0 18px rgba(30,155,255,0.12), inset 0 0 14px rgba(45,212,191,0.05);
-        text-align: center;
-    ">
-        <div style="font-size: 2rem; margin-bottom: 0.5rem;">{icon}</div>
-        <div style="color: {colors['text']}; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">{label}</div>
-        <div style="font-size: 2rem; font-weight: bold; color: {colors['primary']}; margin-top: 0.5rem;">{value}</div>
+        position:relative; overflow:hidden;
+        background: linear-gradient(150deg, {a1}22 0%, rgba(12,18,38,0.55) 62%);
+        backdrop-filter: blur(14px) saturate(120%);
+        -webkit-backdrop-filter: blur(14px) saturate(120%);
+        border: 1px solid {a1}40;
+        padding: 1.25rem 1.3rem;
+        border-radius: 18px;
+        box-shadow: 0 8px 26px rgba(4,8,20,0.45), 0 0 22px {a1}1f;
+        transition: transform .25s cubic-bezier(.22,.61,.36,1), box-shadow .25s;
+    " onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 16px 40px rgba(4,8,20,.55), 0 0 32px {a1}55'"
+       onmouseout="this.style.transform='none';this.style.boxShadow='0 8px 26px rgba(4,8,20,.45), 0 0 22px {a1}1f'">
+        <div style="display:flex; align-items:center; gap:.6rem; margin-bottom:.55rem;">
+            <div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;
+                        justify-content:center;font-size:1.25rem;
+                        background:linear-gradient(135deg,{a1},{a2});box-shadow:0 4px 14px {a1}66;">{icon}</div>
+            <div style="color:#c7d6ef;font-size:0.82rem;font-weight:600;letter-spacing:.4px;">{label}</div>
+        </div>
+        <div style="font-size:2.1rem;font-weight:700;color:#ffffff;line-height:1.1;
+                    font-family:'Poppins','Inter',sans-serif;">{value}</div>
         {delta_html}
     </div>
     """, unsafe_allow_html=True)
@@ -229,7 +246,8 @@ def stats_grid(stats: list):
                 stat.get('label', ''),
                 stat.get('value', '0'),
                 stat.get('delta'),
-                stat.get('icon', '📊')
+                stat.get('icon', '📊'),
+                stat.get('accent', ['blue', 'purple', 'green', 'orange'][i % 4])
             )
 
 
