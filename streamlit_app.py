@@ -1040,9 +1040,11 @@ elif page == "🤖 Agents IA":
         "Stratégie Carrière": "career_strategy_agent"
     }
 
+    _AG_ACCENTS = ["blue", "purple", "green", "orange", "cyan"]
     for i, agent in enumerate(agents):
         with col1 if i % 2 == 0 else col2:
-            card(agent["name"], agent["desc"], agent["color"], agent["icon"])
+            card(agent["name"], agent["desc"], agent["color"], agent["icon"],
+                 accent=_AG_ACCENTS[i % len(_AG_ACCENTS)])
             st.caption(f"📊 {agent['stats']}")
 
             if st.button(f"🚀 Lancer {agent['name']}", key=f"launch_{i}", use_container_width=True):

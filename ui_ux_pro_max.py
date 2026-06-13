@@ -51,24 +51,33 @@ COLOR_SCHEMES = {
 # COMPOSANTS UI STYLÉS
 # ============================================================
 
-def card(title: str, content: str, color: str = "primary", icon: str = "📋"):
-    """Carte stylée avec bordure colorée"""
-    colors = COLOR_SCHEMES["getjobai"]
-
+def card(title: str, content: str, color: str = "primary", icon: str = "📋", accent: str = ""):
+    """Carte Neo-Glass colorée : badge d'icône en dégradé + bord d'accent + glow +
+    hover. 'accent' (blue|purple|green|orange|cyan) prioritaire ; sinon dérivé de 'color'."""
+    _map = {"primary": "blue", "secondary": "purple", "success": "green",
+            "warning": "orange", "danger": "orange", "info": "cyan"}
+    a1, a2 = _ACCENTS.get(accent or _map.get(color, "blue"), _ACCENTS["blue"])
     st.markdown(f"""
     <div style="
-        border-left: 4px solid {colors[color]};
-        padding: 1rem 1.5rem;
-        margin: 1rem 0;
-        background: linear-gradient(135deg, rgba(22,34,61,0.65) 0%, rgba(10,15,30,0.55) 100%);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(30,155,255,0.18);
-        border-left: 4px solid {colors[color]};
-        border-radius: 10px;
-        box-shadow: 0 0 18px rgba(30,155,255,0.10), inset 0 0 12px rgba(45,212,191,0.04);
-    ">
-        <h3 style="margin: 0; color: {colors[color]};">{icon} {title}</h3>
-        <p style="margin: 0.5rem 0 0 0; color: {colors['text']};">{content}</p>
+        position:relative; overflow:hidden;
+        background: linear-gradient(150deg, {a1}1f 0%, rgba(12,18,38,0.55) 62%);
+        backdrop-filter: blur(14px) saturate(120%);
+        -webkit-backdrop-filter: blur(14px) saturate(120%);
+        border: 1px solid {a1}3a;
+        border-left: 4px solid {a1};
+        padding: 1.1rem 1.3rem; margin: .6rem 0;
+        border-radius: 16px;
+        box-shadow: 0 8px 26px rgba(4,8,20,0.42), 0 0 20px {a1}1c;
+        transition: transform .25s cubic-bezier(.22,.61,.36,1), box-shadow .25s;
+    " onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 14px 38px rgba(4,8,20,.55), 0 0 28px {a1}4d'"
+       onmouseout="this.style.transform='none';this.style.boxShadow='0 8px 26px rgba(4,8,20,.42), 0 0 20px {a1}1c'">
+        <div style="display:flex; align-items:center; gap:.6rem;">
+            <div style="width:40px;height:40px;border-radius:11px;display:flex;align-items:center;
+                        justify-content:center;font-size:1.2rem;flex:0 0 auto;
+                        background:linear-gradient(135deg,{a1},{a2});box-shadow:0 4px 14px {a1}66;">{icon}</div>
+            <h3 style="margin:0;color:#ffffff;font-family:'Poppins','Inter',sans-serif;font-size:1.12rem;">{title}</h3>
+        </div>
+        <p style="margin:.6rem 0 0 0;color:#c7d6ef;font-size:.92rem;">{content}</p>
     </div>
     """, unsafe_allow_html=True)
 
