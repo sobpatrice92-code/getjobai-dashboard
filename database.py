@@ -18,12 +18,15 @@ class SupabaseClient:
         # Priorité aux variables d'environnement (Render). st.secrets plante
         # si aucun secrets.toml n'existe → on l'encapsule dans un try/except.
         self.url = os.getenv("SUPABASE_URL")
-        self.key = os.getenv("SUPABASE_KEY")
+        # Clé SERVICE en priorité (contourne RLS / privilèges colonnes), repli sur
+        # anon. Sans SUPABASE_SERVICE_KEY définie → comportement identique à avant.
+        self.key = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY")
 
         if not self.url or not self.key:
             try:
                 self.url = self.url or st.secrets.get("SUPABASE_URL")
-                self.key = self.key or st.secrets.get("SUPABASE_KEY")
+                self.key = (self.key or st.secrets.get("SUPABASE_SERVICE_KEY")
+                            or st.secrets.get("SUPABASE_KEY"))
             except Exception:
                 pass
 

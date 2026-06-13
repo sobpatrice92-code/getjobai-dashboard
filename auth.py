@@ -15,11 +15,13 @@ from typing import Optional, Dict
 def _supabase():
     """Récupère url + headers Supabase (mêmes credentials que database.py)."""
     url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
+    # Clé SERVICE en priorité (repli anon) — voir database.py.
+    key = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY")
     if not url or not key:
         try:
             url = url or st.secrets.get("SUPABASE_URL")
-            key = key or st.secrets.get("SUPABASE_KEY")
+            key = (key or st.secrets.get("SUPABASE_SERVICE_KEY")
+                   or st.secrets.get("SUPABASE_KEY"))
         except Exception:
             pass
     url = "".join((url or "").split())
