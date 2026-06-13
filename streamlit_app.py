@@ -2160,9 +2160,9 @@ ne suffit pas pour la recherche (LinkedIn bloque).
                                       if cur.get("post_edito2") in (["(aucune)"] + _EDITOS) else 0)
 
             tag_perso = st.text_input(
-                "Personne à taguer à chaque post (optionnel)",
+                "Personne à taguer dans VOS posts (optionnel — vous choisissez qui)",
                 value=cur.get("post_tag") or "",
-                placeholder="ex : Fredy Beukam — laissez vide si aucun")
+                placeholder="ex : Jean Dupont — laissez vide pour ne taguer personne")
 
             st.markdown("**🧑 Photo de profil** (pour les posts qui vous mettent en avant — "
                         "l'image générée vous ressemblera)")
