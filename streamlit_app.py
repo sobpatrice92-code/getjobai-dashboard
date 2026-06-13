@@ -1998,6 +1998,43 @@ elif page == "⚙️ Paramètres":
                 st.error("Erreur lors du changement de mot de passe.")
 
     with tab6:
+        # --- Publication automatique : connexion officielle LinkedIn (OAuth, 1 clic) ---
+        st.subheader("🔗 Publier sur LinkedIn — connexion officielle (1 clic)")
+        st.markdown("""
+**Pour publier vos posts automatiquement** (y compris les **posts planifiés**), connectez
+votre compte LinkedIn **une seule fois** avec le bouton officiel ci-dessous. Aucune
+extension, aucun cookie à manipuler.
+
+**La méthode (30 secondes) :**
+1. Cliquez **« 🔗 Connecter LinkedIn »** ci-dessous.
+2. Sur la page LinkedIn, cliquez **« Autoriser »**.
+3. Vous revenez ici et le message **« ✅ LinkedIn connecté »** s'affiche. C'est tout !
+
+> 🔒 Votre jeton d'accès est **chiffré** et rangé dans **votre compte uniquement**.
+> À refaire seulement si un message indique que la connexion a expiré.
+> ⚠️ Sur la page de retour, ne rechargez pas l'adresse qui contient `?code=…`.
+""")
+        if st.session_state.user_id:
+            try:
+                import linkedin_oauth as _lio_p
+                _dbp = get_supabase_client()
+                _lip = _lio_p.get_status(_dbp, st.session_state.user_id)
+                if _lio_p.is_configured():
+                    _aup = _lio_p.build_authorize_url(st.session_state.user_id)
+                    if _lip.get("connected"):
+                        st.success("✅ LinkedIn connecté — publication automatique disponible.")
+                        st.link_button("🔄 Reconnecter LinkedIn (si la connexion a expiré)",
+                                       _aup, use_container_width=True)
+                    else:
+                        st.warning("❌ LinkedIn non connecté. Connectez-le une fois pour "
+                                   "publier automatiquement.")
+                        st.link_button("🔗 Connecter LinkedIn", _aup, use_container_width=True)
+                else:
+                    st.info("ℹ️ La connexion LinkedIn n'est pas encore configurée par l'administrateur.")
+            except Exception as _e_lp:
+                st.caption(f"LinkedIn momentanément indisponible : {str(_e_lp)[:80]}")
+
+        st.markdown("---")
         st.subheader("🔗 Connexion LinkedIn (pour Networking & Easy Apply)")
         st.markdown("""
 **Pourquoi ?** Pour que l'agent **Networking** (recherche de recruteurs) et le **LinkedIn
