@@ -607,7 +607,7 @@ elif page == "📤 Candidatures":
             statut_icon = {
                 "en_attente": "⏳", "validee": "✔️", "a_envoyer": "📨", "sans_email": "✉️",
                 "easyapply": "📝", "envoi_en_cours": "📤", "envoyee": "✅", "recue": "📬",
-                "reponse": "💬", "entretien": "🎯", "refus": "❌",
+                "relancee": "🔁", "reponse": "💬", "entretien": "🎯", "refus": "❌",
             }
             # Classement hiérarchique : les plus récentes en premier (date + heure)
             cands = sorted(cands, key=lambda c: c.get("created_at") or "", reverse=True)
@@ -618,7 +618,7 @@ elif page == "📤 Candidatures":
                 "⏳ À valider": ("en_attente", "validee"),
                 "📨 À envoyer": ("a_envoyer", "sans_email"),
                 "📝 Easy Apply (LinkedIn)": ("easyapply",),
-                "✅ Envoyées": ("envoyee", "recue", "envoi_en_cours"),
+                "✅ Envoyées": ("envoyee", "recue", "envoi_en_cours", "relancee"),
                 "💬 Réponses": ("reponse",),
                 "🎯 Entretiens": ("entretien",),
                 "❌ Refus": ("refus",),
