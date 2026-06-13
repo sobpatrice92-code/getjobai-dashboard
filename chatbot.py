@@ -447,7 +447,9 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
                 f"À partir de ce post LinkedIn (profil : {secteur}), décris EN ANGLAIS, en UNE "
                 f"phrase, une scène PHOTOGRAPHIQUE hyper-réaliste et professionnelle qui illustre "
                 f"le message. La personne principale est {person}. "
-                f"AUCUN texte, logo ou mot dans l'image. Décris uniquement la scène "
+                f"AUCUN texte, logo, marque, panneau ni enseigne (ni sur les casques, vestes, "
+                f"murs ou écrans), évite tout objet de marque ou signalétique en gros plan. "
+                f"Décris uniquement la scène "
                 f"(lieu, personne, action, ambiance).\n\nPOST:\n{post_text[:700]}"
             )}],
         )
@@ -466,7 +468,9 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
                 f"Hyperrealistic professional photograph featuring THIS exact person. {scene} "
                 "Preserve the person's likeness, face and skin tone from the reference photo. "
                 "Natural lighting, editorial magazine quality, candid and authentic. "
-                "Absolutely NO text, NO words, NO watermark, NO logo."
+                "Absolutely NO text, letters, numbers, words, watermark, logo or brand anywhere "
+                "— including on hard hats, helmets, safety vests, clothing, badges, walls, "
+                "screens, banners or signs. Plain, unbranded equipment and clothing."
             )
             r = client.images.edit(model="gpt-image-1", image=ref,
                                     prompt=prompt_edit, size="1024x1024")
@@ -477,8 +481,10 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
     prompt = (
         f"Hyperrealistic professional photograph, {compo}. {scene} "
         f"The main person in the photo is clearly {person}. "
-        "Sharp focus, shallow depth of field, editorial magazine quality, "
-        "candid and authentic. Absolutely NO text, NO words, NO letters, NO watermark, NO logo."
+        "Sharp focus, shallow depth of field, editorial magazine quality, candid and authentic. "
+        "Absolutely NO text, letters, numbers, words, watermark, logo or brand anywhere "
+        "— including on hard hats, helmets, safety vests, clothing, badges, walls, "
+        "screens, banners or signs. Plain, unbranded equipment and clothing."
     )
     try:
         img = client.images.generate(
