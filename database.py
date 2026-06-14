@@ -285,7 +285,7 @@ class SupabaseClient:
                    "ecole", "programme_etudes", "parcours_scolaire", "session_coop",
                    "pays_origine", "statut_immigration", "annee_arrivee",
                    "post_genre", "post_peau", "post_langue", "post_edito1", "post_edito2",
-                   "post_tag", "photo_b64"}
+                   "post_tag", "photo_b64", "gmail_address", "gmail_password"}
         payload = {k: v for k, v in data.items() if k in allowed}
         if not payload:
             return False
