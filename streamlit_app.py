@@ -1310,13 +1310,19 @@ elif page == "📖 Guide":
     <div style="background:linear-gradient(135deg, rgba(30,155,255,0.10), rgba(45,212,191,0.08));
          padding:1.2rem 1.4rem;border-radius:14px;border:1px solid rgba(45,212,191,0.30);
          margin-bottom:1.2rem;color:#dceefb;">
-      <strong>🚀 En 3 étapes :</strong><br>
-      <b>1.</b> Remplissez votre profil dans <b>⚙️ Paramètres</b> (CV, mots-clés, ville, secteur…) —
-      c'est ce qui personnalise <u>tous</u> les agents.<br>
-      <b>2.</b> Allez dans <b>🤖 Agents IA</b> et cliquez <b>Lancer</b> sur l'agent voulu.
-      Une animation 3D vous montre l'avancement en direct.<br>
-      <b>3.</b> Récupérez le résultat à l'endroit indiqué (📋 Offres, 📤 Candidatures, 🤝 Réseau,
-      📦 Livrables) — et un <b>rapport détaillé arrive par email</b>.
+      <strong>🚀 Bien démarrer — 3 réglages à faire UNE fois dans ⚙️ Paramètres :</strong><br>
+      <b>1. 👤 Profil :</b> CV, mots-clés métier, ville, secteur — ça personnalise <u>tous</u> les agents.<br>
+      <b>2. 🔔 Notifications → Gmail d'envoi :</b> votre adresse Gmail + un mot de passe d'application.
+      <u>Obligatoire</u> pour que le <b>Copilote</b> postule par email (sinon il affiche « Gmail non configuré »).<br>
+      <b>3. 🔗 LinkedIn :</b> connectez votre compte en 1 clic — pour publier vos posts automatiquement.<br>
+      <hr style="border-color:rgba(255,255,255,.12);margin:.6rem 0">
+      <strong>Ensuite :</strong>
+      <b>🤖 Agents IA → Lancer</b> un agent (animation en direct) →
+      résultats dans <b>📋 Offres</b>, <b>📤 Candidatures</b>, <b>🤝 Réseau</b>, <b>📦 Livrables</b>
+      + un <b>rapport par email</b>.<br>
+      <span style="color:#9fc7e8">💡 Pour postuler aux offres LinkedIn « Candidature simplifiée » :
+      installez l'<b>extension Chrome GetJobAI</b> → elle remplit le formulaire à votre place,
+      vous cliquez juste « Envoyer ».</span>
     </div>
     """, unsafe_allow_html=True)
 
