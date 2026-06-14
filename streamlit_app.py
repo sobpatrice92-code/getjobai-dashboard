@@ -2017,14 +2017,42 @@ elif page == "⚙️ Paramètres":
             st.success("✅ CV enregistré!") if ok else st.error("Erreur de sauvegarde.")
 
     with tab4:
-        st.subheader("Notifications Email")
+        st.subheader("📧 Gmail d'envoi (Copilote — postuler par email)")
+        st.markdown("""
+Le **Copilote** envoie vos candidatures (lettre + CV) **depuis VOTRE Gmail**, pour que les
+**réponses arrivent dans VOTRE boîte**. Il faut donc votre adresse Gmail + un **mot de passe
+d'application** (Google l'exige pour les apps tierces — votre mot de passe habituel ne marche pas).
 
-        email_notif = st.checkbox("Recevoir rapport après chaque agent", value=True)
-        email_offres = st.checkbox("Alertes nouvelles offres", value=True)
-        email_candidatures = st.checkbox("Confirmations candidatures", value=True)
-
-        if st.button("💾 Sauvegarder Notifications", type="primary"):
-            st.success("✅ Préférences sauvegardées!")
+**Créer un mot de passe d'application (2 min) :**
+1. Activez la **validation en 2 étapes** : https://myaccount.google.com/security
+2. Ouvrez **https://myaccount.google.com/apppasswords**
+3. Créez un mot de passe (nom : « GetJobAI ») → Google affiche **16 lettres**
+4. Collez ces 16 lettres ci-dessous (les espaces seront retirés automatiquement)
+""")
+        _g_addr = st.text_input("Votre adresse Gmail", value=_me.get("gmail_address") or "",
+                                placeholder="prenom.nom@gmail.com", key="cfg_gmail_addr")
+        _has_pwd = bool((_me.get("gmail_password") or "").strip())
+        _g_pwd = st.text_input(
+            "Mot de passe d'application (16 lettres)", type="password",
+            placeholder="●●●● déjà enregistré ●●●●" if _has_pwd else "abcd efgh ijkl mnop",
+            key="cfg_gmail_pwd")
+        st.caption("✅ Mot de passe déjà enregistré (laissez vide pour le garder)." if _has_pwd
+                   else "❌ Aucun mot de passe — le Copilote ne peut pas encore envoyer d'email.")
+        if st.button("💾 Enregistrer mon Gmail d'envoi", type="primary", key="save_gmail"):
+            if not _g_addr.strip():
+                st.error("Entrez votre adresse Gmail.")
+            elif not _has_pwd and not _g_pwd.strip():
+                st.error("Entrez le mot de passe d'application (16 lettres).")
+            else:
+                _patch = {"gmail_address": _g_addr.strip()}
+                if _g_pwd.strip():
+                    _patch["gmail_password"] = _g_pwd.replace(" ", "").strip()
+                if db.update_user(st.session_state.user_id, _patch):
+                    st.success("✅ Gmail d'envoi enregistré ! Le Copilote peut maintenant postuler par email.")
+                else:
+                    st.error("Erreur d'enregistrement.")
+        st.markdown("---")
+        st.caption("🔔 Vous recevez aussi un rapport par email après chaque agent (automatique).")
 
     with tab5:
         st.subheader("Changer mon mot de passe")
