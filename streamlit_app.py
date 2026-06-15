@@ -30,6 +30,7 @@ from database import get_supabase_client
 
 # Import Authentification + Assistant IA
 from auth import login_screen, set_password
+import billing
 from chatbot import (chatbot_page, generer_message_linkedin, generer_post_linkedin,
                      generer_image_post)
 
@@ -260,6 +261,14 @@ _lim = st.session_state.pop("_li_oauth_msg", None)
 if _lim:
     (st.success if _lim.startswith("✅") else st.error)(_lim)
 
+# Message de retour après paiement Stripe (success_url / cancel_url)
+_ab = st.query_params.get("abonnement")
+if _ab == "ok":
+    st.success("✅ Merci ! Votre abonnement est en cours d'activation. "
+               "L'accès s'ouvre dès la confirmation de paiement (quelques secondes).")
+elif _ab == "annule":
+    st.info("Paiement annulé — vous pouvez réessayer quand vous voulez.")
+
 # Recharger les données user depuis Supabase si besoin (ex: impersonation admin)
 if st.session_state.user_email and not st.session_state.user_id:
     try:
@@ -344,6 +353,12 @@ with st.sidebar:
     # User info
     if st.session_state.user_email:
         st.markdown(f"👤 **{st.session_state.user_email}**")
+        # Gestion de l'abonnement (uniquement si la facturation est activée et que
+        # l'utilisateur a un abonnement actif/à gérer).
+        if billing.enabled() and st.session_state.user_id \
+                and not st.session_state.is_admin \
+                and billing.is_active(st.session_state.user_id):
+            billing.manage_button(st.session_state.user_id)
         if st.button("🚪 Déconnexion"):
             if _cookies is not None:
                 try:
@@ -372,14 +387,19 @@ with st.sidebar:
 # tant qu'un administrateur ne l'a pas validé.
 if st.session_state.user_id and not st.session_state.is_admin \
         and not st.session_state.is_whitelisted:
-    section_header("⏳ Compte en attente d'approbation", "")
-    alert(
-        "Votre compte a bien été créé mais il doit être **approuvé par un "
-        "administrateur** avant que vous puissiez utiliser GetJobAI. "
-        "Vous recevrez un accès dès validation. Merci de votre patience !",
-        "warning"
-    )
-    st.stop()
+    # Si l'abonnement est activé : un abonné passe ; sinon on affiche l'écran
+    # d'abonnement (st.stop interne). Si l'abonnement est désactivé (flag off),
+    # on garde EXACTEMENT l'ancien comportement (approbation admin manuelle).
+    if not (billing.enabled() and billing.gate_or_subscribe(
+            st.session_state.user_id, st.session_state.user_email)):
+        section_header("⏳ Compte en attente d'approbation", "")
+        alert(
+            "Votre compte a bien été créé mais il doit être **approuvé par un "
+            "administrateur** avant que vous puissiez utiliser GetJobAI. "
+            "Vous recevrez un accès dès validation. Merci de votre patience !",
+            "warning"
+        )
+        st.stop()
 
 # ============================================================
 # PAGE: DASHBOARD
