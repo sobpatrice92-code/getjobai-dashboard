@@ -330,6 +330,28 @@ _POST_ANGLES = [
     "prends position sur une idée reçue du métier",
 ]
 
+# HOOKS — la 1ère ligne est LE levier #1 sur LinkedIn (arrêter le défilement).
+_HOOKS = [
+    "une affirmation audacieuse, à contre-courant du consensus",
+    "un résultat chiffré qui surprend (ex : « J'ai réduit X de 40 % en 3 mois »)",
+    "une mini-scène qui démarre en plein milieu de l'action",
+    "une erreur coûteuse que tu as commise (et assumée)",
+    "une vérité que peu osent dire à voix haute dans ton métier",
+    "une question directe qui met le lecteur face à lui-même",
+    "un avant/après frappant en une phrase",
+    "une croyance répandue que tu démontes en 3 mots",
+]
+
+# STRUCTURES de post éprouvées (variété pour ne jamais se répéter).
+_POST_FORMATS = [
+    "HISTOIRE : situation → tension → ce que tu as fait → résultat → leçon",
+    "LEÇONS : 3 à 4 leçons courtes, numérotées et concrètes",
+    "CONTRE-PIED : l'idée reçue → pourquoi elle est fausse → quoi faire à la place",
+    "MÉTHODE : le problème → ta méthode en étapes claires → le bénéfice",
+    "AVANT / APRÈS : où tu en étais → le déclic → où tu en es",
+    "ERREUR → LEÇON : l'erreur → ses conséquences → ce que tu fais autrement aujourd'hui",
+]
+
 # Variations de composition photo (pour ne JAMAIS produire deux fois la même image)
 _IMG_COMPOS = [
     "wide establishing shot", "close-up detail shot", "over-the-shoulder perspective",
@@ -354,12 +376,14 @@ def _humaniser_texte(client, texte, is_en=False):
     consigne = (
         ("Rewrite this LinkedIn post so it sounds 100% human and authentic, written by a real "
          "professional from personal experience. Remove every AI cliché and empty corporate phrase. "
+         "KEEP the punchy first line (the hook) strong and intact. "
          "Keep the meaning, concrete numbers, the hashtags and the final question. "
          "FORBIDDEN: asterisks, markdown, ellipses (...). Reply ONLY with the rewritten post."
          if is_en else
          "Réécris ce post LinkedIn pour qu'il sonne 100% humain et authentique, comme écrit par un "
          "vrai professionnel à partir de son vécu. Supprime TOUT cliché IA et toute formule corporate "
-         f"creuse (ex : {_CLICHES_BANNIS}). Garde le sens, les chiffres concrets, les hashtags et la "
+         f"creuse (ex : {_CLICHES_BANNIS}). GARDE la PREMIÈRE LIGNE (le hook) courte et percutante, "
+         "intacte. Garde le sens, les chiffres concrets, les hashtags et la "
          "question finale. GARDE une mise en page TRÈS AÉRÉE : chaque idée sur sa ligne, une LIGNE "
          "VIDE entre chaque idée. INTERDIT : astérisques, markdown, points de suspension (...). "
          "Réponds UNIQUEMENT avec le post réécrit.")
@@ -428,16 +452,23 @@ def generer_post_linkedin(secteur="", ville="", province="", langue="fr",
     # Angle = ligne éditoriale choisie par l'utilisateur (variété si plusieurs), sinon aléatoire
     _edito_choices = [_EDITO_MAP[e] for e in (editos or []) if e in _EDITO_MAP]
     angle = random.choice(_edito_choices) if _edito_choices else random.choice(_POST_ANGLES)
+    hook = random.choice(_HOOKS)
+    fmt = random.choice(_POST_FORMATS)
 
     prompt = f"""Tu es {nom}, professionnel basé à {loc}.
 Ton métier / tes compétences : {secteur}. Tu écris depuis TON vécu dans CE métier précis.
 
 Thème du post : {theme}
 Angle d'écriture (pour varier à chaque fois) : {angle}
+Structure du post : {fmt}
 
 LANGUE : {lang_instr}
 
 RÈGLES (STRICTES) :
+- ACCROCHE (PRIORITÉ #1) : la TOUTE PREMIÈRE LIGNE est un HOOK court et percutant qui arrête
+  le défilement — type : {hook}. Le lecteur doit vouloir cliquer « voir plus ».
+  INTERDIT les ouvertures molles (« Aujourd'hui je veux parler de… », « En tant que… »).
+- Ligne 2 = une respiration courte qui relance, AVANT de dérouler le corps.
 - Parle à la PREMIÈRE PERSONNE, depuis ton expérience concrète dans TON métier ({secteur})
 - N'invente PAS un autre métier — reste strictement dans : {secteur}
 {concepts_line}- Ton humain et authentique — JAMAIS corporatif, JAMAIS de cliché
