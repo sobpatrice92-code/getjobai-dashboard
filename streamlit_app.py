@@ -31,6 +31,7 @@ from database import get_supabase_client
 # Import Authentification + Assistant IA
 from auth import login_screen, set_password
 import billing
+from simulation_entretien import simulation_entretien_page
 from chatbot import (chatbot_page, generer_message_linkedin, generer_post_linkedin,
                      generer_image_post)
 
@@ -332,6 +333,7 @@ with st.sidebar:
         "📋 Offres d'Emploi",
         "📤 Candidatures",
         "🤖 Agents IA",
+        "🎤 Simulation entretien",
         "🤝 Réseau",
         "📦 Livrables",
         "📅 Planificateur",
@@ -806,6 +808,13 @@ elif page == "📤 Candidatures":
                                       "Suivez-la dans 🤖 Agents IA, résultat dans 📦 Livrables.", "success")
                             else:
                                 st.error("Échec du lancement.")
+
+# ============================================================
+# PAGE: SIMULATION ENTRETIEN (live)
+# ============================================================
+
+elif page == "🎤 Simulation entretien":
+    simulation_entretien_page(st.session_state.user_id, {})
 
 # ============================================================
 # PAGE: AGENTS IA
@@ -1740,6 +1749,30 @@ elif page == "📦 Livrables":
                     if t == "entretien" and guide:
                         with st.expander("📖 Lire mon guide d'entretien (plein écran)", expanded=False):
                             st.markdown(guide)
+                        # 🎧 Session audio de coaching (synthèse vocale du briefing)
+                        if st.button("🎧 Écouter le coaching (audio)", key=f"audio_{liv.get('id')}"):
+                            try:
+                                from chatbot import _get_client, _synthese_vocale
+                                _cli = _get_client()
+                                if _cli:
+                                    with st.spinner("Génération de la session audio…"):
+                                        _scr = _cli.chat.completions.create(
+                                            model="gpt-4o", temperature=0.4, max_tokens=320,
+                                            messages=[{"role": "user", "content":
+                                                "À partir de ce guide d'entretien, rédige un BRIEFING ORAL "
+                                                "de coach motivant d'environ 60 secondes (le pitch + 3 "
+                                                "conseils clés), à la 2e personne, SANS markdown :\n\n"
+                                                + guide[:4000]}],
+                                        ).choices[0].message.content
+                                        _au = _synthese_vocale(_cli, _scr)
+                                    if _au:
+                                        st.audio(_au, format="audio/mp3")
+                                    else:
+                                        st.info("Audio momentanément indisponible.")
+                                else:
+                                    st.info("Service audio indisponible.")
+                            except Exception:
+                                st.info("Audio indisponible pour le moment.")
                     else:
                         with st.expander("Détail"):
                             st.code(output[-2000:] or "(vide)")
