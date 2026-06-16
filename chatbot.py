@@ -4,6 +4,7 @@ Assistant IA — chatbot d'aide à la recherche d'emploi (GPT-4o)
 Lit la clé OpenAI depuis l'env OPENAI_API_KEY (Render).
 """
 import os
+import re
 import streamlit as st
 
 SYSTEM_PROMPT = (
@@ -215,24 +216,43 @@ _ANGLE = {
 }
 
 
+_NOM_GENERIQUE = ("recruteur", "recruiter", "recrutement", "talent", " rh", "hr ", "ressources",
+                  "équipe", "team", "service", "—", "•", "department")
+
+
+def _prenom_utile(nom):
+    """Prénom exploitable, ou '' si le contact est générique (« Recruteur — Nokia »)."""
+    n = (nom or "").strip()
+    if not n or any(g in n.lower() for g in _NOM_GENERIQUE):
+        return ""
+    p = n.split()[0]
+    return p if len(p) >= 2 and p[0].isalpha() else ""
+
+
 def generer_message_linkedin(nom, titre, entreprise, secteur="votre secteur",
                              nom_user="", objectif=""):
     """Message d'invitation LinkedIn HYPER-personnalisé (< 300 car), adapté au TYPE
     de contact (recruteur / décideur / pair) et à l'identité réelle de l'utilisateur."""
     client = _get_client()
-    prenom = (nom or "").split()[0] if nom else ""
+    prenom = _prenom_utile(nom)
     moi = nom_user or "un professionnel"
     if client is None:
-        return (f"Bonjour {prenom}, je suis {nom_user}, professionnel en {secteur}. "
+        salut = f"Bonjour {prenom}, " if prenom else "Bonjour, "
+        return (f"{salut}je suis {nom_user}, professionnel en {secteur}. "
                 "J'aimerais rejoindre votre réseau et échanger. Merci !")
     try:
         angle = _ANGLE[_classer_contact(titre)].format(sec=secteur)
+        ouverture = (f"Commence par « Bonjour {prenom}, »." if prenom
+                     else "Le prénom est INCONNU : commence simplement par « Bonjour, » (sans nom).")
         prompt = (
             "Rédige un message d'invitation LinkedIn EXCELLENT (MAX 280 caractères). Ton humain, "
             "chaleureux et professionnel, ZÉRO cliché IA (jamais « j'espère que ce message vous "
             "trouve bien »). PERSONNALISE avec son rôle et/ou son entreprise.\n"
+            "RÈGLE ABSOLUE : n'écris JAMAIS de crochets ni de placeholder (interdit : [Prénom], "
+            "[Nom], [spécialisation], etc.). N'invente pas de spécialisation précise — reste sur le "
+            "secteur général. " + ouverture + "\n"
             f"Expéditeur : {moi} (en {secteur}).\n"
-            f"Destinataire : {nom}" + (f", {titre}" if titre else "")
+            f"Destinataire : {('un·e ' + titre) if titre else 'un professionnel'}"
             + (f" chez {entreprise}" if entreprise else "") + ".\n"
             f"{angle}\n"
             + (f"Objectif précis : {objectif}.\n" if objectif else "")
@@ -242,9 +262,14 @@ def generer_message_linkedin(nom, titre, entreprise, secteur="votre secteur",
             model="gpt-4o", temperature=0.7, max_tokens=160,
             messages=[{"role": "user", "content": prompt}],
         )
-        return r.choices[0].message.content.strip()[:290]
+        msg = r.choices[0].message.content.strip()
+        # Filet de sécurité : retirer tout crochet/placeholder résiduel
+        msg = re.sub(r"\s*\[[^\]]*\]", "", msg)
+        msg = re.sub(r"\s{2,}", " ", msg).strip()
+        return msg[:290]
     except Exception:
-        return (f"Bonjour {prenom}, je suis {nom_user}, professionnel en {secteur}. "
+        salut = f"Bonjour {prenom}, " if prenom else "Bonjour, "
+        return (f"{salut}je suis {nom_user}, professionnel en {secteur}. "
                 "J'aimerais échanger avec vous. Merci !")
 
 
