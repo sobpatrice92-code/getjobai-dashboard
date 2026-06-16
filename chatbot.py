@@ -549,7 +549,7 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
     portrait = bool(photo_b64)
     try:
         import json as _json
-        desc = client.chat.completions.create(
+        desc = client.with_options(timeout=30.0).chat.completions.create(
             model="gpt-4o", max_tokens=180, temperature=0.5,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": (
@@ -590,8 +590,9 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
                 "Faithfully PRESERVE the person's exact likeness: same face, facial features, skin "
                 "tone, hair and apparent age as the reference photo. " + _REAL + " " + _NOTXT
             )
-            r = client.images.edit(model="gpt-image-1", image=ref, prompt=prompt_edit,
-                                    size="1024x1024", quality="high")
+            r = client.with_options(timeout=110.0).images.edit(
+                model="gpt-image-1", image=ref, prompt=prompt_edit,
+                size="1024x1024", quality="medium")
             return r.data[0].b64_json
         except Exception:
             pass  # repli : génération normale sans photo
@@ -601,9 +602,9 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
         f"The main person in the photo is clearly {person}. " + _REAL + " " + _NOTXT
     )
     try:
-        img = client.images.generate(
+        img = client.with_options(timeout=110.0).images.generate(
             model="gpt-image-1", prompt=prompt, size="1024x1024",
-            quality="high", n=1,
+            quality="medium", n=1,
         )
         return img.data[0].b64_json
     except Exception:
