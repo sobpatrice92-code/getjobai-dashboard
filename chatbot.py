@@ -545,57 +545,65 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
     if client is None:
         return None
     person = _person_desc(genre, peau)
-    # 1. Dériver une scène visuelle concrète à partir du post
+    # 1. Dériver une scène + décider si l'auteur est MIS EN AVANT (portrait/lumière)
+    portrait = bool(photo_b64)
     try:
+        import json as _json
         desc = client.chat.completions.create(
-            model="gpt-4o", max_tokens=120, temperature=0.6,
+            model="gpt-4o", max_tokens=180, temperature=0.5,
+            response_format={"type": "json_object"},
             messages=[{"role": "user", "content": (
-                f"À partir de ce post LinkedIn (profil : {secteur}), décris EN ANGLAIS, en UNE "
-                f"phrase, une scène PHOTOGRAPHIQUE hyper-réaliste et professionnelle qui illustre "
-                f"le message. La personne principale est {person}. "
-                f"AUCUN texte, logo, marque, panneau ni enseigne (ni sur les casques, vestes, "
-                f"murs ou écrans), évite tout objet de marque ou signalétique en gros plan. "
-                f"Décris uniquement la scène "
-                f"(lieu, personne, action, ambiance).\n\nPOST:\n{post_text[:700]}"
+                f"À partir de ce post LinkedIn (profil : {secteur}), renvoie UNIQUEMENT ce JSON :\n"
+                '{"scene": "UNE phrase EN ANGLAIS décrivant une scène photographique hyper-réaliste '
+                'et professionnelle qui illustre le message (lieu, action, ambiance), sans aucun '
+                'texte/logo/marque/enseigne", '
+                '"portrait": true ou false (true SI le post met PERSONNELLEMENT l\'auteur en avant '
+                '— récit personnel, mise en lumière, prise de parole, portrait — où il doit être le '
+                'SUJET CENTRAL et reconnaissable ; false si c\'est un concept/scène générale)}\n\n'
+                f"POST:\n{post_text[:700]}"
             )}],
         )
-        scene = desc.choices[0].message.content.strip()
+        obj = _json.loads(desc.choices[0].message.content)
+        scene = (obj.get("scene") or "").strip() or f"{person} in a {secteur} work environment"
+        portrait = bool(obj.get("portrait"))
     except Exception:
         scene = f"{person}, a professional in a {secteur} work environment"
 
     import random
-    compo = random.choice(_IMG_COMPOS)
+    compo = "editorial head-and-shoulders portrait, subject looking toward camera" if portrait \
+        else random.choice(_IMG_COMPOS)
+    _REAL = ("Shot on 85mm f/1.8, natural light, ultra-detailed realistic skin texture, "
+             "sharp focus, shallow depth of field, editorial magazine quality, candid and authentic.")
+    _NOTXT = ("Absolutely NO text, letters, numbers, words, watermark, logo or brand anywhere "
+              "— including on hard hats, helmets, safety vests, clothing, badges, walls, screens, "
+              "banners or signs. Plain, unbranded equipment and clothing.")
 
-    # Cas « me mettre en avant » : image inspirée de la photo de profil
+    # Cas « me mettre en avant » : image qui RESSEMBLE à l'utilisateur (sa photo de profil)
     if photo_b64:
         try:
             ref = _photo_vers_png(photo_b64)
+            cadrage = ("A clean, flattering editorial PORTRAIT of THIS exact person as the central "
+                       "subject. " if portrait else
+                       "Hyperrealistic professional photograph featuring THIS exact person. ")
             prompt_edit = (
-                f"Hyperrealistic professional photograph featuring THIS exact person. {scene} "
-                "Preserve the person's likeness, face and skin tone from the reference photo. "
-                "Natural lighting, editorial magazine quality, candid and authentic. "
-                "Absolutely NO text, letters, numbers, words, watermark, logo or brand anywhere "
-                "— including on hard hats, helmets, safety vests, clothing, badges, walls, "
-                "screens, banners or signs. Plain, unbranded equipment and clothing."
+                f"{cadrage}{scene} "
+                "Faithfully PRESERVE the person's exact likeness: same face, facial features, skin "
+                "tone, hair and apparent age as the reference photo. " + _REAL + " " + _NOTXT
             )
-            r = client.images.edit(model="gpt-image-1", image=ref,
-                                    prompt=prompt_edit, size="1024x1024")
+            r = client.images.edit(model="gpt-image-1", image=ref, prompt=prompt_edit,
+                                    size="1024x1024", quality="high")
             return r.data[0].b64_json
         except Exception:
             pass  # repli : génération normale sans photo
 
     prompt = (
         f"Hyperrealistic professional photograph, {compo}. {scene} "
-        f"The main person in the photo is clearly {person}. "
-        "Sharp focus, shallow depth of field, editorial magazine quality, candid and authentic. "
-        "Absolutely NO text, letters, numbers, words, watermark, logo or brand anywhere "
-        "— including on hard hats, helmets, safety vests, clothing, badges, walls, "
-        "screens, banners or signs. Plain, unbranded equipment and clothing."
+        f"The main person in the photo is clearly {person}. " + _REAL + " " + _NOTXT
     )
     try:
         img = client.images.generate(
             model="gpt-image-1", prompt=prompt, size="1024x1024",
-            quality="medium", n=1,
+            quality="high", n=1,
         )
         return img.data[0].b64_json
     except Exception:

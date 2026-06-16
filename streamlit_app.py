@@ -1151,8 +1151,8 @@ elif page == "🤖 Agents IA":
                                     value=True, key="pg_avec_image")
         pg_moi = False
         if _pref_photo:
-            pg_moi = st.checkbox("🧑 Me mettre en avant (image inspirée de MA photo de profil)",
-                                 value=False, key="pg_moi")
+            pg_moi = st.checkbox("🧑 Me mettre en avant (image qui me RESSEMBLE, depuis ma photo)",
+                                 value=True, key="pg_moi")
         else:
             st.caption("💡 Ajoutez une photo dans **Paramètres → 🎨 Post LinkedIn** pour des images "
                        "qui vous ressemblent (posts qui vous mettent en avant).")
