@@ -187,31 +187,81 @@ def _get_client():
         return None
 
 
-def generer_message_linkedin(nom, titre, entreprise, secteur="génie civil / construction",
-                             nom_user="Patrice"):
-    """Génère un message de connexion LinkedIn personnalisé (< 300 caractères)."""
+def _classer_contact(titre):
+    """Classe un contact selon son intitulé → adapte l'angle du message + la priorité."""
+    t = (titre or "").lower()
+    if any(k in t for k in ("recruit", "recruteur", "talent", "human resources", "ressources humaines",
+                            "hr ", "rh ", "sourcing", "people ", "acquisition")):
+        return "recruteur"
+    if any(k in t for k in ("director", "directeur", "directrice", "vp ", " vp", "vice-president", "vice président",
+                            "head ", "chef", "lead", "manager", "gestionnaire", "président", "founder",
+                            "fondateur", "ceo", "cto", "coo", "owner", "principal")):
+        return "decideur"
+    if any(k in t for k in ("étudiant", "student", "intern", "stagiaire", "co-op", "coop", "junior",
+                            "apprenti", "graduate", "new grad")):
+        return "pair"
+    return "pro"
+
+
+_ANGLE = {
+    "recruteur": "Destinataire = RECRUTEUR / talent acquisition. Exprime un intérêt clair pour des "
+                 "opportunités en {sec}, glisse en 1 phrase ta valeur, et demande à rester en contact "
+                 "pour les postes pertinents.",
+    "decideur": "Destinataire = DÉCIDEUR / manager. Montre que tu connais son rôle/son entreprise, "
+                "exprime ton intérêt pour son équipe/secteur, propose un court échange.",
+    "pair": "Destinataire = PAIR (même domaine/niveau). Crée un lien d'entraide, mentionne le point "
+            "commun, propose d'échanger des conseils.",
+    "pro": "Destinataire = professionnel du secteur. Crée un lien pertinent et propose de rester en contact.",
+}
+
+
+def generer_message_linkedin(nom, titre, entreprise, secteur="votre secteur",
+                             nom_user="", objectif=""):
+    """Message d'invitation LinkedIn HYPER-personnalisé (< 300 car), adapté au TYPE
+    de contact (recruteur / décideur / pair) et à l'identité réelle de l'utilisateur."""
     client = _get_client()
+    prenom = (nom or "").split()[0] if nom else ""
+    moi = nom_user or "un professionnel"
     if client is None:
-        return (f"Bonjour {nom.split()[0] if nom else ''}, je suis {nom_user}, "
-                f"professionnel en {secteur}. J'aimerais rejoindre votre réseau. Merci !")
+        return (f"Bonjour {prenom}, je suis {nom_user}, professionnel en {secteur}. "
+                "J'aimerais rejoindre votre réseau et échanger. Merci !")
     try:
+        angle = _ANGLE[_classer_contact(titre)].format(sec=secteur)
         prompt = (
-            f"Rédige un court message d'invitation LinkedIn (MAX 280 caractères, ton "
-            f"professionnel et chaleureux, pas de cliché IA) de la part de {nom_user} "
-            f"(candidat en {secteur}) vers {nom}"
-            + (f", {titre}" if titre else "")
-            + (f" chez {entreprise}" if entreprise else "")
-            + ". Objectif : se connecter pour des opportunités. Réponds UNIQUEMENT avec le "
-            "message, sans guillemets."
+            "Rédige un message d'invitation LinkedIn EXCELLENT (MAX 280 caractères). Ton humain, "
+            "chaleureux et professionnel, ZÉRO cliché IA (jamais « j'espère que ce message vous "
+            "trouve bien »). PERSONNALISE avec son rôle et/ou son entreprise.\n"
+            f"Expéditeur : {moi} (en {secteur}).\n"
+            f"Destinataire : {nom}" + (f", {titre}" if titre else "")
+            + (f" chez {entreprise}" if entreprise else "") + ".\n"
+            f"{angle}\n"
+            + (f"Objectif précis : {objectif}.\n" if objectif else "")
+            + "Termine par une ouverture simple. Réponds UNIQUEMENT avec le message, sans guillemets."
         )
         r = client.chat.completions.create(
-            model="gpt-4o", temperature=0.7, max_tokens=150,
+            model="gpt-4o", temperature=0.7, max_tokens=160,
             messages=[{"role": "user", "content": prompt}],
         )
         return r.choices[0].message.content.strip()[:290]
     except Exception:
-        return (f"Bonjour {nom.split()[0] if nom else ''}, je suis {nom_user}, "
-                f"professionnel en {secteur}. J'aimerais échanger avec vous. Merci !")
+        return (f"Bonjour {prenom}, je suis {nom_user}, professionnel en {secteur}. "
+                "J'aimerais échanger avec vous. Merci !")
+
+
+def prioriser_contacts(contacts):
+    """Trie les contacts par PRIORITÉ de prise de contact (les plus utiles d'abord)
+    et annote chacun de _type et _priorite. Performant : 100% heuristique, zéro appel IA."""
+    poids = {"recruteur": 100, "decideur": 80, "pair": 55, "pro": 45}
+    for c in contacts:
+        typ = _classer_contact(c.get("titre", ""))
+        score = poids.get(typ, 45)
+        if (c.get("statut") or "a_contacter") != "contacte":
+            score += 10  # à contacter en priorité
+        if (c.get("entreprise") or "").strip():
+            score += 5
+        c["_type"] = typ
+        c["_priorite"] = score
+    return sorted(contacts, key=lambda c: c.get("_priorite", 0), reverse=True)
 
 
 _POST_THEMES = [

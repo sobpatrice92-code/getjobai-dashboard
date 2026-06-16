@@ -33,7 +33,7 @@ from auth import login_screen, set_password
 import billing
 from simulation_entretien import simulation_entretien_page
 from chatbot import (chatbot_page, generer_message_linkedin, generer_post_linkedin,
-                     generer_image_post)
+                     generer_image_post, prioriser_contacts)
 
 # Configuration
 st.set_page_config(
@@ -1591,11 +1591,22 @@ elif page == "🤝 Réseau":
     else:
         db = get_supabase_client()
         contacts = db.get_contacts_reseau(st.session_state.user_id)
+        # Identité RÉELLE de l'utilisateur (messages au bon nom + bon secteur, multi-user)
+        _me_net = {}
+        try:
+            _me_net = db.get_user_by_email(st.session_state.user_email) or {}
+        except Exception:
+            pass
+        _nom_user = _me_net.get("full_name") or _me_net.get("nom_complet") or ""
+        _secteur_user = _me_net.get("sector") or "votre secteur"
+        # Priorisation : recruteurs/décideurs d'abord, non-contactés d'abord (heuristique)
+        contacts = prioriser_contacts(contacts)
         a_faire = [c for c in contacts if (c.get("statut") or "") == "a_contacter"]
 
         alert("💡 L'agent **Networking** trouve les recruteurs et rédige les messages. "
               "Ici, vous ouvrez le profil, copiez le message, et envoyez **vous-même** "
-              "(1 min) — aucun risque de ban, rien ne casse.", "info")
+              "(1 min) — aucun risque de ban, rien ne casse. Les contacts les plus utiles "
+              "(recruteurs, décideurs) sont **remontés en haut**.", "info")
 
         if not contacts:
             alert("Aucun contact pour l'instant. Lancez l'agent **🤝 Networking Agent** "
@@ -1611,7 +1622,8 @@ elif page == "🤝 Réseau":
                     barre = st.progress(0.0)
                     for idx, c in enumerate(sans_msg):
                         msg = generer_message_linkedin(
-                            c.get("nom", ""), c.get("titre", ""), c.get("entreprise", ""))
+                            c.get("nom", ""), c.get("titre", ""), c.get("entreprise", ""),
+                            secteur=_secteur_user, nom_user=_nom_user)
                         db.update_contact_message(c.get("id"), msg)
                         barre.progress((idx + 1) / len(sans_msg))
                     st.success(f"✅ {len(sans_msg)} messages générés !")
@@ -1630,8 +1642,12 @@ elif page == "🤝 Réseau":
                 message = c.get("message") or ""
                 type_action = c.get("type_action") or "invitation"
 
+                _typ = c.get("_type", "pro")
+                _badge = {"recruteur": "🔥 Recruteur", "decideur": "⭐ Décideur",
+                          "pair": "🤝 Pair", "pro": "• Pro"}.get(_typ, "• Pro")
                 with st.container(border=True):
-                    st.markdown(f"### {icon} {nom}")
+                    st.markdown(f"### {icon} {nom}  <span style='font-size:13px;opacity:.85'>{_badge}</span>",
+                                unsafe_allow_html=True)
                     sub = " • ".join([x for x in [titre, entreprise, c.get('source','')] if x])
                     st.caption(sub)
                     st.markdown(f"**Action :** {'💬 Message' if type_action=='message' else '📨 Invitation'}")
@@ -1641,7 +1657,8 @@ elif page == "🤝 Réseau":
 
                     if not message:
                         if st.button("✨ Générer un message", key=f"gen_{cid}"):
-                            msg = generer_message_linkedin(nom, titre, entreprise)
+                            msg = generer_message_linkedin(nom, titre, entreprise,
+                                                           secteur=_secteur_user, nom_user=_nom_user)
                             db.update_contact_message(cid, msg)
                             st.rerun()
                     st.text_area("✉️ Message (à envoyer sur LinkedIn)",
