@@ -2124,7 +2124,13 @@ d'application** (Google l'exige pour les apps tierces — votre mot de passe hab
             else:
                 _patch = {"gmail_address": _g_addr.strip()}
                 if _g_pwd.strip():
-                    _patch["gmail_password"] = _g_pwd.replace(" ", "").strip()
+                    _pwd_clean = _g_pwd.replace(" ", "").strip()
+                    try:
+                        from linkedin_oauth import enc_token
+                        _pwd_clean = enc_token(_pwd_clean)  # chiffré au repos (enc:...)
+                    except Exception:
+                        pass
+                    _patch["gmail_password"] = _pwd_clean
                 if db.update_user(st.session_state.user_id, _patch):
                     st.success("✅ Gmail d'envoi enregistré ! Le Copilote peut maintenant postuler par email.")
                 else:
@@ -2218,9 +2224,13 @@ ne suffit pas pour la recherche (LinkedIn bloque).
                     # Extraire li_at au passage (pour Easy Apply)
                     li_at = next((c.get("value") for c in data
                                   if c.get("name") == "li_at"), "")
-                    ok = db.save_setting(st.session_state.user_id, "linkedin_cookie", cookies_txt.strip())
+                    try:
+                        from linkedin_oauth import enc_token
+                    except Exception:
+                        enc_token = lambda s: s
+                    ok = db.save_setting(st.session_state.user_id, "linkedin_cookie", enc_token(cookies_txt.strip()))
                     if li_at:
-                        db.save_setting(st.session_state.user_id, "linkedin_cookie_li_at", li_at)
+                        db.save_setting(st.session_state.user_id, "linkedin_cookie_li_at", enc_token(li_at))
                     if ok:
                         st.success(f"✅ {len(data)} cookies enregistrés ! "
                                    "L'agent Networking peut maintenant fonctionner.")
