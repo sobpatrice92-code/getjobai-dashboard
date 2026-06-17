@@ -390,7 +390,7 @@ def _humaniser_texte(client, texte, is_en=False):
     )
     try:
         r = client.chat.completions.create(
-            model="gpt-4o", temperature=0.7, max_tokens=550,
+            model="gpt-4o", temperature=0.7, max_tokens=1200,
             messages=[{"role": "user", "content": consigne + "\n\nPOST :\n" + texte}],
         )
         return r.choices[0].message.content.strip()
@@ -485,7 +485,7 @@ RÈGLES (STRICTES) :
 
     try:
         resp = client.chat.completions.create(
-            model="gpt-4o", temperature=0.8, max_tokens=450,
+            model="gpt-4o", temperature=0.8, max_tokens=1200,
             messages=[{"role": "user", "content": prompt}],
         )
         post = resp.choices[0].message.content.strip()
