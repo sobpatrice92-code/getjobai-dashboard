@@ -33,7 +33,8 @@ def _sign(user_id: str, ttl: int = 600) -> str:
 
 def _sub_status(user_id: str) -> str:
     url = os.getenv("SUPABASE_URL", "").rstrip("/")
-    key = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY") or ""
+    key = (os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+           or os.getenv("SUPABASE_KEY") or "")
     try:
         r = httpx.get(f"{url}/rest/v1/users?id=eq.{user_id}&select=subscription_status",
                       headers={"apikey": key, "Authorization": "Bearer " + key}, timeout=10)

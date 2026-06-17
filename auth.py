@@ -16,11 +16,14 @@ def _supabase():
     """Récupère url + headers Supabase (mêmes credentials que database.py)."""
     url = os.getenv("SUPABASE_URL")
     # Clé SERVICE en priorité (repli anon) — voir database.py.
-    key = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY")
+    key = (os.getenv("SUPABASE_SERVICE_KEY")
+           or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+           or os.getenv("SUPABASE_KEY"))
     if not url or not key:
         try:
             url = url or st.secrets.get("SUPABASE_URL")
             key = (key or st.secrets.get("SUPABASE_SERVICE_KEY")
+                   or st.secrets.get("SUPABASE_SERVICE_ROLE_KEY")
                    or st.secrets.get("SUPABASE_KEY"))
         except Exception:
             pass

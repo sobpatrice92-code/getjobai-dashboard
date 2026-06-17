@@ -21,7 +21,8 @@ except Exception:  # repli si l'import change
     _get_client = _synthese_vocale = _transcrire = None
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_KEY") or ""
+SUPABASE_KEY = (os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+                or os.getenv("SUPABASE_KEY") or "")
 _H = {"apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY}
 
 
