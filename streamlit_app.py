@@ -15,6 +15,7 @@ from ui_ux_pro_max import (
     inject_animations,
     inject_neo_glass,
     inject_premium_polish,
+    empty_state,
     section_header,
     hero_holographic,
     holo_loader_3d,
@@ -312,19 +313,20 @@ def _build_info():
 
 
 with st.sidebar:
-    # Logo
-    st.markdown(f"""
-    <div style="
-        background: linear-gradient(135deg, {COLOR_SCHEMES['getjobai']['primary']} 0%, {COLOR_SCHEMES['getjobai']['secondary']} 100%);
-        padding: 2rem 1rem;
-        border-radius: 12px;
-        text-align: center;
-        margin-bottom: 2rem;
-    ">
-        <h1 style="color: white; margin: 0; font-size: 2rem;">🚀 GetJobAI</h1>
-        <p style="color: white; opacity: 0.9; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
-            Assistant IA de Recherche d'Emploi
-        </p>
+    # Logo — lockup raffiné (mark dégradé + wordmark)
+    st.markdown("""
+    <div style="display:flex; align-items:center; gap:.7rem; padding:.5rem .2rem 1.4rem;">
+        <div style="width:46px; height:46px; border-radius:13px; flex:0 0 auto;
+            display:flex; align-items:center; justify-content:center; font-size:1.5rem;
+            background:linear-gradient(135deg,#5b7cff 0%, #9b8bff 50%, #2dd4bf 100%);
+            box-shadow:0 6px 18px rgba(91,124,255,.45), inset 0 1px 0 rgba(255,255,255,.25);">🚀</div>
+        <div style="line-height:1.12;">
+            <div style="font-family:'Poppins','Inter',sans-serif; font-weight:700; font-size:1.38rem;
+                background:linear-gradient(95deg,#eaf2ff 0%, #9fc7e8 100%);
+                -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">GetJobAI</div>
+            <div style="color:#8ea3c8; font-size:.7rem; letter-spacing:1px; text-transform:uppercase; margin-top:1px;">
+                Assistant IA · Emploi</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -587,7 +589,9 @@ elif page == "📋 Offres d'Emploi":
         st.markdown("<br>", unsafe_allow_html=True)
 
         if not results:
-            alert("Aucune offre ne correspond à vos filtres. Ajustez les critères.", "warning")
+            empty_state("🔍", "Aucune offre ne correspond",
+                        "Ajustez vos filtres, ou lancez <b>🔎 Job Hunter</b> / "
+                        "<b>COOP Hunter</b> (page 🤖 Agents IA) pour remplir votre liste d'offres.")
         else:
             # URLs déjà en candidatures → éviter de re-préparer
             cand_urls = {c.get("job_url") for c in db.get_candidatures_list(st.session_state.user_id)}
@@ -646,9 +650,9 @@ elif page == "📤 Candidatures":
         cv_texte = db.get_user_cv(st.session_state.user_id)
 
         if not cands:
-            alert("Aucune candidature pour l'instant. Lancez l'agent **📝 Préparer "
-                  "Candidatures** (page 🤖 Agents IA) : il génère vos lettres et les "
-                  "place ici en attente de votre validation.", "info")
+            empty_state("📭", "Aucune candidature pour l'instant",
+                        "Lancez <b>📝 Préparer Candidatures</b> (page 🤖 Agents IA) : il génère "
+                        "vos lettres et les place ici, en attente de votre validation.")
         else:
             statut_icon = {
                 "en_attente": "⏳", "validee": "✔️", "a_envoyer": "📨", "sans_email": "✉️",
@@ -1077,8 +1081,7 @@ elif page == "🤖 Agents IA":
     for i, agent in enumerate(agents):
         with col1 if i % 2 == 0 else col2:
             card(agent["name"], agent["desc"], agent["color"], agent["icon"],
-                 accent=_AG_ACCENTS[i % len(_AG_ACCENTS)])
-            st.caption(f"📊 {agent['stats']}")
+                 accent=_AG_ACCENTS[i % len(_AG_ACCENTS)], footer=f"📊 {agent['stats']}")
 
             if st.button(f"🚀 Lancer {agent['name']}", key=f"launch_{i}", use_container_width=True):
                 # Post LinkedIn = génération manuelle dans le Dashboard (pas de publication auto)
@@ -1611,8 +1614,9 @@ elif page == "🤝 Réseau":
               "(recruteurs, décideurs) sont **remontés en haut**.", "info")
 
         if not contacts:
-            alert("Aucun contact pour l'instant. Lancez l'agent **🤝 Networking Agent** "
-                  "(page 🤖 Agents IA) : il trouvera des recruteurs et préparera les messages.", "info")
+            empty_state("🤝", "Aucun contact pour l'instant",
+                        "Lancez <b>🤝 Networking Agent</b> (page 🤖 Agents IA) : il trouvera des "
+                        "recruteurs et préparera vos messages d'approche.")
         else:
             st.caption(f"🤝 {len(contacts)} contact(s) • {len(a_faire)} à contacter")
 
@@ -1728,8 +1732,9 @@ elif page == "📦 Livrables":
         }
 
         if not livrables:
-            alert("Aucun livrable pour l'instant. Lancez un agent depuis la page "
-                  "🤖 Agents IA — son résultat apparaîtra ici.", "info")
+            empty_state("📦", "Aucun livrable pour l'instant",
+                        "Lancez un agent depuis la page <b>🤖 Agents IA</b> — son résultat "
+                        "(CV, lettre, rapport, analyse…) apparaîtra ici.")
         else:
             # Filtre par type
             types_presents = sorted({l.get("type", "autre") for l in livrables})
@@ -1913,7 +1918,9 @@ elif page == "📅 Planificateur":
         schedules = db.get_schedules(st.session_state.user_id)
 
         if not schedules:
-            st.info("Aucune planification. Ajoutez-en une ci-dessus.")
+            empty_state("📅", "Aucune planification",
+                        "Ajoutez‑en une ci‑dessus pour lancer vos agents automatiquement "
+                        "(ex. tous les matins à 9h).")
         else:
             for s in schedules:
                 sid = s.get("id")

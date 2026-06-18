@@ -51,12 +51,18 @@ COLOR_SCHEMES = {
 # COMPOSANTS UI STYLÉS
 # ============================================================
 
-def card(title: str, content: str, color: str = "primary", icon: str = "📋", accent: str = ""):
+def card(title: str, content: str, color: str = "primary", icon: str = "📋", accent: str = "",
+         footer: str = ""):
     """Carte Neo-Glass colorée : badge d'icône en dégradé + bord d'accent + glow +
-    hover. 'accent' (blue|purple|green|orange|cyan) prioritaire ; sinon dérivé de 'color'."""
+    hover. 'accent' (blue|purple|green|orange|cyan) prioritaire ; sinon dérivé de 'color'.
+    'footer' (optionnel) : ligne de stats discrète en pied de carte (séparateur fin)."""
     _map = {"primary": "blue", "secondary": "purple", "success": "green",
             "warning": "orange", "danger": "orange", "info": "cyan"}
     a1, a2 = _ACCENTS.get(accent or _map.get(color, "blue"), _ACCENTS["blue"])
+    _footer_html = (
+        f'<div style="margin:.85rem 0 0 0; padding-top:.6rem; border-top:1px solid {a1}26;'
+        f'color:#9fb4d6; font-size:.82rem;">{footer}</div>' if footer else ""
+    )
     st.markdown(f"""
     <div style="
         position:relative; overflow:hidden;
@@ -65,8 +71,8 @@ def card(title: str, content: str, color: str = "primary", icon: str = "📋", a
         -webkit-backdrop-filter: blur(14px) saturate(120%);
         border: 1px solid {a1}3a;
         border-left: 4px solid {a1};
-        padding: 1.1rem 1.3rem; margin: .6rem 0;
-        border-radius: 16px;
+        padding: 1.1rem 1.3rem; margin: .6rem 0 .2rem 0;
+        border-radius: 16px 16px 4px 4px;
         box-shadow: 0 8px 26px rgba(4,8,20,0.42), 0 0 20px {a1}1c;
         transition: transform .25s cubic-bezier(.22,.61,.36,1), box-shadow .25s;
     " onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 14px 38px rgba(4,8,20,.55), 0 0 28px {a1}4d'"
@@ -78,6 +84,7 @@ def card(title: str, content: str, color: str = "primary", icon: str = "📋", a
             <h3 style="margin:0;color:#ffffff;font-family:'Poppins','Inter',sans-serif;font-size:1.12rem;">{title}</h3>
         </div>
         <p style="margin:.6rem 0 0 0;color:#c7d6ef;font-size:.92rem;">{content}</p>
+        {_footer_html}
     </div>
     """, unsafe_allow_html=True)
 
@@ -982,4 +989,20 @@ def inject_premium_polish():
     [data-testid="stDataFrame"]{ border-radius:14px; overflow:hidden; border:1px solid var(--gja-line); }
     *:focus-visible{ outline:2px solid var(--gja-teal) !important; outline-offset:2px; }
     </style>
+    """, unsafe_allow_html=True)
+
+
+def empty_state(icon: str, title: str, hint: str = ""):
+    """État vide élégant : grande icône, titre, indice — centré dans un cadre discret
+    (au lieu d'un simple message brut). Pour les listes sans contenu."""
+    st.markdown(f"""
+    <div style="text-align:center; padding:2.5rem 1.5rem; margin:.6rem 0;
+        background:linear-gradient(150deg,rgba(30,41,75,.28),rgba(12,18,38,.20));
+        border:1px dashed rgba(120,160,255,.22); border-radius:18px;">
+        <div style="font-size:2.7rem; margin-bottom:.4rem;">{icon}</div>
+        <div style="font-family:'Poppins','Inter',sans-serif; font-weight:600; color:#eaf2ff;
+            font-size:1.1rem;">{title}</div>
+        <div style="color:#93a4c8; font-size:.92rem; margin:.4rem auto 0; max-width:480px;
+            line-height:1.55;">{hint}</div>
+    </div>
     """, unsafe_allow_html=True)
