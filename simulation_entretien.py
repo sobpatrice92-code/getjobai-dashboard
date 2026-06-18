@@ -67,24 +67,41 @@ def _system_prompt(cfg, cv, jd):
     niveau = {"Doux": "bienveillant, questions accessibles",
               "Réaliste": "professionnel et exigeant comme un vrai entretien",
               "Exigeant": "très exigeant, questions pièges et de mise en situation"}[cfg["niveau"]]
-    return (
+    entete = (
         f"Tu es un·e RECRUTEUR·EUSE RH EXPERT·E qui fait passer un entretien d'embauche {cible}. "
         f"Style : {niveau}. Langue de l'entretien : {lang}.\n"
         f"CV DU CANDIDAT :\n{cv[:3000]}\n"
         + (f"DESCRIPTION DU POSTE :\n{jd}\n" if jd else "")
-        + "MODE COACHING INTERACTIF — RÈGLES STRICTES :\n"
-        "- Pose UNE SEULE question à la fois. Ton TOUT PREMIER message = uniquement la question "
-        "« Parlez-moi de vous » (sans feedback, le candidat n'a pas encore répondu).\n"
-        "- APRÈS CHAQUE réponse du candidat, structure ta réponse en 3 blocs EXACTEMENT, avec ces titres :\n"
-        "   **✅ Feedback :** 1 à 3 phrases — ce qui était bon + ce qui manquait (méthode STAR, "
-        "chiffres concrets, clarté, lien avec le poste).\n"
-        "   **💡 Réponse modèle :** une réponse EXEMPLAIRE et concise à CETTE question, ancrée sur le "
-        "CV du candidat (ce qu'il aurait pu/dû répondre).\n"
-        "   **❓ Question suivante :** enchaîne avec la prochaine question.\n"
-        "- Varie les questions : comportementales (STAR), techniques liées au poste, mise en situation, motivation.\n"
-        f"- Après {cfg['nb']} questions, donne le feedback + la réponse modèle de la dernière, puis écris "
-        "exactement « ENTRETIEN TERMINÉ — cliquez « 🏁 Terminer » pour votre bilan ». Ne mets PAS de note chiffrée ici."
     )
+    varie = ("- Varie les questions : comportementales (STAR), techniques liées au poste, "
+             "mise en situation, motivation.\n")
+    if cfg.get("coaching", True):
+        regles = (
+            "MODE COACHING INTERACTIF — RÈGLES STRICTES :\n"
+            "- Pose UNE SEULE question à la fois. Ton TOUT PREMIER message = uniquement la question "
+            "« Parlez-moi de vous » (sans feedback, le candidat n'a pas encore répondu).\n"
+            "- APRÈS CHAQUE réponse du candidat, structure ta réponse en 3 blocs EXACTEMENT, avec ces titres :\n"
+            "   **✅ Feedback :** 1 à 3 phrases — ce qui était bon + ce qui manquait (méthode STAR, "
+            "chiffres concrets, clarté, lien avec le poste).\n"
+            "   **💡 Réponse modèle :** une réponse EXEMPLAIRE et concise à CETTE question, ancrée sur le "
+            "CV du candidat (ce qu'il aurait pu/dû répondre).\n"
+            "   **❓ Question suivante :** enchaîne avec la prochaine question.\n"
+            + varie +
+            f"- Après {cfg['nb']} questions, donne le feedback + la réponse modèle de la dernière, puis écris "
+            "exactement « ENTRETIEN TERMINÉ — cliquez « 🏁 Terminer » pour votre bilan ». Ne mets PAS de note chiffrée ici."
+        )
+    else:
+        regles = (
+            "MODE ENTRETIEN RÉEL — RÈGLES STRICTES :\n"
+            "- Pose UNE SEULE question à la fois. Commence par « Parlez-moi de vous ».\n"
+            "- Réagis en UNE phrase brève et neutre à la réponse, puis enchaîne la question suivante.\n"
+            + varie +
+            "- NE donne AUCUN feedback ni correction ni réponse modèle pendant l'entretien "
+            "(tout est réservé au bilan final).\n"
+            f"- Après {cfg['nb']} questions, conclus poliment l'entretien (sans noter) et écris "
+            "exactement « ENTRETIEN TERMINÉ — cliquez « 🏁 Terminer » pour votre bilan »."
+        )
+    return entete + regles
 
 
 def _scorecard(client, cfg, transcript):
@@ -142,6 +159,11 @@ def simulation_entretien_page(user_id, profil):
             langue = c3.selectbox("Langue", ["fr", "en"], format_func=lambda x: "Français" if x == "fr" else "English")
             niveau = c4.selectbox("Difficulté", ["Doux", "Réaliste", "Exigeant"], index=1)
             nb = c5.slider("Nombre de questions", 4, 12, 6)
+            mode = st.radio(
+                "Mode",
+                ["🎓 Coaching — correction + réponse modèle après chaque réponse",
+                 "🎯 Entretien réel — aucun feedback pendant, bilan complet à la fin"],
+                index=0)
             go = st.form_submit_button("🎬 Démarrer l'entretien", type="primary", use_container_width=True)
         if go:
             cv = profil.get("cv_text") or ""
@@ -150,7 +172,8 @@ def simulation_entretien_page(user_id, profil):
                 return
             jd = _fetch_job_desc(user_id, poste, entreprise)
             S["sim_conf"] = {"poste": poste.strip(), "entreprise": entreprise.strip(),
-                            "langue": langue, "niveau": niveau, "nb": nb}
+                            "langue": langue, "niveau": niveau, "nb": nb,
+                            "coaching": mode.startswith("🎓")}
             S["sim_sys"] = _system_prompt(S["sim_conf"], cv, jd)
             S["sim_msgs"] = []
             S["sim_qcount"] = 0
