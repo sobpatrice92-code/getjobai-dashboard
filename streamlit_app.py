@@ -13,7 +13,8 @@ from datetime import datetime
 # Import UI UX PRO MAX
 from ui_ux_pro_max import (
     inject_animations,
-    inject_aiapply_light,
+    inject_neo_glass,
+    inject_premium_polish,
     empty_state,
     section_header,
     hero_holographic,
@@ -47,10 +48,10 @@ st.set_page_config(
     }
 )
 
-# Thème CLAIR premium (façon AIApply) — SEULE couche de thème.
-# (inject_animations() est volontairement RETIRÉ : il forçait du texte clair
-#  partout -> illisible sur fond blanc. Tout le style clair est dans aiapply_light.)
-inject_aiapply_light()
+# Injecter animations CSS + surcouche visuelle Neo-Glass (CSS uniquement)
+inject_animations()
+inject_neo_glass()
+inject_premium_polish()  # couche de finition premium (tabs, champs, typo, métriques)
 
 
 # ============================================================
@@ -321,9 +322,9 @@ with st.sidebar:
             box-shadow:0 6px 18px rgba(91,124,255,.45), inset 0 1px 0 rgba(255,255,255,.25);">🚀</div>
         <div style="line-height:1.12;">
             <div style="font-family:'Poppins','Inter',sans-serif; font-weight:700; font-size:1.38rem;
-                background:linear-gradient(95deg,#2F6BFF 0%, #1E5BF0 100%);
+                background:linear-gradient(95deg,#eaf2ff 0%, #9fc7e8 100%);
                 -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">GetJobAI</div>
-            <div style="color:#6B7280; font-size:.7rem; letter-spacing:1px; text-transform:uppercase; margin-top:1px;">
+            <div style="color:#8ea3c8; font-size:.7rem; letter-spacing:1px; text-transform:uppercase; margin-top:1px;">
                 Assistant IA · Emploi</div>
         </div>
     </div>
@@ -723,7 +724,7 @@ elif page == "📤 Candidatures":
                             st.markdown(
                                 "<div style='background:rgba(34,197,94,0.10);border:1px solid "
                                 "rgba(34,197,94,0.35);border-radius:10px;padding:10px 12px;margin:4px 0;'>"
-                                f"<b>{_ttl}</b><br><span style='color:#3F6B4E'>{_safe}</span></div>",
+                                f"<b>{_ttl}</b><br><span style='color:#cfe9d6'>{_safe}</span></div>",
                                 unsafe_allow_html=True)
                         else:
                             st.info(f"{_ttl} — le message complet est dans votre Gmail.")
@@ -908,22 +909,22 @@ elif page == "🤖 Agents IA":
             dest = RESULTS_DEST.get(agent_nom, "📦 Livrables")
 
             st.markdown(f"""
-            <div style="background:#FFFFFF;
-                 padding:1.4rem 1.6rem;border-radius:16px;border:1px solid #E7EBF2;
+            <div style="background:linear-gradient(135deg, rgba(17,28,52,0.92), rgba(10,15,30,0.92));
+                 padding:1.4rem 1.6rem;border-radius:16px;border:1px solid rgba(45,212,191,0.25);
                  border-left:5px solid {couleur};margin-bottom:1rem;
-                 box-shadow:0 1px 2px rgba(16,24,40,.05), 0 10px 24px rgba(16,24,40,.06);">
+                 box-shadow:0 0 24px rgba(30,155,255,0.14);">
               <div style="display:flex;align-items:center;gap:18px;">
                 {visuel}
                 <div>
-                  <h3 style="color:#111827;margin:0;">{agent_nom}</h3>
-                  <p style="color:#5B6678;margin:.2rem 0 0 0;font-size:0.92rem;">{libelle}</p>
-                  <p style="color:#16A34A;margin:.35rem 0 0 0;font-size:0.9rem;font-weight:600;">{prochaine}</p>
+                  <h3 style="color:#eaf6ff;margin:0;">{agent_nom}</h3>
+                  <p style="color:#9fc7e8;margin:.2rem 0 0 0;font-size:0.92rem;">{libelle}</p>
+                  <p style="color:#2dd4bf;margin:.35rem 0 0 0;font-size:0.9rem;font-weight:600;">{prochaine}</p>
                 </div>
               </div>
               <div style="margin-top:1rem;">{chips}</div>
               <div style="margin-top:1rem;padding:.7rem 1rem;border-radius:10px;
-                   background:#F4F8FF;border:1px dashed #CADBFF;
-                   color:#3F4B61;font-size:0.9rem;">
+                   background:rgba(30,155,255,0.08);border:1px dashed rgba(45,212,191,0.35);
+                   color:#cfe2f5;font-size:0.9rem;">
                 📍 <strong>Où trouver les résultats :</strong> {dest}
               </div>
             </div>
@@ -1293,7 +1294,7 @@ elif page == "🤖 Agents IA":
                         .then(()=>{{this.innerHTML="✅ Copié !";
                         setTimeout(()=>this.innerHTML="📋 Copier",1600);}})'
                         style="background:linear-gradient(135deg,#1e9bff,#2dd4bf);
-                        color:#ffffff;border:none;padding:11px 16px;border-radius:8px;
+                        color:#04101f;border:none;padding:11px 16px;border-radius:8px;
                         cursor:pointer;font-size:15px;font-weight:600;width:100%;
                         box-shadow:0 0 14px rgba(45,212,191,0.35);">
                         📋 Copier
@@ -1342,20 +1343,20 @@ elif page == "📖 Guide":
     )
 
     st.markdown("""
-    <div style="background:linear-gradient(135deg, rgba(47,107,255,0.06), rgba(45,212,191,0.06));
-         padding:1.2rem 1.4rem;border-radius:14px;border:1px solid #DCE6FF;
-         margin-bottom:1.2rem;color:#1F2937;">
+    <div style="background:linear-gradient(135deg, rgba(30,155,255,0.10), rgba(45,212,191,0.08));
+         padding:1.2rem 1.4rem;border-radius:14px;border:1px solid rgba(45,212,191,0.30);
+         margin-bottom:1.2rem;color:#dceefb;">
       <strong>🚀 Bien démarrer — 3 réglages à faire UNE fois dans ⚙️ Paramètres :</strong><br>
       <b>1. 👤 Profil :</b> CV, mots-clés métier, ville, secteur — ça personnalise <u>tous</u> les agents.<br>
       <b>2. 🔔 Notifications → Gmail d'envoi :</b> votre adresse Gmail + un mot de passe d'application.
       <u>Obligatoire</u> pour que le <b>Copilote</b> postule par email (sinon il affiche « Gmail non configuré »).<br>
       <b>3. 🔗 LinkedIn :</b> connectez votre compte en 1 clic — pour publier vos posts automatiquement.<br>
-      <hr style="border-color:rgba(16,24,40,.12);margin:.6rem 0">
+      <hr style="border-color:rgba(255,255,255,.12);margin:.6rem 0">
       <strong>Ensuite :</strong>
       <b>🤖 Agents IA → Lancer</b> un agent (animation en direct) →
       résultats dans <b>📋 Offres</b>, <b>📤 Candidatures</b>, <b>🤝 Réseau</b>, <b>📦 Livrables</b>
       + un <b>rapport par email</b>.<br>
-      <span style="color:#5B6678">💡 Pour postuler aux offres LinkedIn « Candidature simplifiée » :
+      <span style="color:#9fc7e8">💡 Pour postuler aux offres LinkedIn « Candidature simplifiée » :
       installez l'<b>extension Chrome GetJobAI</b> → elle remplit le formulaire à votre place,
       vous cliquez juste « Envoyer ».</span>
     </div>
@@ -1531,7 +1532,7 @@ elif page == "📖 Guide":
                 st.markdown(
                     f"<div style='margin-top:.5rem;padding:.5rem .8rem;border-radius:8px;"
                     f"background:rgba(45,212,191,0.10);border:1px dashed rgba(45,212,191,0.40);"
-                    f"color:#0E8174;'>📍 <b>Où trouver le résultat :</b> {a['ou']}</div>",
+                    f"color:#bff0e6;'>📍 <b>Où trouver le résultat :</b> {a['ou']}</div>",
                     unsafe_allow_html=True,
                 )
         st.markdown("")
@@ -1541,7 +1542,7 @@ elif page == "📖 Guide":
     st.markdown(
         "<div style='background:linear-gradient(135deg, rgba(30,155,255,0.10), "
         "rgba(45,212,191,0.08));padding:1.1rem 1.3rem;border-radius:14px;"
-        "border:1px solid #DCE6FF;color:#1F2937;'>"
+        "border:1px solid rgba(45,212,191,0.30);color:#dceefb;'>"
         "Les agents de recherche (Job Hunter, Indeed, <b>Orchestrateur</b>, COOP) "
         "préparent déjà les meilleures offres en <b>candidatures « à valider »</b> "
         "(lettre + CV adapté). Pour postuler :<br><br>"
@@ -1550,9 +1551,9 @@ elif page == "📖 Guide":
         "qui vous intéressent.<br>"
         "<b>3.</b> Lancez <b>🤖 Agents IA › 🚀 Postuler (Copilote)</b> : il envoie "
         "réellement (email RH + LinkedIn Easy Apply).<br><br>"
-        "<span style='color:#0E9F8E;font-weight:600;'>🧭 Recherche → 📤 Candidatures "
+        "<span style='color:#2dd4bf;font-weight:600;'>🧭 Recherche → 📤 Candidatures "
         "(Approuver) → 🚀 Postuler (Copilote)</span><br>"
-        "<span style='font-size:0.85rem;color:#5B6678;'>Les autres offres de "
+        "<span style='font-size:0.85rem;color:#9fc7e8;'>Les autres offres de "
         "📋 Offres d'Emploi : postulez via leur lien, ou lancez 📝 Préparer "
         "Candidatures pour en générer d'autres.</span>"
         "</div>",
@@ -1677,7 +1678,7 @@ elif page == "🤝 Réseau":
                                 .then(()=>{{this.innerHTML="✅ Copié !";
                                 setTimeout(()=>this.innerHTML="📋 Copier le message",1600);}})'
                                 style="background:linear-gradient(135deg,#1e9bff,#2dd4bf);
-                                color:#ffffff;border:none;padding:9px 16px;border-radius:8px;
+                                color:#04101f;border:none;padding:9px 16px;border-radius:8px;
                                 cursor:pointer;font-size:14px;font-weight:600;width:100%;
                                 box-shadow:0 0 14px rgba(45,212,191,0.35);">
                                 📋 Copier le message

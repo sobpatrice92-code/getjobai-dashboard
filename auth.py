@@ -128,13 +128,13 @@ def login_screen():
     .gja-login-hero{ text-align:center; margin:1.4rem 0 1.1rem; }
     .gja-login-logo{ font-family:'Poppins','Inter',sans-serif; font-weight:700; font-size:2.7rem;
       line-height:1.1; letter-spacing:-1px;
-      background:linear-gradient(95deg,#2F6BFF 0%, #6271FF 50%, #0EA5A4 120%);
+      background:linear-gradient(95deg,#7da2ff 0%, #9b8bff 45%, #2dd4bf 110%);
       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-    .gja-login-tag{ color:#111827; font-size:1.18rem; font-weight:600; margin-top:.5rem; }
-    .gja-login-sub{ color:#5B6678; font-size:.96rem; margin-top:.35rem; }
+    .gja-login-tag{ color:#eaf2ff; font-size:1.18rem; font-weight:600; margin-top:.5rem; }
+    .gja-login-sub{ color:#93a4c8; font-size:.96rem; margin-top:.35rem; }
     .gja-login-feats{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:1.15rem auto .2rem; }
-    .gja-login-feats span{ background:#EEF3FF; border:1px solid #DCE6FF;
-      color:#2F5BD0; padding:6px 13px; border-radius:999px; font-size:.82rem; font-weight:500; }
+    .gja-login-feats span{ background:rgba(91,124,255,.10); border:1px solid rgba(120,160,255,.18);
+      color:#cfe0ff; padding:6px 13px; border-radius:999px; font-size:.82rem; font-weight:500; }
     </style>
     """, unsafe_allow_html=True)
 
