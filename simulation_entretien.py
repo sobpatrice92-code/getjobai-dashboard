@@ -142,9 +142,9 @@ def simulation_entretien_page(user_id, profil):
                 st.warning("Ajoutez d'abord votre CV (Paramètres) pour un entretien personnalisé.")
                 return
             jd = _fetch_job_desc(user_id, poste, entreprise)
-            S["sim_cfg"] = {"poste": poste.strip(), "entreprise": entreprise.strip(),
+            S["sim_conf"] = {"poste": poste.strip(), "entreprise": entreprise.strip(),
                             "langue": langue, "niveau": niveau, "nb": nb}
-            S["sim_sys"] = _system_prompt(S["sim_cfg"], cv, jd)
+            S["sim_sys"] = _system_prompt(S["sim_conf"], cv, jd)
             S["sim_msgs"] = []
             S["sim_qcount"] = 0
             S["sim_active"] = True
@@ -160,7 +160,7 @@ def simulation_entretien_page(user_id, profil):
         return
 
     # ---------- Entretien en cours ----------
-    cfg = S["sim_cfg"]
+    cfg = S["sim_conf"]
     st.info(f"🎯 Entretien : **{cfg['poste'] or 'poste général'}**"
             + (f" @ **{cfg['entreprise']}**" if cfg["entreprise"] else "")
             + f" • {cfg['niveau']} • question {min(S['sim_qcount'], cfg['nb'])}/{cfg['nb']}")
