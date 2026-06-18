@@ -147,12 +147,19 @@ def simulation_entretien_page(user_id, profil):
             S["sim_sys"] = _system_prompt(S["sim_conf"], cv, jd)
             S["sim_msgs"] = []
             S["sim_qcount"] = 0
-            S["sim_active"] = True
-            S["sim_poste"], S["sim_ent"] = poste, entreprise
-            with st.spinner("Le recruteur prépare l'entretien…"):
-                q = _ask_next(client, S["sim_sys"], [{"role": "user", "content": "Commençons l'entretien."}])
+            try:
+                with st.spinner("Le recruteur prépare l'entretien…"):
+                    q = _ask_next(client, S["sim_sys"], [{"role": "user", "content": "Commençons l'entretien."}])
                 S["sim_msgs"].append({"role": "assistant", "content": q})
                 S["sim_qcount"] = 1
+                S["sim_active"] = True
+                S["sim_poste"], S["sim_ent"] = poste, entreprise
+            except Exception as e:
+                S["sim_active"] = False
+                st.error(f"❌ Le recruteur IA n'a pas pu démarrer : {str(e)[:180]}\n\n"
+                         "Si l'erreur mentionne « API key » / 401 : la clé OPENAI_API_KEY du "
+                         "dashboard (Render) doit être mise à jour.")
+                return
             st.rerun()
         # Afficher le dernier score s'il existe
         if S.get("sim_score"):
@@ -186,10 +193,13 @@ def simulation_entretien_page(user_id, profil):
         rep = typed or rep
         if rep:
             S["sim_msgs"].append({"role": "user", "content": rep})
-            with st.spinner("…"):
-                q = _ask_next(client, S["sim_sys"], S["sim_msgs"])
+            try:
+                with st.spinner("…"):
+                    q = _ask_next(client, S["sim_sys"], S["sim_msgs"])
                 S["sim_msgs"].append({"role": "assistant", "content": q})
                 S["sim_qcount"] += 1
+            except Exception as e:
+                st.error(f"❌ Erreur du recruteur IA : {str(e)[:180]}")
             st.rerun()
     else:
         with st.spinner("Évaluation de votre entretien par le jury IA…"):
