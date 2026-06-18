@@ -72,12 +72,18 @@ def _system_prompt(cfg, cv, jd):
         f"Style : {niveau}. Langue de l'entretien : {lang}.\n"
         f"CV DU CANDIDAT :\n{cv[:3000]}\n"
         + (f"DESCRIPTION DU POSTE :\n{jd}\n" if jd else "")
-        + "RÈGLES STRICTES :\n"
-        "- Pose UNE SEULE question à la fois. Commence par « Parlez-moi de vous ».\n"
-        "- Réagis en UNE phrase brève et neutre à la réponse, puis enchaîne la question suivante.\n"
-        "- Varie : comportementales (STAR), techniques liées au poste, mise en situation, motivation.\n"
-        "- NE donne PAS de feedback détaillé ni de score pendant l'entretien (réservé à la fin).\n"
-        f"- Après {cfg['nb']} questions, conclus poliment l'entretien (sans noter)."
+        + "MODE COACHING INTERACTIF — RÈGLES STRICTES :\n"
+        "- Pose UNE SEULE question à la fois. Ton TOUT PREMIER message = uniquement la question "
+        "« Parlez-moi de vous » (sans feedback, le candidat n'a pas encore répondu).\n"
+        "- APRÈS CHAQUE réponse du candidat, structure ta réponse en 3 blocs EXACTEMENT, avec ces titres :\n"
+        "   **✅ Feedback :** 1 à 3 phrases — ce qui était bon + ce qui manquait (méthode STAR, "
+        "chiffres concrets, clarté, lien avec le poste).\n"
+        "   **💡 Réponse modèle :** une réponse EXEMPLAIRE et concise à CETTE question, ancrée sur le "
+        "CV du candidat (ce qu'il aurait pu/dû répondre).\n"
+        "   **❓ Question suivante :** enchaîne avec la prochaine question.\n"
+        "- Varie les questions : comportementales (STAR), techniques liées au poste, mise en situation, motivation.\n"
+        f"- Après {cfg['nb']} questions, donne le feedback + la réponse modèle de la dernière, puis écris "
+        "exactement « ENTRETIEN TERMINÉ — cliquez « 🏁 Terminer » pour votre bilan ». Ne mets PAS de note chiffrée ici."
     )
 
 
@@ -106,14 +112,15 @@ def _scorecard(client, cfg, transcript):
 def _ask_next(client, sys_prompt, messages):
     convo = [{"role": "system", "content": sys_prompt}] + messages
     r = client.chat.completions.create(model="gpt-4o", temperature=0.6,
-                                       max_tokens=400, messages=convo)
+                                       max_tokens=850, messages=convo)
     return (r.choices[0].message.content or "").strip()
 
 
 def simulation_entretien_page(user_id, profil):
-    st.markdown("## 🎤 Simulation d'entretien (live)")
-    st.caption("Un recruteur IA expert vous fait passer un vrai entretien, puis vous note "
-               "et vous donne des recommandations. Répondez par écrit ou à la voix.")
+    st.markdown("## 🎤 Simulation d'entretien (coaching live)")
+    st.caption("Un recruteur IA vous pose une question, vous répondez (écrit ou voix), il vous "
+               "**corrige aussitôt** et vous donne la **réponse modèle**, puis enchaîne. "
+               "À la fin, cliquez **🏁 Terminer** → **score + recommandations** s'affichent ici même.")
 
     client = _get_client() if _get_client else None
     if client is None:
