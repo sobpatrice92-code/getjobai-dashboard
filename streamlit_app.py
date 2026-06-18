@@ -13,9 +13,7 @@ from datetime import datetime
 # Import UI UX PRO MAX
 from ui_ux_pro_max import (
     inject_animations,
-    inject_neo_glass,
-    inject_premium_polish,
-    inject_market_grade,
+    inject_aiapply_light,
     empty_state,
     section_header,
     hero_holographic,
@@ -50,10 +48,8 @@ st.set_page_config(
 )
 
 # Injecter animations CSS + surcouche visuelle Neo-Glass (CSS uniquement)
-inject_animations()
-inject_neo_glass()
-inject_premium_polish()  # couche de finition premium (tabs, champs, typo, métriques)
-inject_market_grade()    # direction finale haute-contraste/sobre — gagne la cascade
+inject_animations()       # keyframes + hero
+inject_aiapply_light()    # thème CLAIR premium (façon AIApply) — gagne la cascade
 
 
 # ============================================================
@@ -324,9 +320,9 @@ with st.sidebar:
             box-shadow:0 6px 18px rgba(91,124,255,.45), inset 0 1px 0 rgba(255,255,255,.25);">🚀</div>
         <div style="line-height:1.12;">
             <div style="font-family:'Poppins','Inter',sans-serif; font-weight:700; font-size:1.38rem;
-                background:linear-gradient(95deg,#eaf2ff 0%, #9fc7e8 100%);
+                background:linear-gradient(95deg,#2F6BFF 0%, #1E5BF0 100%);
                 -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">GetJobAI</div>
-            <div style="color:#8ea3c8; font-size:.7rem; letter-spacing:1px; text-transform:uppercase; margin-top:1px;">
+            <div style="color:#6B7280; font-size:.7rem; letter-spacing:1px; text-transform:uppercase; margin-top:1px;">
                 Assistant IA · Emploi</div>
         </div>
     </div>

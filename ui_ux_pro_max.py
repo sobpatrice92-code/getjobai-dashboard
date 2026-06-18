@@ -12,16 +12,16 @@ import streamlit as st
 
 COLOR_SCHEMES = {
     "getjobai": {
-        "primary": "#1e9bff",      # bleu électrique
-        "secondary": "#2dd4bf",    # teal
-        "success": "#2dd4bf",
-        "warning": "#fbbf24",
-        "danger": "#f87171",
-        "info": "#38bdf8",
-        "light": "#16223d",        # surface "claire" = panneau sombre
-        "dark": "#070b16",
-        "text": "#dbeafe",         # texte clair sur fond sombre
-        "background": "#0a0f1e"
+        "primary": "#2F6BFF",      # bleu confiant (AIApply)
+        "secondary": "#2dd4bf",    # teal accent
+        "success": "#16A34A",      # vert (statut OK)
+        "warning": "#F59E0B",      # ambre
+        "danger": "#EF4444",       # rouge
+        "info": "#2F6BFF",
+        "light": "#F5F7FB",        # surface claire
+        "dark": "#111827",
+        "text": "#111827",         # texte foncé sur fond clair
+        "background": "#FFFFFF"
     },
     "modern": {
         "primary": "#6366f1",
@@ -60,28 +60,28 @@ def card(title: str, content: str, color: str = "primary", icon: str = "📋", a
             "warning": "orange", "danger": "orange", "info": "cyan"}
     a1, a2 = _ACCENTS.get(accent or _map.get(color, "blue"), _ACCENTS["blue"])
     _footer_html = (
-        f'<div style="margin:.8rem 0 0 0; padding-top:.6rem; border-top:1px solid rgba(255,255,255,.08);'
-        f'color:#A6B0C2; font-size:.82rem;">{footer}</div>' if footer else ""
+        f'<div style="margin:.8rem 0 0 0; padding-top:.6rem; border-top:1px solid #EEF1F6;'
+        f'color:#5B6678; font-size:.82rem;">{footer}</div>' if footer else ""
     )
     st.markdown(f"""
     <div style="
         position:relative; overflow:hidden;
-        background:#141925;
-        border:1px solid rgba(255,255,255,.08);
+        background:#FFFFFF;
+        border:1px solid #E7EBF2;
         border-left:3px solid {a1};
         padding:1.05rem 1.25rem; margin:.6rem 0 .2rem 0;
         border-radius:14px 14px 6px 6px;
-        box-shadow:0 10px 26px rgba(0,0,0,0.45);
+        box-shadow:0 1px 2px rgba(16,24,40,.05), 0 10px 24px rgba(16,24,40,.06);
         transition:transform .2s cubic-bezier(.22,.61,.36,1), border-color .2s, box-shadow .2s;
-    " onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='rgba(255,255,255,.16)';this.style.boxShadow='0 16px 34px rgba(0,0,0,.55)'"
-       onmouseout="this.style.transform='none';this.style.borderColor='rgba(255,255,255,.08)';this.style.boxShadow='0 10px 26px rgba(0,0,0,.45)'">
+    " onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='#D5DCE8';this.style.boxShadow='0 16px 32px rgba(16,24,40,.12)'"
+       onmouseout="this.style.transform='none';this.style.borderColor='#E7EBF2';this.style.boxShadow='0 1px 2px rgba(16,24,40,.05), 0 10px 24px rgba(16,24,40,.06)'">
         <div style="display:flex; align-items:center; gap:.7rem;">
             <div style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;
                         justify-content:center;font-size:1.15rem;flex:0 0 auto;
-                        background:linear-gradient(135deg,{a1},{a2});box-shadow:0 4px 12px {a1}55;">{icon}</div>
-            <h3 style="margin:0;color:#F2F4F8;font-family:'Poppins','Inter',sans-serif;font-size:1.07rem;font-weight:600;">{title}</h3>
+                        background:linear-gradient(135deg,{a1},{a2});box-shadow:0 4px 12px {a1}40;">{icon}</div>
+            <h3 style="margin:0;color:#111827;font-family:'Poppins','Inter',sans-serif;font-size:1.07rem;font-weight:600;">{title}</h3>
         </div>
-        <p style="margin:.55rem 0 0 0;color:#AEB8C9;font-size:.9rem;line-height:1.5;">{content}</p>
+        <p style="margin:.55rem 0 0 0;color:#5B6678;font-size:.9rem;line-height:1.5;">{content}</p>
         {_footer_html}
     </div>
     """, unsafe_allow_html=True)
@@ -103,28 +103,26 @@ def metric_card(label: str, value: str, delta: str = None, icon: str = "📊", a
     a1, a2 = _ACCENTS.get(accent, _ACCENTS["blue"])
     delta_html = ""
     if delta:
-        delta_html = f'<div style="color:#9fc1e0;font-size:0.82rem;margin-top:0.55rem;">{delta}</div>'
+        delta_html = f'<div style="color:#16A34A;font-size:0.82rem;font-weight:600;margin-top:0.55rem;">{delta}</div>'
 
     st.markdown(f"""
     <div style="
         position:relative; overflow:hidden;
-        background: linear-gradient(150deg, {a1}22 0%, rgba(12,18,38,0.55) 62%);
-        backdrop-filter: blur(14px) saturate(120%);
-        -webkit-backdrop-filter: blur(14px) saturate(120%);
-        border: 1px solid {a1}40;
-        padding: 1.25rem 1.3rem;
-        border-radius: 18px;
-        box-shadow: 0 8px 26px rgba(4,8,20,0.45), 0 0 22px {a1}1f;
-        transition: transform .25s cubic-bezier(.22,.61,.36,1), box-shadow .25s;
-    " onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 16px 40px rgba(4,8,20,.55), 0 0 32px {a1}55'"
-       onmouseout="this.style.transform='none';this.style.boxShadow='0 8px 26px rgba(4,8,20,.45), 0 0 22px {a1}1f'">
+        background:#FFFFFF;
+        border:1px solid #E7EBF2;
+        padding:1.25rem 1.3rem;
+        border-radius:16px;
+        box-shadow:0 1px 2px rgba(16,24,40,.05), 0 10px 24px rgba(16,24,40,.06);
+        transition:transform .2s cubic-bezier(.22,.61,.36,1), box-shadow .2s, border-color .2s;
+    " onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='#D5DCE8';this.style.boxShadow='0 16px 34px rgba(16,24,40,.12)'"
+       onmouseout="this.style.transform='none';this.style.borderColor='#E7EBF2';this.style.boxShadow='0 1px 2px rgba(16,24,40,.05), 0 10px 24px rgba(16,24,40,.06)'">
         <div style="display:flex; align-items:center; gap:.6rem; margin-bottom:.55rem;">
             <div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;
                         justify-content:center;font-size:1.25rem;
-                        background:linear-gradient(135deg,{a1},{a2});box-shadow:0 4px 14px {a1}66;">{icon}</div>
-            <div style="color:#c7d6ef;font-size:0.82rem;font-weight:600;letter-spacing:.4px;">{label}</div>
+                        background:linear-gradient(135deg,{a1},{a2});box-shadow:0 4px 14px {a1}40;">{icon}</div>
+            <div style="color:#5B6678;font-size:0.82rem;font-weight:600;letter-spacing:.3px;">{label}</div>
         </div>
-        <div style="font-size:2.1rem;font-weight:700;color:#ffffff;line-height:1.1;
+        <div style="font-size:2.1rem;font-weight:700;color:#111827;line-height:1.1;
                     font-family:'Poppins','Inter',sans-serif;">{value}</div>
         {delta_html}
     </div>
@@ -274,17 +272,16 @@ def job_card_pro(job: dict):
 
     st.markdown(f"""
     <div style="
-        background: linear-gradient(135deg, rgba(22,34,61,0.65) 0%, rgba(10,15,30,0.55) 100%);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(30,155,255,0.18);
+        background:#FFFFFF;
+        border: 1px solid #E7EBF2;
         padding: 1.5rem;
         margin: 1rem 0;
-        border-radius: 12px;
-        box-shadow: 0 0 18px rgba(30,155,255,0.10);
+        border-radius: 14px;
+        box-shadow: 0 1px 2px rgba(16,24,40,.05), 0 10px 24px rgba(16,24,40,.06);
         border-left: 4px solid {score_color};
-        transition: transform 0.2s, box-shadow 0.2s;
-    " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 28px rgba(30,155,255,0.30)'"
-       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 0 18px rgba(30,155,255,0.10)'">
+        transition: transform 0.2s, box-shadow 0.2s, border-color .2s;
+    " onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='#D5DCE8'; this.style.boxShadow='0 16px 32px rgba(16,24,40,.12)'"
+       onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='#E7EBF2'; this.style.boxShadow='0 1px 2px rgba(16,24,40,.05), 0 10px 24px rgba(16,24,40,.06)'">
         <div style="display: flex; justify-content: space-between; align-items: start;">
             <div style="flex: 1;">
                 <h3 style="margin: 0; color: {colors['primary']}; font-size: 1.3rem;">{job.get('title', 'N/A')}</h3>
@@ -990,92 +987,108 @@ def inject_premium_polish():
     """, unsafe_allow_html=True)
 
 
-def inject_market_grade():
-    """Surcouche FINALE — direction premium haute-lisibilité (Linear/Vercel/Stripe) :
-    near-black neutre, surfaces solides + bordures fines, texte très contrasté, UN
-    accent indigo confiant, glows/blur réduits. Appelée en DERNIER (gagne la cascade)."""
+def inject_aiapply_light():
+    """Thème CLAIR premium inspiré d'AIApply : fond blanc, accent bleu confiant,
+    cartes blanches à ombre douce + bordures fines, statuts vert/orange, sobre et
+    action-oriented. Appelée en DERNIER (gagne la cascade sur les couches sombres)."""
     st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap');
     :root{
-      --bg:#0B0E14; --surf:#141925; --surf2:#1B2230; --surf3:#222b3b;
-      --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
-      --tx:#F2F4F8; --tx2:#AEB8C9; --tx3:#7A8597;
-      --acc:#6271FF; --acc2:#7C89FF; --accd:#4E5BE6; --teal:#2DD4BF;
+      --bg:#FFFFFF; --bg2:#F5F7FB; --surf:#FFFFFF;
+      --line:#E7EBF2; --line2:#D5DCE8;
+      --tx:#111827; --tx2:#5B6678; --tx3:#9AA4B5;
+      --acc:#2F6BFF; --acc2:#1E5BF0; --green:#16A34A; --orange:#F59E0B;
     }
 
-    /* ---------- Fond + texte très contrasté ---------- */
-    .stApp, [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"]{
-      background:var(--bg) !important; }
+    /* ---------- Police + fond + texte ---------- */
+    html, body, .stApp, p, span, div, label, input, textarea, button, select{
+      font-family:'Inter', -apple-system, 'Segoe UI', sans-serif; }
+    h1,h2,h3,h4,h5{ font-family:'Poppins','Inter',sans-serif !important; color:var(--tx) !important;
+      letter-spacing:-.3px; }
+    .stApp, [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"]{ background:var(--bg) !important; }
     .stApp, .stMarkdown, p, li, span, div, label,
-    [data-testid="stWidgetLabel"] label, [data-baseweb="form-control-label"]{ color:var(--tx); }
-    h1,h2,h3,h4,h5{ color:var(--tx) !important; }
+    [data-testid="stWidgetLabel"] label{ color:var(--tx); }
     [data-testid="stCaptionContainer"], .stCaption, small{ color:var(--tx2) !important; }
-    a, .stMarkdown a{ color:var(--acc2) !important; text-decoration:none; }
-    a:hover{ color:#9AA6FF !important; text-decoration:underline; }
-    .main h1{
-      background:linear-gradient(92deg,#FFFFFF 0%, #D8E0FF 60%, #8FE9DD 120%) !important;
-      -webkit-background-clip:text !important; background-clip:text !important;
-      -webkit-text-fill-color:transparent !important; }
+    a, .stMarkdown a{ color:var(--acc) !important; text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+    .main .block-container{ padding-top:2rem; padding-bottom:4rem; max-width:1180px; }
+    .main h1{ color:var(--tx) !important; font-weight:700 !important; letter-spacing:-.6px !important;
+      -webkit-text-fill-color:initial !important; background:none !important; }
 
-    /* ---------- CARTES (st.container border=True) : surface solide, hairline ---------- */
+    /* ---------- CARTES (st.container border=True) : blanc, ombre douce ---------- */
     [data-testid="stVerticalBlockBorderWrapper"]{
-      background:var(--surf) !important; backdrop-filter:none !important;
-      -webkit-backdrop-filter:none !important;
+      background:#FFFFFF !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
       border:1px solid var(--line) !important; border-radius:16px !important;
-      box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 28px rgba(0,0,0,.5) !important; }
+      box-shadow:0 1px 2px rgba(16,24,40,.05), 0 12px 28px rgba(16,24,40,.06) !important; }
     [data-testid="stVerticalBlockBorderWrapper"]:hover{
       transform:translateY(-2px); border-color:var(--line2) !important;
-      box-shadow:0 14px 34px rgba(0,0,0,.55) !important; }
+      box-shadow:0 16px 34px rgba(16,24,40,.10) !important; }
 
-    /* ---------- Boutons : primaire solide confiant, AUCUN pulsing ---------- */
+    /* ---------- Boutons : bleu plein, arrondi ---------- */
     .stButton > button{ border-radius:10px !important; font-weight:600 !important;
       transition:transform .15s, background .18s, border-color .18s, box-shadow .2s !important; }
     .stButton > button[kind="primary"], [data-testid="baseButton-primary"]{
-      background:var(--acc) !important; border:1px solid rgba(255,255,255,.14) !important;
-      color:#fff !important; animation:none !important;
-      box-shadow:0 4px 14px rgba(98,113,255,.32) !important; }
+      background:var(--acc) !important; border:1px solid var(--acc) !important; color:#fff !important;
+      animation:none !important; box-shadow:0 1px 2px rgba(16,24,40,.10) !important; }
+    .stButton > button[kind="primary"] *, [data-testid="baseButton-primary"] *{ color:#fff !important; }
     .stButton > button[kind="primary"]:hover, [data-testid="baseButton-primary"]:hover{
-      background:var(--accd) !important; transform:translateY(-1px);
-      box-shadow:0 8px 22px rgba(98,113,255,.5) !important; }
+      background:var(--acc2) !important; transform:translateY(-1px);
+      box-shadow:0 8px 18px rgba(47,107,255,.28) !important; }
     .stButton > button[kind="secondary"]{
-      background:var(--surf2) !important; border:1px solid var(--line) !important; color:var(--tx) !important; }
+      background:#FFFFFF !important; border:1px solid var(--line2) !important; color:var(--tx) !important; }
     .stButton > button[kind="secondary"]:hover{
-      background:var(--surf3) !important; border-color:var(--line2) !important; }
+      border-color:var(--acc) !important; color:var(--acc) !important; background:#F4F8FF !important; }
     [data-testid="stLinkButton"] a{ border-radius:10px !important; }
 
-    /* ---------- Champs : surface sombre nette + focus-ring indigo ---------- */
+    /* ---------- Champs : blanc, bordure claire, focus bleu ---------- */
     .stTextInput input, .stTextArea textarea, .stNumberInput input,
     [data-baseweb="select"] > div, [data-baseweb="input"]{
-      background:#0E121B !important; border:1px solid var(--line) !important;
+      background:#FFFFFF !important; border:1px solid var(--line2) !important;
       color:var(--tx) !important; border-radius:10px !important; }
     .stTextInput input::placeholder, .stTextArea textarea::placeholder{ color:var(--tx3) !important; }
     .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus,
     [data-baseweb="input"]:focus-within, [data-baseweb="select"] > div:focus-within{
-      border-color:var(--acc) !important; box-shadow:0 0 0 3px rgba(98,113,255,.28) !important; }
-    ::selection{ background:rgba(98,113,255,.35); color:#fff; }
+      border-color:var(--acc) !important; box-shadow:0 0 0 3px rgba(47,107,255,.18) !important; }
+    ::selection{ background:rgba(47,107,255,.18); }
 
-    /* ---------- Tabs : segmented sobre, actif solide ---------- */
+    /* ---------- Tabs : segmented clair ---------- */
     [data-testid="stTabs"] [role="tablist"]{
-      background:var(--surf) !important; border:1px solid var(--line) !important;
-      backdrop-filter:none !important; }
-    [data-testid="stTabs"] [role="tab"]{ color:var(--tx2) !important; }
-    [data-testid="stTabs"] [role="tab"]:hover{ color:var(--tx) !important; background:rgba(98,113,255,.10) !important; }
+      background:#F1F4FA !important; border:1px solid var(--line) !important; gap:4px; padding:5px;
+      border-radius:12px; backdrop-filter:none !important; }
+    [data-testid="stTabs"] [role="tab"]{ color:var(--tx2) !important; border-radius:8px !important;
+      font-weight:600 !important; padding:7px 14px !important; }
+    [data-testid="stTabs"] [role="tab"]:hover{ color:var(--tx) !important; background:#FFFFFF !important; }
     [data-testid="stTabs"] [role="tab"][aria-selected="true"]{
-      background:var(--acc) !important; color:#fff !important; box-shadow:none !important; }
+      background:#FFFFFF !important; color:var(--acc) !important;
+      box-shadow:0 1px 3px rgba(16,24,40,.12) !important; }
+    [data-testid="stTabs"] [data-baseweb="tab-highlight"],
+    [data-testid="stTabs"] [data-baseweb="tab-border"]{ display:none !important; }
 
-    /* ---------- Sidebar + métriques + expander ---------- */
-    [data-testid="stSidebar"]{ background:#0E121B !important; border-right:1px solid var(--line) !important; }
-    [data-testid="stSidebar"] [role="radiogroup"] label:hover{ background:rgba(98,113,255,.12) !important; }
-    [data-testid="stMetric"]{ background:var(--surf) !important; border:1px solid var(--line) !important; }
+    /* ---------- Sidebar + métriques + expander (clairs) ---------- */
+    [data-testid="stSidebar"]{ background:#F7F9FC !important; border-right:1px solid var(--line) !important; }
+    [data-testid="stSidebar"] [role="radiogroup"] label:hover{ background:#EAF0FF !important; }
+    [data-testid="stMetric"]{ background:#FFFFFF !important; border:1px solid var(--line) !important;
+      border-radius:14px; box-shadow:0 1px 2px rgba(16,24,40,.05); }
     [data-testid="stMetricValue"]{ color:var(--tx) !important; }
     [data-testid="stMetricLabel"]{ color:var(--tx2) !important; }
-    [data-testid="stExpander"]{ background:var(--surf) !important; border:1px solid var(--line) !important; }
+    [data-testid="stExpander"]{ background:#FFFFFF !important; border:1px solid var(--line) !important;
+      border-radius:12px; }
 
     /* ---------- Détails ---------- */
     hr{ border-color:var(--line) !important; }
-    ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.14) !important; }
-    ::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,.24) !important; }
-    code{ background:var(--surf2) !important; color:#C9D4FF !important; border:1px solid var(--line); border-radius:6px; }
+    ::-webkit-scrollbar-thumb{ background:#CBD5E1 !important; border-radius:8px; }
+    ::-webkit-scrollbar-thumb:hover{ background:#94A3B8 !important; }
+    code{ background:#F1F4FA !important; color:var(--acc2) !important; border:1px solid var(--line); border-radius:6px; }
+
+    /* ---------- Hero clair (override du bandeau sombre holo-hero) ---------- */
+    .holo-hero{ background:linear-gradient(120deg,#F0F5FF 0%, #EAF7F4 100%) !important;
+      border:1px solid #E2E8F4 !important; backdrop-filter:none !important; animation:none !important;
+      box-shadow:0 1px 2px rgba(16,24,40,.04), 0 12px 30px rgba(16,24,40,.06) !important; }
+    .holo-hero::before, .holo-hero::after{ display:none !important; }
+    .holo-hero h1{ color:#111827 !important; -webkit-text-fill-color:#111827 !important; background:none !important; }
+    .holo-hero p{ color:#5B6678 !important; }
+    .holo-dot{ background:#2F6BFF !important; box-shadow:0 0 10px rgba(47,107,255,.5) !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1085,12 +1098,11 @@ def empty_state(icon: str, title: str, hint: str = ""):
     (au lieu d'un simple message brut). Pour les listes sans contenu."""
     st.markdown(f"""
     <div style="text-align:center; padding:2.5rem 1.5rem; margin:.6rem 0;
-        background:linear-gradient(150deg,rgba(30,41,75,.28),rgba(12,18,38,.20));
-        border:1px dashed rgba(120,160,255,.22); border-radius:18px;">
+        background:#F7F9FC; border:1px dashed #D5DCE8; border-radius:18px;">
         <div style="font-size:2.7rem; margin-bottom:.4rem;">{icon}</div>
-        <div style="font-family:'Poppins','Inter',sans-serif; font-weight:600; color:#eaf2ff;
+        <div style="font-family:'Poppins','Inter',sans-serif; font-weight:600; color:#111827;
             font-size:1.1rem;">{title}</div>
-        <div style="color:#93a4c8; font-size:.92rem; margin:.4rem auto 0; max-width:480px;
+        <div style="color:#5B6678; font-size:.92rem; margin:.4rem auto 0; max-width:480px;
             line-height:1.55;">{hint}</div>
     </div>
     """, unsafe_allow_html=True)

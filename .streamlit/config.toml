@@ -1,10 +1,9 @@
-# Thème GetJobAI — dark premium haute-lisibilité (near-black + indigo confiant)
-# Inspiré des références marché (Linear / Vercel / Stripe) : fond profond neutre,
-# texte très contrasté, un seul accent fort. API officielle Streamlit (stable).
+# Thème GetJobAI — CLAIR premium, inspiré d'AIApply (fond blanc, accent bleu,
+# cartes blanches à ombre douce, statuts vert/orange). Sobre, pro, action-oriented.
 [theme]
-base = "dark"
-primaryColor = "#6271FF"
-backgroundColor = "#0B0E14"
-secondaryBackgroundColor = "#141925"
-textColor = "#F2F4F8"
+base = "light"
+primaryColor = "#2F6BFF"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F7FB"
+textColor = "#111827"
 font = "sans serif"
