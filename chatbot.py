@@ -119,7 +119,7 @@ def _synthese_vocale(client, texte):
         import re
         propre = re.sub(r"[*#`_>\-]{1,}", " ", texte)
         propre = re.sub(r"\s+", " ", propre).strip()[:900]
-        r = client.audio.speech.create(model="tts-1", voice="alloy", input=propre)
+        r = (_audio_client() or client).audio.speech.create(model="tts-1", voice="alloy", input=propre)
         return r.content
     except Exception:
         return None
@@ -129,7 +129,7 @@ def _transcrire(client, audio_file):
     """Transcrit l'audio du micro (WAV) en texte via Whisper. Retourne le texte ou None."""
     try:
         data = audio_file.getvalue() if hasattr(audio_file, "getvalue") else audio_file.read()
-        tr = client.audio.transcriptions.create(
+        tr = (_audio_client() or client).audio.transcriptions.create(
             model="whisper-1", file=("commande.wav", data), language="fr")
         return (tr.text or "").strip()
     except Exception as e:
@@ -185,6 +185,25 @@ def _get_client():
         return OpenAI(api_key=key)
     except Exception as e:
         st.error(f"Erreur initialisation OpenAI: {e}")
+        return None
+
+
+def _audio_client():
+    """Client OpenAI épinglé sur l'API RÉELLE (api.openai.com). Les endpoints audio
+    (/v1/audio/transcriptions, /v1/audio/speech) ne sont PAS routés par un éventuel
+    proxy OPENAI_BASE_URL (qui ne gère que le chat) -> on les force en direct."""
+    key = os.getenv("OPENAI_API_KEY")
+    if not key:
+        try:
+            key = st.secrets.get("OPENAI_API_KEY")
+        except Exception:
+            key = None
+    if not key:
+        return None
+    try:
+        from openai import OpenAI
+        return OpenAI(api_key=key, base_url="https://api.openai.com/v1")
+    except Exception:
         return None
 
 
