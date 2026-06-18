@@ -53,6 +53,15 @@ inject_animations()
 inject_neo_glass()
 inject_premium_polish()  # couche de finition premium (tabs, champs, typo, métriques)
 
+# ── Fond NOIR PUR (OLED) : override du dégradé bleu-nuit + grille d'inject_animations ──
+st.markdown("""
+<style>
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"],
+section.main, [data-testid="stMain"]{ background:#000000 !important; background-image:none !important; }
+[data-testid="stSidebar"]{ background:#050507 !important; }
+</style>
+""", unsafe_allow_html=True)
+
 
 # ============================================================
 # GÉNÉRATION PDF (lettre / CV) pour postuler manuellement
