@@ -723,7 +723,7 @@ elif page == "📤 Candidatures":
                             st.markdown(
                                 "<div style='background:rgba(34,197,94,0.10);border:1px solid "
                                 "rgba(34,197,94,0.35);border-radius:10px;padding:10px 12px;margin:4px 0;'>"
-                                f"<b>{_ttl}</b><br><span style='color:#cfe9d6'>{_safe}</span></div>",
+                                f"<b>{_ttl}</b><br><span style='color:#3F6B4E'>{_safe}</span></div>",
                                 unsafe_allow_html=True)
                         else:
                             st.info(f"{_ttl} — le message complet est dans votre Gmail.")
@@ -1293,7 +1293,7 @@ elif page == "🤖 Agents IA":
                         .then(()=>{{this.innerHTML="✅ Copié !";
                         setTimeout(()=>this.innerHTML="📋 Copier",1600);}})'
                         style="background:linear-gradient(135deg,#1e9bff,#2dd4bf);
-                        color:#04101f;border:none;padding:11px 16px;border-radius:8px;
+                        color:#ffffff;border:none;padding:11px 16px;border-radius:8px;
                         cursor:pointer;font-size:15px;font-weight:600;width:100%;
                         box-shadow:0 0 14px rgba(45,212,191,0.35);">
                         📋 Copier
@@ -1531,7 +1531,7 @@ elif page == "📖 Guide":
                 st.markdown(
                     f"<div style='margin-top:.5rem;padding:.5rem .8rem;border-radius:8px;"
                     f"background:rgba(45,212,191,0.10);border:1px dashed rgba(45,212,191,0.40);"
-                    f"color:#bff0e6;'>📍 <b>Où trouver le résultat :</b> {a['ou']}</div>",
+                    f"color:#0E8174;'>📍 <b>Où trouver le résultat :</b> {a['ou']}</div>",
                     unsafe_allow_html=True,
                 )
         st.markdown("")
@@ -1677,7 +1677,7 @@ elif page == "🤝 Réseau":
                                 .then(()=>{{this.innerHTML="✅ Copié !";
                                 setTimeout(()=>this.innerHTML="📋 Copier le message",1600);}})'
                                 style="background:linear-gradient(135deg,#1e9bff,#2dd4bf);
-                                color:#04101f;border:none;padding:9px 16px;border-radius:8px;
+                                color:#ffffff;border:none;padding:9px 16px;border-radius:8px;
                                 cursor:pointer;font-size:14px;font-weight:600;width:100%;
                                 box-shadow:0 0 14px rgba(45,212,191,0.35);">
                                 📋 Copier le message
