@@ -14,6 +14,7 @@ from datetime import datetime
 from ui_ux_pro_max import (
     inject_animations,
     inject_neo_glass,
+    inject_premium_polish,
     section_header,
     hero_holographic,
     holo_loader_3d,
@@ -49,6 +50,7 @@ st.set_page_config(
 # Injecter animations CSS + surcouche visuelle Neo-Glass (CSS uniquement)
 inject_animations()
 inject_neo_glass()
+inject_premium_polish()  # couche de finition premium (tabs, champs, typo, métriques)
 
 
 # ============================================================

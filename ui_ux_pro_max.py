@@ -905,3 +905,81 @@ def inject_neo_glass():
     ::-webkit-scrollbar-track { background: transparent; }
     </style>
     """, unsafe_allow_html=True)
+
+
+def inject_premium_polish():
+    """Couche de FINITION premium (au-dessus de neo_glass) : tabs en segmented
+    control, champs avec focus-ring lumineux, hiérarchie typographique raffinée,
+    sidebar en profondeur, métriques en cartes, densité aérée. 100% CSS, additif."""
+    st.markdown("""
+    <style>
+    :root{
+      --gja-blue:#5b7cff; --gja-blue2:#1e9bff; --gja-teal:#2dd4bf;
+      --gja-ink:#eaf2ff; --gja-muted:#93a4c8; --gja-line:rgba(120,160,255,.14);
+    }
+
+    /* Densité + largeur de lecture confortable */
+    .main .block-container{ padding-top:2.1rem; padding-bottom:4rem; max-width:1180px; }
+
+    /* Rendu net + hiérarchie typographique */
+    html, body, .stApp{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+    .main h1{ font-size:2.05rem !important; font-weight:700 !important; line-height:1.15 !important;
+      letter-spacing:-.5px !important;
+      background:linear-gradient(92deg,#eaf2ff 0%, #bcd4ff 58%, var(--gja-teal) 130%);
+      -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    [data-testid="stSidebar"] h1{ -webkit-text-fill-color:#fff !important; background:none !important; }
+    h2{ font-size:1.45rem !important; letter-spacing:-.3px !important; }
+    h3{ font-size:1.16rem !important; letter-spacing:-.2px !important; }
+    p, li, label{ line-height:1.6; }
+    [data-testid="stCaptionContainer"]{ color:var(--gja-muted) !important; }
+
+    /* ----- TABS : segmented control premium ----- */
+    [data-testid="stTabs"] [role="tablist"]{
+      gap:6px; background:rgba(12,20,40,.55); padding:6px; border-radius:14px;
+      border:1px solid var(--gja-line); backdrop-filter:blur(8px); }
+    [data-testid="stTabs"] [role="tab"]{
+      border-radius:10px !important; padding:8px 15px !important; color:var(--gja-muted) !important;
+      font-weight:600 !important; transition:all .2s; }
+    [data-testid="stTabs"] [role="tab"]:hover{ color:var(--gja-ink) !important; background:rgba(91,124,255,.10); }
+    [data-testid="stTabs"] [role="tab"][aria-selected="true"]{
+      color:#fff !important; background:linear-gradient(135deg,var(--gja-blue),var(--gja-teal)) !important;
+      box-shadow:0 4px 14px rgba(91,124,255,.35); }
+    [data-testid="stTabs"] [data-baseweb="tab-highlight"],
+    [data-testid="stTabs"] [data-baseweb="tab-border"]{ display:none !important; }
+
+    /* ----- CHAMPS : focus-ring lumineux ----- */
+    .stTextInput input, .stTextArea textarea, .stNumberInput input,
+    [data-baseweb="select"] > div{
+      border-radius:12px !important; border:1px solid var(--gja-line) !important;
+      transition:border-color .2s, box-shadow .2s !important; }
+    .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus,
+    [data-baseweb="input"]:focus-within, [data-baseweb="select"] > div:focus-within{
+      border-color:var(--gja-blue) !important;
+      box-shadow:0 0 0 3px rgba(91,124,255,.25) !important; outline:none !important; }
+    ::selection{ background:rgba(45,212,191,.32); }
+
+    /* ----- METRICS : carte accent ----- */
+    [data-testid="stMetric"]{
+      background:linear-gradient(150deg,rgba(30,41,75,.45),rgba(12,18,38,.35));
+      border:1px solid var(--gja-line); border-radius:16px; padding:14px 16px; }
+    [data-testid="stMetricValue"]{ font-family:'Poppins','Inter',sans-serif; font-weight:700; }
+    [data-testid="stMetricLabel"]{ color:var(--gja-muted) !important; }
+
+    /* ----- EXPANDER + SIDEBAR + boutons secondaires ----- */
+    [data-testid="stExpander"]{ border:1px solid var(--gja-line) !important; border-radius:14px !important;
+      overflow:hidden; background:rgba(12,18,38,.35); }
+    [data-testid="stExpander"] summary:hover{ color:var(--gja-teal) !important; }
+    [data-testid="stSidebar"]{ background:linear-gradient(180deg,#0c1426 0%, #0a0f1e 100%) !important;
+      border-right:1px solid var(--gja-line); }
+    .stButton > button[kind="secondary"]{
+      background:rgba(91,124,255,.08) !important; border:1px solid var(--gja-line) !important;
+      color:var(--gja-ink) !important; border-radius:12px !important; }
+    .stButton > button[kind="secondary"]:hover{
+      border-color:var(--gja-teal) !important; background:rgba(45,212,191,.10) !important; }
+
+    /* ----- Divers : dividers, table, focus clavier ----- */
+    hr{ border-color:var(--gja-line) !important; opacity:.7; }
+    [data-testid="stDataFrame"]{ border-radius:14px; overflow:hidden; border:1px solid var(--gja-line); }
+    *:focus-visible{ outline:2px solid var(--gja-teal) !important; outline-offset:2px; }
+    </style>
+    """, unsafe_allow_html=True)
