@@ -2007,6 +2007,19 @@ elif page == "⚙️ Paramètres":
                                 _me.get("parcours_scolaire") or "", height=90,
                                 placeholder="ex : DEC en informatique (2024-2026), DES (2024)…")
 
+        st.caption("🎯 **Zone où vous aimeriez votre stage** (laissez vide = votre ville de "
+                   "résidence). COOP Hunter cherchera les stages dans cette zone.")
+        zc1, zc2, zc3 = st.columns(3)
+        with zc1:
+            coop_zone_ville = st.text_input("Ville visée (stage)", _me.get("coop_zone_ville") or "",
+                                            placeholder="ex : Toronto")
+        with zc2:
+            coop_zone_province = st.text_input("Province / État visé", _me.get("coop_zone_province") or "",
+                                               placeholder="ex : Ontario")
+        with zc3:
+            coop_zone_pays = st.text_input("Pays visé", _me.get("coop_zone_pays") or "",
+                                           placeholder="ex : Canada")
+
         st.markdown("---")
         st.markdown("### 🍁 Profil immigration (pour Immigration Advisor)")
         st.caption("Renseignez ces champs pour un rapport d'immigration personnalisé "
@@ -2038,6 +2051,8 @@ elif page == "⚙️ Paramètres":
                 "sector": secteur_profil,
                 "ecole": ecole, "programme_etudes": programme,
                 "parcours_scolaire": parcours, "session_coop": session_coop,
+                "coop_zone_ville": coop_zone_ville, "coop_zone_province": coop_zone_province,
+                "coop_zone_pays": coop_zone_pays,
                 "pays_origine": pays_origine, "statut_immigration": statut_immig,
                 "annee_arrivee": annee_arrivee,
             })

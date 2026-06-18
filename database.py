@@ -286,6 +286,7 @@ class SupabaseClient:
                    "linkedin_url", "linkedin_profile", "location", "keywords", "sector",
                    "cv_text", "cv_filename",
                    "ecole", "programme_etudes", "parcours_scolaire", "session_coop",
+                   "coop_zone_ville", "coop_zone_province", "coop_zone_pays",
                    "pays_origine", "statut_immigration", "annee_arrivee",
                    "post_genre", "post_peau", "post_langue", "post_edito1", "post_edito2",
                    "post_tag", "photo_b64", "gmail_address", "gmail_password"}
