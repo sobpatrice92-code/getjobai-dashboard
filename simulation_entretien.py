@@ -248,9 +248,17 @@ def simulation_entretien_page(user_id, profil):
         st.rerun()
 
 
+def _to_int(v, defaut=0):
+    """int() robuste : l'IA peut renvoyer '85', 85.5, 'N/A'… -> jamais de crash."""
+    try:
+        return int(float(v))
+    except (TypeError, ValueError):
+        return defaut
+
+
 def _afficher_score(client, sc):
     st.markdown("### 📊 Votre bilan d'entretien")
-    g = int(sc.get("global", 0))
+    g = _to_int(sc.get("global", 0))
     coul = "#16A34A" if g >= 75 else "#F59E0B" if g >= 55 else "#EF4444"
     st.markdown(
         f"<div style=\"font-family:'Poppins','Inter',sans-serif;font-weight:800;font-size:3.1rem;"
@@ -261,8 +269,9 @@ def _afficher_score(client, sc):
     if dims:
         cols = st.columns(len(dims))
         for col, (k, v) in zip(cols, dims.items()):
-            col.metric(k, f"{int(v)}")
-            col.progress(min(int(v), 100) / 100)
+            _vi = _to_int(v)
+            col.metric(k, f"{_vi}")
+            col.progress(min(max(_vi, 0), 100) / 100)
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("#### ✅ Points forts")
