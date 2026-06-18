@@ -208,8 +208,12 @@ def simulation_entretien_page(user_id, profil):
 def _afficher_score(client, sc):
     st.markdown("### 📊 Votre bilan d'entretien")
     g = int(sc.get("global", 0))
-    coul = "#22c55e" if g >= 75 else "#f59e0b" if g >= 55 else "#ef4444"
-    st.markdown(f"<h1 style='color:{coul};margin:0'>{g}/100</h1>", unsafe_allow_html=True)
+    coul = "#16A34A" if g >= 75 else "#F59E0B" if g >= 55 else "#EF4444"
+    st.markdown(
+        f"<div style=\"font-family:'Poppins','Inter',sans-serif;font-weight:800;font-size:3.1rem;"
+        f"line-height:1;margin:.2rem 0 .4rem;color:{coul};\">{g}"
+        f"<span style='font-size:1.4rem;font-weight:700;color:#9AA4B5;margin-left:2px;'>/100</span></div>",
+        unsafe_allow_html=True)
     dims = sc.get("dimensions", {})
     if dims:
         cols = st.columns(len(dims))
