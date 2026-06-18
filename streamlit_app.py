@@ -2007,11 +2007,11 @@ elif page == "⚙️ Paramètres":
                                 _me.get("parcours_scolaire") or "", height=90,
                                 placeholder="ex : DEC en informatique (2024-2026), DES (2024)…")
 
-        st.caption("🎯 **Zone où vous aimeriez votre stage** (laissez vide = votre ville de "
-                   "résidence). COOP Hunter cherchera les stages dans cette zone.")
+        st.caption("🎯 **Zone où vous cherchez (stage ou emploi)** — laissez vide = votre ville "
+                   "de résidence. COOP Hunter, Job Hunter et Chercheur d'offres cibleront cette zone.")
         zc1, zc2, zc3 = st.columns(3)
         with zc1:
-            coop_zone_ville = st.text_input("Ville visée (stage)", _me.get("coop_zone_ville") or "",
+            coop_zone_ville = st.text_input("Ville visée", _me.get("coop_zone_ville") or "",
                                             placeholder="ex : Toronto")
         with zc2:
             coop_zone_province = st.text_input("Province / État visé", _me.get("coop_zone_province") or "",
