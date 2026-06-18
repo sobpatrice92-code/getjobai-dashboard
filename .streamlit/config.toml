@@ -1,9 +1,10 @@
-# Thème GetJobAI — sombre high-tech (bleu électrique + teal)
-# API officielle Streamlit : stable, ne casse pas aux mises à jour.
+# Thème GetJobAI — dark premium haute-lisibilité (near-black + indigo confiant)
+# Inspiré des références marché (Linear / Vercel / Stripe) : fond profond neutre,
+# texte très contrasté, un seul accent fort. API officielle Streamlit (stable).
 [theme]
 base = "dark"
-primaryColor = "#1e9bff"
-backgroundColor = "#0a0f1e"
-secondaryBackgroundColor = "#111c34"
-textColor = "#dbeafe"
+primaryColor = "#6271FF"
+backgroundColor = "#0B0E14"
+secondaryBackgroundColor = "#141925"
+textColor = "#F2F4F8"
 font = "sans serif"

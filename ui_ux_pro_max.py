@@ -60,30 +60,28 @@ def card(title: str, content: str, color: str = "primary", icon: str = "📋", a
             "warning": "orange", "danger": "orange", "info": "cyan"}
     a1, a2 = _ACCENTS.get(accent or _map.get(color, "blue"), _ACCENTS["blue"])
     _footer_html = (
-        f'<div style="margin:.85rem 0 0 0; padding-top:.6rem; border-top:1px solid {a1}26;'
-        f'color:#9fb4d6; font-size:.82rem;">{footer}</div>' if footer else ""
+        f'<div style="margin:.8rem 0 0 0; padding-top:.6rem; border-top:1px solid rgba(255,255,255,.08);'
+        f'color:#A6B0C2; font-size:.82rem;">{footer}</div>' if footer else ""
     )
     st.markdown(f"""
     <div style="
         position:relative; overflow:hidden;
-        background: linear-gradient(150deg, {a1}1f 0%, rgba(12,18,38,0.55) 62%);
-        backdrop-filter: blur(14px) saturate(120%);
-        -webkit-backdrop-filter: blur(14px) saturate(120%);
-        border: 1px solid {a1}3a;
-        border-left: 4px solid {a1};
-        padding: 1.1rem 1.3rem; margin: .6rem 0 .2rem 0;
-        border-radius: 16px 16px 4px 4px;
-        box-shadow: 0 8px 26px rgba(4,8,20,0.42), 0 0 20px {a1}1c;
-        transition: transform .25s cubic-bezier(.22,.61,.36,1), box-shadow .25s;
-    " onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 14px 38px rgba(4,8,20,.55), 0 0 28px {a1}4d'"
-       onmouseout="this.style.transform='none';this.style.boxShadow='0 8px 26px rgba(4,8,20,.42), 0 0 20px {a1}1c'">
-        <div style="display:flex; align-items:center; gap:.6rem;">
-            <div style="width:40px;height:40px;border-radius:11px;display:flex;align-items:center;
-                        justify-content:center;font-size:1.2rem;flex:0 0 auto;
-                        background:linear-gradient(135deg,{a1},{a2});box-shadow:0 4px 14px {a1}66;">{icon}</div>
-            <h3 style="margin:0;color:#ffffff;font-family:'Poppins','Inter',sans-serif;font-size:1.12rem;">{title}</h3>
+        background:#141925;
+        border:1px solid rgba(255,255,255,.08);
+        border-left:3px solid {a1};
+        padding:1.05rem 1.25rem; margin:.6rem 0 .2rem 0;
+        border-radius:14px 14px 6px 6px;
+        box-shadow:0 10px 26px rgba(0,0,0,0.45);
+        transition:transform .2s cubic-bezier(.22,.61,.36,1), border-color .2s, box-shadow .2s;
+    " onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='rgba(255,255,255,.16)';this.style.boxShadow='0 16px 34px rgba(0,0,0,.55)'"
+       onmouseout="this.style.transform='none';this.style.borderColor='rgba(255,255,255,.08)';this.style.boxShadow='0 10px 26px rgba(0,0,0,.45)'">
+        <div style="display:flex; align-items:center; gap:.7rem;">
+            <div style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;
+                        justify-content:center;font-size:1.15rem;flex:0 0 auto;
+                        background:linear-gradient(135deg,{a1},{a2});box-shadow:0 4px 12px {a1}55;">{icon}</div>
+            <h3 style="margin:0;color:#F2F4F8;font-family:'Poppins','Inter',sans-serif;font-size:1.07rem;font-weight:600;">{title}</h3>
         </div>
-        <p style="margin:.6rem 0 0 0;color:#c7d6ef;font-size:.92rem;">{content}</p>
+        <p style="margin:.55rem 0 0 0;color:#AEB8C9;font-size:.9rem;line-height:1.5;">{content}</p>
         {_footer_html}
     </div>
     """, unsafe_allow_html=True)
@@ -91,11 +89,11 @@ def card(title: str, content: str, color: str = "primary", icon: str = "📋", a
 
 # Palette d'accents Neo-Glass pour les cartes stats (bleu/violet/vert/orange…)
 _ACCENTS = {
-    "blue":   ("#1e9bff", "#3b82f6"),
-    "purple": ("#9b6bff", "#7c3aed"),
-    "green":  ("#22c55e", "#10b981"),
-    "orange": ("#f59e0b", "#fb923c"),
-    "cyan":   ("#2dd4bf", "#06b6d4"),
+    "blue":   ("#6271FF", "#4E5BE6"),   # indigo — accent principal
+    "purple": ("#A78BFA", "#7C3AED"),
+    "green":  ("#34D399", "#10B981"),
+    "orange": ("#FBBF24", "#F59E0B"),
+    "cyan":   ("#2DD4BF", "#0EA5A4"),
 }
 
 
@@ -988,6 +986,96 @@ def inject_premium_polish():
     hr{ border-color:var(--gja-line) !important; opacity:.7; }
     [data-testid="stDataFrame"]{ border-radius:14px; overflow:hidden; border:1px solid var(--gja-line); }
     *:focus-visible{ outline:2px solid var(--gja-teal) !important; outline-offset:2px; }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def inject_market_grade():
+    """Surcouche FINALE — direction premium haute-lisibilité (Linear/Vercel/Stripe) :
+    near-black neutre, surfaces solides + bordures fines, texte très contrasté, UN
+    accent indigo confiant, glows/blur réduits. Appelée en DERNIER (gagne la cascade)."""
+    st.markdown("""
+    <style>
+    :root{
+      --bg:#0B0E14; --surf:#141925; --surf2:#1B2230; --surf3:#222b3b;
+      --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+      --tx:#F2F4F8; --tx2:#AEB8C9; --tx3:#7A8597;
+      --acc:#6271FF; --acc2:#7C89FF; --accd:#4E5BE6; --teal:#2DD4BF;
+    }
+
+    /* ---------- Fond + texte très contrasté ---------- */
+    .stApp, [data-testid="stAppViewContainer"], .main, [data-testid="stHeader"]{
+      background:var(--bg) !important; }
+    .stApp, .stMarkdown, p, li, span, div, label,
+    [data-testid="stWidgetLabel"] label, [data-baseweb="form-control-label"]{ color:var(--tx); }
+    h1,h2,h3,h4,h5{ color:var(--tx) !important; }
+    [data-testid="stCaptionContainer"], .stCaption, small{ color:var(--tx2) !important; }
+    a, .stMarkdown a{ color:var(--acc2) !important; text-decoration:none; }
+    a:hover{ color:#9AA6FF !important; text-decoration:underline; }
+    .main h1{
+      background:linear-gradient(92deg,#FFFFFF 0%, #D8E0FF 60%, #8FE9DD 120%) !important;
+      -webkit-background-clip:text !important; background-clip:text !important;
+      -webkit-text-fill-color:transparent !important; }
+
+    /* ---------- CARTES (st.container border=True) : surface solide, hairline ---------- */
+    [data-testid="stVerticalBlockBorderWrapper"]{
+      background:var(--surf) !important; backdrop-filter:none !important;
+      -webkit-backdrop-filter:none !important;
+      border:1px solid var(--line) !important; border-radius:16px !important;
+      box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 28px rgba(0,0,0,.5) !important; }
+    [data-testid="stVerticalBlockBorderWrapper"]:hover{
+      transform:translateY(-2px); border-color:var(--line2) !important;
+      box-shadow:0 14px 34px rgba(0,0,0,.55) !important; }
+
+    /* ---------- Boutons : primaire solide confiant, AUCUN pulsing ---------- */
+    .stButton > button{ border-radius:10px !important; font-weight:600 !important;
+      transition:transform .15s, background .18s, border-color .18s, box-shadow .2s !important; }
+    .stButton > button[kind="primary"], [data-testid="baseButton-primary"]{
+      background:var(--acc) !important; border:1px solid rgba(255,255,255,.14) !important;
+      color:#fff !important; animation:none !important;
+      box-shadow:0 4px 14px rgba(98,113,255,.32) !important; }
+    .stButton > button[kind="primary"]:hover, [data-testid="baseButton-primary"]:hover{
+      background:var(--accd) !important; transform:translateY(-1px);
+      box-shadow:0 8px 22px rgba(98,113,255,.5) !important; }
+    .stButton > button[kind="secondary"]{
+      background:var(--surf2) !important; border:1px solid var(--line) !important; color:var(--tx) !important; }
+    .stButton > button[kind="secondary"]:hover{
+      background:var(--surf3) !important; border-color:var(--line2) !important; }
+    [data-testid="stLinkButton"] a{ border-radius:10px !important; }
+
+    /* ---------- Champs : surface sombre nette + focus-ring indigo ---------- */
+    .stTextInput input, .stTextArea textarea, .stNumberInput input,
+    [data-baseweb="select"] > div, [data-baseweb="input"]{
+      background:#0E121B !important; border:1px solid var(--line) !important;
+      color:var(--tx) !important; border-radius:10px !important; }
+    .stTextInput input::placeholder, .stTextArea textarea::placeholder{ color:var(--tx3) !important; }
+    .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus,
+    [data-baseweb="input"]:focus-within, [data-baseweb="select"] > div:focus-within{
+      border-color:var(--acc) !important; box-shadow:0 0 0 3px rgba(98,113,255,.28) !important; }
+    ::selection{ background:rgba(98,113,255,.35); color:#fff; }
+
+    /* ---------- Tabs : segmented sobre, actif solide ---------- */
+    [data-testid="stTabs"] [role="tablist"]{
+      background:var(--surf) !important; border:1px solid var(--line) !important;
+      backdrop-filter:none !important; }
+    [data-testid="stTabs"] [role="tab"]{ color:var(--tx2) !important; }
+    [data-testid="stTabs"] [role="tab"]:hover{ color:var(--tx) !important; background:rgba(98,113,255,.10) !important; }
+    [data-testid="stTabs"] [role="tab"][aria-selected="true"]{
+      background:var(--acc) !important; color:#fff !important; box-shadow:none !important; }
+
+    /* ---------- Sidebar + métriques + expander ---------- */
+    [data-testid="stSidebar"]{ background:#0E121B !important; border-right:1px solid var(--line) !important; }
+    [data-testid="stSidebar"] [role="radiogroup"] label:hover{ background:rgba(98,113,255,.12) !important; }
+    [data-testid="stMetric"]{ background:var(--surf) !important; border:1px solid var(--line) !important; }
+    [data-testid="stMetricValue"]{ color:var(--tx) !important; }
+    [data-testid="stMetricLabel"]{ color:var(--tx2) !important; }
+    [data-testid="stExpander"]{ background:var(--surf) !important; border:1px solid var(--line) !important; }
+
+    /* ---------- Détails ---------- */
+    hr{ border-color:var(--line) !important; }
+    ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.14) !important; }
+    ::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,.24) !important; }
+    code{ background:var(--surf2) !important; color:#C9D4FF !important; border:1px solid var(--line); border-radius:6px; }
     </style>
     """, unsafe_allow_html=True)
 

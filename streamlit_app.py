@@ -15,6 +15,7 @@ from ui_ux_pro_max import (
     inject_animations,
     inject_neo_glass,
     inject_premium_polish,
+    inject_market_grade,
     empty_state,
     section_header,
     hero_holographic,
@@ -52,6 +53,7 @@ st.set_page_config(
 inject_animations()
 inject_neo_glass()
 inject_premium_polish()  # couche de finition premium (tabs, champs, typo, métriques)
+inject_market_grade()    # direction finale haute-contraste/sobre — gagne la cascade
 
 
 # ============================================================
