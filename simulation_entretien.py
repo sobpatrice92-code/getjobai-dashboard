@@ -183,15 +183,18 @@ def simulation_entretien_page(user_id, profil):
         termine = True
 
     if not termine:
-        # Réponse à la voix (optionnel) ou écrite
+        # Réponse à la voix (optionnel) ou écrite.
+        # CLÉ DYNAMIQUE par question : sinon l'audio enregistré persiste au rerun et
+        # se re-transcrit en boucle -> l'entretien fonce jusqu'au bout et « s'arrête ».
         rep = None
         if hasattr(st, "audio_input") and _transcrire:
-            au = st.audio_input("🎙️ Répondre à la voix (optionnel)")
+            au = st.audio_input("🎙️ Répondre à la voix (optionnel)",
+                                 key=f"sim_audio_{S['sim_qcount']}")
             if au is not None:
                 rep = _transcrire(client, au)
         typed = st.chat_input("Votre réponse…")
         rep = typed or rep
-        if rep:
+        if rep and rep.strip():
             S["sim_msgs"].append({"role": "user", "content": rep})
             try:
                 with st.spinner("…"):
