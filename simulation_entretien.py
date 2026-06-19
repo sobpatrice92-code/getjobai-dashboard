@@ -148,9 +148,14 @@ def simulation_entretien_page(user_id, profil):
         profil = _fetch_profil(user_id)
 
     S = st.session_state
+    # ---------- Écran de RÉSULTATS (entretien terminé) ----------
+    # DOIT passer AVANT l'écran de config : sinon le score calculé à la fin est
+    # effacé au rerun suivant et l'utilisateur ne voit jamais son bilan.
+    if not S.get("sim_active") and S.get("sim_score"):
+        _afficher_score(client, S["sim_score"])
+        return
     # ---------- Écran de configuration ----------
     if not S.get("sim_active"):
-        S.pop("sim_score", None)
         with st.form("sim_cfg"):
             c1, c2 = st.columns(2)
             poste = c1.text_input("Poste visé", value=S.get("sim_poste", ""))
@@ -191,9 +196,6 @@ def simulation_entretien_page(user_id, profil):
                          "dashboard (Render) doit être mise à jour.")
                 return
             st.rerun()
-        # Afficher le dernier score s'il existe
-        if S.get("sim_score"):
-            _afficher_score(client, S["sim_score"])
         return
 
     # ---------- Entretien en cours ----------
@@ -242,8 +244,11 @@ def simulation_entretien_page(user_id, profil):
             try:
                 S["sim_score"] = _scorecard(client, cfg, transcript)
             except Exception as e:
-                st.error(f"Évaluation impossible : {str(e)[:120]}")
-                S["sim_score"] = None
+                S["sim_score"] = {"global": 0, "recommandations": [
+                    f"Évaluation IA impossible ({str(e)[:120]}). Réessayez « Nouvel entretien »."]}
+            if not S.get("sim_score"):
+                S["sim_score"] = {"global": 0, "recommandations": [
+                    "L'évaluation IA n'a rien renvoyé. Réessayez « Nouvel entretien »."]}
         S["sim_active"] = False
         st.rerun()
 
