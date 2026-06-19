@@ -2093,7 +2093,10 @@ elif page == "⚙️ Paramètres":
                 "pays_origine": pays_origine, "statut_immigration": statut_immig,
                 "annee_arrivee": annee_arrivee,
             })
-            st.success("✅ Profil sauvegardé!") if ok else st.error("Erreur de sauvegarde.")
+            if ok:
+                st.success("✅ Profil sauvegardé!")
+            else:
+                st.error("Erreur de sauvegarde.")
 
     with tab10:
         st.subheader("🤝 Filtre de l'agent Réseau")
@@ -2115,7 +2118,10 @@ elif page == "⚙️ Paramètres":
                 "reseau_exclure_entreprises": excl_ent.strip(),
                 "reseau_exclure_roles": excl_roles.strip(),
             })
-            st.success("✅ Filtre réseau enregistré !") if ok else st.error("Erreur de sauvegarde.")
+            if ok:
+                st.success("✅ Filtre réseau enregistré !")
+            else:
+                st.error("Erreur de sauvegarde.")
         if _filtre_on and not (excl_ent.strip() or excl_roles.strip()):
             st.info("Filtre activé mais aucune exclusion saisie → tout le monde sera contacté.")
 
@@ -2131,7 +2137,10 @@ elif page == "⚙️ Paramètres":
 
         if st.button("💾 Sauvegarder les Keywords", type="primary"):
             ok = db.update_user(st.session_state.user_id, {"keywords": keywords.strip()})
-            st.success("✅ Keywords sauvegardés!") if ok else st.error("Erreur de sauvegarde.")
+            if ok:
+                st.success("✅ Keywords sauvegardés!")
+            else:
+                st.error("Erreur de sauvegarde.")
 
     with tab3:
         st.subheader("📄 Mon CV")
@@ -2157,7 +2166,10 @@ elif page == "⚙️ Paramètres":
                     if st.button("💾 Enregistrer ce CV", type="primary", key="save_cv_pdf"):
                         ok = db.update_user(st.session_state.user_id,
                                             {"cv_text": texte, "cv_filename": up.name})
-                        st.success("✅ CV enregistré!") if ok else st.error("Erreur de sauvegarde.")
+                        if ok:
+                            st.success("✅ CV enregistré!")
+                        else:
+                            st.error("Erreur de sauvegarde.")
                 else:
                     st.error("Impossible d'extraire le texte (PDF scanné ?). Collez-le ci-dessous.")
             except Exception as e:
@@ -2168,7 +2180,10 @@ elif page == "⚙️ Paramètres":
         if st.button("💾 Enregistrer le CV (texte)", key="save_cv_txt"):
             ok = db.update_user(st.session_state.user_id,
                                 {"cv_text": cv_txt.strip(), "cv_filename": _cv_nom or "CV.txt"})
-            st.success("✅ CV enregistré!") if ok else st.error("Erreur de sauvegarde.")
+            if ok:
+                st.success("✅ CV enregistré!")
+            else:
+                st.error("Erreur de sauvegarde.")
 
     with tab4:
         st.subheader("📧 Gmail d'envoi (Copilote — postuler par email)")
