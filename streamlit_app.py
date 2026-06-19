@@ -1731,12 +1731,14 @@ elif page == "🤝 Réseau":
                             msg = generer_message_linkedin(nom, titre, entreprise,
                                                            secteur=_secteur_user, nom_user=_nom_user)
                             db.update_contact_message(cid, msg)
+                            st.session_state[f"msg_{cid}"] = msg  # MAJ du widget (sinon valeur figée)
                             st.rerun()
                     else:
                         if st.button("♻️ Régénérer le message", key=f"regen_{cid}"):
                             msg = generer_message_linkedin(nom, titre, entreprise,
                                                            secteur=_secteur_user, nom_user=_nom_user)
                             db.update_contact_message(cid, msg)
+                            st.session_state[f"msg_{cid}"] = msg  # MAJ du widget (sinon valeur figée)
                             st.rerun()
                     st.text_area("✉️ Message (à envoyer sur LinkedIn)",
                                  value=message, height=110, key=f"msg_{cid}")
