@@ -248,6 +248,19 @@ def _prenom_utile(nom):
     return p if len(p) >= 2 and p[0].isalpha() else ""
 
 
+_PLATEFORMES_MSG = ("michael page", "indeed", "linkedin", "jooble", "talent.com",
+                    "jobillico", "simplify", "glassdoor", "monster", "jobboom",
+                    "neuvoo", "workopolis", "ziprecruiter", "randstad", "adecco",
+                    "n/a", "via", "")
+
+
+def _clean_entreprise(e):
+    """Nom d'entreprise propre, ou '' si c'est une plateforme/agence ('via Michael
+    Page') — évite la phrase cassée « chez via Michael Page »."""
+    e = re.sub(r"^\s*(via|chez|au sein de|@)\s+", "", (e or "").strip(), flags=re.I).strip()
+    return "" if e.lower() in _PLATEFORMES_MSG else e
+
+
 def generer_message_linkedin(nom, titre, entreprise, secteur="votre secteur",
                              nom_user="", objectif=""):
     """Message d'invitation LinkedIn HYPER-personnalisé (< 300 car), adapté au TYPE
@@ -255,6 +268,7 @@ def generer_message_linkedin(nom, titre, entreprise, secteur="votre secteur",
     client = _get_client()
     prenom = _prenom_utile(nom)
     moi = nom_user or "un professionnel"
+    ent = _clean_entreprise(entreprise)
     if client is None:
         salut = f"Bonjour {prenom}, " if prenom else "Bonjour, "
         return (f"{salut}je suis {nom_user}, professionnel en {secteur}. "
@@ -272,7 +286,7 @@ def generer_message_linkedin(nom, titre, entreprise, secteur="votre secteur",
             "secteur général. " + ouverture + "\n"
             f"Expéditeur : {moi} (en {secteur}).\n"
             f"Destinataire : {('un·e ' + titre) if titre else 'un professionnel'}"
-            + (f" chez {entreprise}" if entreprise else "") + ".\n"
+            + (f" chez {ent}" if ent else "") + ".\n"
             f"{angle}\n"
             + (f"Objectif précis : {objectif}.\n" if objectif else "")
             + "Termine par une ouverture simple. Réponds UNIQUEMENT avec le message, sans guillemets."
@@ -284,6 +298,7 @@ def generer_message_linkedin(nom, titre, entreprise, secteur="votre secteur",
         msg = r.choices[0].message.content.strip()
         # Filet de sécurité : retirer tout crochet/placeholder résiduel
         msg = re.sub(r"\s*\[[^\]]*\]", "", msg)
+        msg = re.sub(r"\bchez\s*(?=[.,;:!?]|$)", "", msg, flags=re.I)  # « chez » orphelin
         msg = re.sub(r"\s{2,}", " ", msg).strip()
         return msg[:290]
     except Exception:
