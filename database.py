@@ -116,6 +116,23 @@ class SupabaseClient:
         except Exception:
             return False
 
+    def vider_table(self, table: str, user_id: str) -> int:
+        """Supprime TOUTES les lignes de `table` appartenant à user_id (remise à 0).
+        Allowlist stricte : impossible de viser une table non prévue.
+        Retourne le nombre de lignes supprimées."""
+        if table not in ("jobs", "candidatures", "contacts_reseau", "livrables"):
+            return 0
+        url = f"{self.url}/rest/v1/{table}?user_id=eq.{user_id}"
+        h = {**self.headers, "Prefer": "count=exact, return=minimal"}
+        try:
+            r = httpx.delete(url, headers=h, timeout=20)
+            if r.status_code in (200, 204):
+                cr = r.headers.get("content-range", "")
+                return int(cr.split("/")[-1]) if "/" in cr else 0
+        except Exception as e:
+            st.error(f"Erreur remise à zéro ({table}): {e}")
+        return 0
+
     def get_contacts_reseau(self, user_id: str, limit: int = 200) -> List[Dict]:
         """Contacts réseau LinkedIn à contacter (mode semi-auto)."""
         url = (f"{self.url}/rest/v1/contacts_reseau?user_id=eq.{user_id}"

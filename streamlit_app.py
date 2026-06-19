@@ -435,6 +435,34 @@ if st.session_state.user_id and not st.session_state.is_admin \
         )
         st.stop()
 
+
+def bouton_remise_a_zero(table, libelle):
+    """Bouton '🗑️ Tout remettre à 0' (vide la table pour l'utilisateur courant),
+    avec confirmation obligatoire. À placer en haut d'une page."""
+    if not st.session_state.get("user_id"):
+        return
+    db = get_supabase_client()
+    k = f"confirm_raz_{table}"
+    if not st.session_state.get(k):
+        _, cbtn = st.columns([3, 1])
+        if cbtn.button("🗑️ Tout remettre à 0", key=f"raz_btn_{table}",
+                       use_container_width=True):
+            st.session_state[k] = True
+            st.rerun()
+    else:
+        st.warning(f"⚠️ Supprimer **toutes** vos {libelle} ? Action **irréversible**.")
+        col_ok, col_no = st.columns(2)
+        if col_ok.button("Oui, tout supprimer", key=f"raz_ok_{table}",
+                         type="primary", use_container_width=True):
+            n = db.vider_table(table, st.session_state.user_id)
+            st.session_state[k] = False
+            st.success(f"✅ {n} élément(s) supprimé(s).")
+            st.rerun()
+        if col_no.button("Annuler", key=f"raz_no_{table}", use_container_width=True):
+            st.session_state[k] = False
+            st.rerun()
+
+
 # ============================================================
 # PAGE: DASHBOARD
 # ============================================================
@@ -568,6 +596,7 @@ elif page == "📋 Offres d'Emploi":
         alert("Connectez-vous pour voir vos offres.", "warning")
     else:
         db = get_supabase_client()
+        bouton_remise_a_zero("jobs", "offres")
         # Charger les VRAIES offres de l'utilisateur depuis Supabase
         all_jobs = db.get_jobs(st.session_state.user_id, limit=500)
 
@@ -654,6 +683,7 @@ elif page == "📤 Candidatures":
         "📤 Mes Candidatures",
         "Suivez l'état de vos candidatures"
     )
+    bouton_remise_a_zero("candidatures", "candidatures")
 
     # Stats candidatures RÉELLES depuis Supabase
     if st.session_state.user_id:
@@ -1618,6 +1648,7 @@ elif page == "🤝 Réseau":
         "🤝 Réseau LinkedIn",
         "Contacts trouvés + messages prêts — vous envoyez en 1 clic (robuste, sans risque)"
     )
+    bouton_remise_a_zero("contacts_reseau", "contacts réseau")
 
     if not st.session_state.user_id:
         alert("Connectez-vous pour voir vos contacts réseau.", "warning")
@@ -1760,6 +1791,7 @@ elif page == "📦 Livrables":
         "📦 Livrables",
         "Tous les résultats produits par vos agents"
     )
+    bouton_remise_a_zero("livrables", "livrables")
 
     if not st.session_state.user_id:
         alert("Connectez-vous pour voir vos livrables.", "warning")
