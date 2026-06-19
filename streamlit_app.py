@@ -1999,9 +1999,9 @@ elif page == "⚙️ Paramètres":
         "Configurez votre profil et vos préférences"
     )
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs(
         ["👤 Profil", "🔑 Keywords", "📄 Mon CV", "🔔 Notifications", "🔒 Mot de passe",
-         "🔗 LinkedIn", "🎨 Post LinkedIn", "🧩 Extension", "📝 Easy Apply"])
+         "🔗 LinkedIn", "🎨 Post LinkedIn", "🧩 Extension", "📝 Easy Apply", "🤝 Réseau"])
 
     # Charger le VRAI profil de l'utilisateur connecté (personnalisé)
     db = get_supabase_client()
@@ -2094,6 +2094,30 @@ elif page == "⚙️ Paramètres":
                 "annee_arrivee": annee_arrivee,
             })
             st.success("✅ Profil sauvegardé!") if ok else st.error("Erreur de sauvegarde.")
+
+    with tab10:
+        st.subheader("🤝 Filtre de l'agent Réseau")
+        st.caption("Liste noire : l'agent Réseau ne contactera PAS (ni invitation, ni message) "
+                   "les entreprises et les rôles exclus ici. Tout le reste est contacté normalement.")
+        _filtre_on = st.checkbox("Activer le filtre réseau",
+                                 value=bool(_me.get("reseau_filtre_actif")))
+        excl_ent = st.text_area(
+            "Entreprises à exclure (une par ligne ou séparées par des virgules)",
+            value=_me.get("reseau_exclure_entreprises") or "", height=110,
+            placeholder="ex :\nAcme Construction\nConcurrent X\nAgence d'intérim Y")
+        excl_roles = st.text_area(
+            "Rôles / titres à exclure (mots-clés cherchés dans le titre LinkedIn)",
+            value=_me.get("reseau_exclure_roles") or "", height=110,
+            placeholder="ex :\nstagiaire\nétudiant\ncommercial\nvente\nassurance")
+        if st.button("💾 Enregistrer le filtre réseau", type="primary"):
+            ok = db.update_user(st.session_state.user_id, {
+                "reseau_filtre_actif": _filtre_on,
+                "reseau_exclure_entreprises": excl_ent.strip(),
+                "reseau_exclure_roles": excl_roles.strip(),
+            })
+            st.success("✅ Filtre réseau enregistré !") if ok else st.error("Erreur de sauvegarde.")
+        if _filtre_on and not (excl_ent.strip() or excl_roles.strip()):
+            st.info("Filtre activé mais aucune exclusion saisie → tout le monde sera contacté.")
 
     with tab2:
         st.subheader("Mots-clés de Recherche")
