@@ -242,6 +242,12 @@ def _safe_member(db, user_id):
 def publish(access_token: str, member_id: str, texte: str, image_b64: str = "") -> tuple:
     """Publie un post (texte + image optionnelle) via l'API REST LinkedIn.
     Retourne (ok, message/urn)."""
+    try:
+        from test_mode import est_test
+    except Exception:
+        est_test = lambda: False
+    if est_test():
+        return True, "test-mode-simulé (aucun post réel)"
     author = f"urn:li:person:{member_id}"
     base_h = {
         "Authorization": f"Bearer {access_token}",

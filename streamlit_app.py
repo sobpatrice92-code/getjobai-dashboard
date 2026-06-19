@@ -62,6 +62,25 @@ section.main, [data-testid="stMain"]{ background:#000000 !important; background-
 </style>
 """, unsafe_allow_html=True)
 
+# ── Bandeau MODE TEST : visible uniquement quand TEST_MODE=1 (staging) ──
+try:
+    from test_mode import est_test as _est_test
+except Exception:
+    _est_test = lambda: False
+if _est_test():
+    # Garde-fou dur : en TEST_MODE, refuser de tourner si la base est la PROD.
+    if "dibwjyzsmmubrurpgsfp" in (os.getenv("SUPABASE_URL") or ""):
+        st.error("🛑 TEST_MODE actif mais la base est la PROD (dibwjyzsmmubrurpgsfp). "
+                 "Bascule staging ratée — dashboard stoppé pour éviter d'écrire en prod.")
+        st.stop()
+    st.markdown("""
+    <div style="position:sticky;top:0;z-index:99999;background:#FFD400;color:#000;
+    text-align:center;font-weight:800;padding:9px 12px;letter-spacing:.5px;
+    border-bottom:3px solid #000;font-size:15px;">
+    🧪 MODE TEST — base staging · aucun email ni post LinkedIn réel
+    </div>
+    """, unsafe_allow_html=True)
+
 
 # ============================================================
 # GÉNÉRATION PDF (lettre / CV) pour postuler manuellement
