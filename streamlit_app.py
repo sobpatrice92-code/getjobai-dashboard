@@ -1665,7 +1665,13 @@ elif page == "🤝 Réseau":
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            for c in contacts:
+            # Séparer RECRUTEURS / autres PERSONNES, chacun du plus récent au plus ancien.
+            def _recent(lst):
+                return sorted(lst, key=lambda c: c.get("created_at") or "", reverse=True)
+            _recruteurs = _recent([c for c in contacts if c.get("_type") == "recruteur"])
+            _personnes  = _recent([c for c in contacts if c.get("_type") != "recruteur"])
+
+            def _render_contact(c):
                 cid = c.get("id")
                 statut = c.get("statut") or "a_contacter"
                 icon = "✅" if statut == "contacte" else "📨"
@@ -1726,6 +1732,18 @@ elif page == "🤝 Réseau":
                         if st.button("🗑️ Retirer", key=f"rm_{cid}", use_container_width=True):
                             db.delete_contact_reseau(cid)
                             st.rerun()
+
+            st.markdown(f"## 🔥 Recruteurs ({len(_recruteurs)})")
+            if not _recruteurs:
+                st.caption("Aucun recruteur pour l'instant.")
+            for c in _recruteurs:
+                _render_contact(c)
+
+            st.markdown(f"## 👥 Autres personnes ({len(_personnes)})")
+            if not _personnes:
+                st.caption("Aucune autre personne pour l'instant.")
+            for c in _personnes:
+                _render_contact(c)
 
 # ============================================================
 # PAGE: LIVRABLES (résultats de tous les agents)
