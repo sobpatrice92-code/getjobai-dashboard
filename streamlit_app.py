@@ -1663,6 +1663,22 @@ elif page == "🤝 Réseau":
             pass
         _nom_user = _me_net.get("full_name") or _me_net.get("nom_complet") or ""
         _secteur_user = _me_net.get("sector") or "votre secteur"
+        # Entreprises où l'utilisateur a POSTULÉ → message ANCRÉ (mentionne la candidature)
+        _post_map = {}
+        try:
+            for _k in db.get_candidatures_list(st.session_state.user_id):
+                _comp = (_k.get("company") or "").strip().lower()
+                if _comp:
+                    _post_map.setdefault(_comp, _k.get("job_title") or "")
+        except Exception:
+            pass
+
+        def _poste_pour(ent):
+            el = (ent or "").strip().lower()
+            for comp, pst in _post_map.items():
+                if comp and (comp in el or el in comp):
+                    return pst
+            return ""
         # Priorisation : recruteurs/décideurs d'abord, non-contactés d'abord (heuristique)
         contacts = prioriser_contacts(contacts)
         a_faire = [c for c in contacts if (c.get("statut") or "") == "a_contacter"]
@@ -1688,7 +1704,8 @@ elif page == "🤝 Réseau":
                     for idx, c in enumerate(sans_msg):
                         msg = generer_message_linkedin(
                             c.get("nom", ""), c.get("titre", ""), c.get("entreprise", ""),
-                            secteur=_secteur_user, nom_user=_nom_user)
+                            secteur=_secteur_user, nom_user=_nom_user,
+                            poste_postule=_poste_pour(c.get("entreprise", "")))
                         db.update_contact_message(c.get("id"), msg)
                         barre.progress((idx + 1) / len(sans_msg))
                     st.success(f"✅ {len(sans_msg)} messages générés !")
@@ -1729,14 +1746,16 @@ elif page == "🤝 Réseau":
                     if not message:
                         if st.button("✨ Générer un message", key=f"gen_{cid}"):
                             msg = generer_message_linkedin(nom, titre, entreprise,
-                                                           secteur=_secteur_user, nom_user=_nom_user)
+                                                           secteur=_secteur_user, nom_user=_nom_user,
+                                                           poste_postule=_poste_pour(entreprise))
                             db.update_contact_message(cid, msg)
                             st.session_state[f"msg_{cid}"] = msg  # MAJ du widget (sinon valeur figée)
                             st.rerun()
                     else:
                         if st.button("♻️ Régénérer le message", key=f"regen_{cid}"):
                             msg = generer_message_linkedin(nom, titre, entreprise,
-                                                           secteur=_secteur_user, nom_user=_nom_user)
+                                                           secteur=_secteur_user, nom_user=_nom_user,
+                                                           poste_postule=_poste_pour(entreprise))
                             db.update_contact_message(cid, msg)
                             st.session_state[f"msg_{cid}"] = msg  # MAJ du widget (sinon valeur figée)
                             st.rerun()

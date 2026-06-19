@@ -262,49 +262,69 @@ def _clean_entreprise(e):
 
 
 def generer_message_linkedin(nom, titre, entreprise, secteur="votre secteur",
-                             nom_user="", objectif=""):
-    """Message d'invitation LinkedIn HYPER-personnalisé (< 300 car), adapté au TYPE
-    de contact (recruteur / décideur / pair) et à l'identité réelle de l'utilisateur."""
+                             nom_user="", objectif="", poste_postule=""):
+    """Message LinkedIn ancré (< 300 car). Si `poste_postule` est fourni, le contact
+    travaille dans une entreprise où l'utilisateur a POSTULÉ -> on rédige un MESSAGE
+    qui le mentionne (pas une invitation générique). Sinon, invitation ciblée selon
+    le type de contact. ZÉRO compliment ou fait inventé sur la personne."""
     client = _get_client()
     prenom = _prenom_utile(nom)
     moi = nom_user or "un professionnel"
     ent = _clean_entreprise(entreprise)
+    salut = f"Bonjour {prenom}, " if prenom else "Bonjour, "
+    if poste_postule:
+        _chez = f" chez {ent}" if ent else ""
+        fb = (f"{salut}je viens de déposer ma candidature pour le poste de {poste_postule}{_chez}. "
+              f"Comme vous y travaillez, je me permets de vous le signaler — votre regard me serait "
+              f"précieux. Au plaisir d'échanger, {nom_user}.")
+    else:
+        fb = (f"{salut}je suis {nom_user}, en {secteur}. Je développe mon réseau dans ce domaine et "
+              f"serais heureux d'entrer en contact. Au plaisir, {nom_user}.")
     if client is None:
-        salut = f"Bonjour {prenom}, " if prenom else "Bonjour, "
-        return (f"{salut}je suis {nom_user}, professionnel en {secteur}. "
-                "J'aimerais rejoindre votre réseau et échanger. Merci !")
+        return fb[:290]
     try:
-        angle = _ANGLE[_classer_contact(titre)].format(sec=secteur)
+        if poste_postule:
+            consigne = (
+                f"CONTEXTE RÉEL (n'invente RIEN d'autre) : je viens de POSTULER au poste de "
+                f"« {poste_postule} »" + (f" chez {ent}" if ent else " dans son entreprise")
+                + f", où ce contact travaille" + (f" comme {titre}" if titre else "") + ".\n"
+                "Rédige un MESSAGE (PAS une invitation) : signale ma candidature avec tact, demande "
+                "poliment son point de vue sur le poste/l'équipe ou s'il/elle peut en toucher un mot, "
+                "sans rien exiger ni supplier. Direct, sincère, reconnaissant.")
+        else:
+            consigne = (
+                f"Je suis {moi}, dans le domaine {secteur}.\n"
+                + _ANGLE[_classer_contact(titre)].format(sec=secteur) + "\n"
+                + ("Ce que tu SAIS du contact : "
+                   + (f"poste « {titre} »" if titre else "poste inconnu")
+                   + (f", entreprise {ent}" if ent else "") + ". "
+                   "Rédige une INVITATION de connexion avec un motif clair et pertinent."))
         ouverture = (f"Commence par « Bonjour {prenom}, »." if prenom
-                     else "Le prénom est INCONNU : commence simplement par « Bonjour, » (sans nom).")
+                     else "Prénom INCONNU : commence simplement par « Bonjour, » (sans nom).")
         prompt = (
-            "Rédige un message d'invitation LinkedIn EXCELLENT (MAX 280 caractères). Ton humain, "
-            "chaleureux et professionnel, ZÉRO cliché IA (jamais « j'espère que ce message vous "
-            "trouve bien »). PERSONNALISE avec son rôle et/ou son entreprise.\n"
-            "RÈGLE ABSOLUE : n'écris JAMAIS de crochets ni de placeholder (interdit : [Prénom], "
-            "[Nom], [spécialisation], etc.). N'invente pas de spécialisation précise — reste sur le "
-            "secteur général. " + ouverture + "\n"
-            f"Expéditeur : {moi} (en {secteur}).\n"
-            f"Destinataire : {('un·e ' + titre) if titre else 'un professionnel'}"
-            + (f" chez {ent}" if ent else "") + ".\n"
-            f"{angle}\n"
-            + (f"Objectif précis : {objectif}.\n" if objectif else "")
-            + "Termine par une ouverture simple. Réponds UNIQUEMENT avec le message, sans guillemets."
+            "Tu es un expert RH en recrutement et en mise en relation. Rédige UN message LinkedIn en "
+            "français, MAX 280 caractères, qui sonne HUMAIN, sincère et naturel.\n"
+            + consigne + "\n"
+            "INTERDITS ABSOLUS : n'invente AUCUN compliment ni fait sur la personne (jamais « votre "
+            "travail m'inspire », « approche innovante », « j'admire votre parcours » — tu ne connais "
+            "PAS son travail) ; pas de superlatifs ni de clichés IA ; pas d'astérisques ; AUCUN crochet "
+            "[Nom] ni placeholder ; n'écris jamais « chez » sans nom d'entreprise. "
+            + ouverture + " "
+            + (f"Objectif : {objectif}. " if objectif else "")
+            + f"Signe par « {nom_user} ». Réponds UNIQUEMENT par le message, sans guillemets."
         )
         r = client.chat.completions.create(
-            model="gpt-4o", temperature=0.7, max_tokens=160,
+            model="gpt-4o", temperature=0.6, max_tokens=170,
             messages=[{"role": "user", "content": prompt}],
         )
-        msg = r.choices[0].message.content.strip()
-        # Filet de sécurité : retirer tout crochet/placeholder résiduel
+        msg = (r.choices[0].message.content or "").strip().strip('"').strip()
+        # Filets de sécurité : crochets résiduels, « chez » orphelin, espaces
         msg = re.sub(r"\s*\[[^\]]*\]", "", msg)
-        msg = re.sub(r"\bchez\s*(?=[.,;:!?]|$)", "", msg, flags=re.I)  # « chez » orphelin
+        msg = re.sub(r"\bchez\s*(?=[.,;:!?]|$)", "", msg, flags=re.I)
         msg = re.sub(r"\s{2,}", " ", msg).strip()
-        return msg[:290]
+        return (msg or fb)[:290]
     except Exception:
-        salut = f"Bonjour {prenom}, " if prenom else "Bonjour, "
-        return (f"{salut}je suis {nom_user}, professionnel en {secteur}. "
-                "J'aimerais échanger avec vous. Merci !")
+        return fb[:290]
 
 
 def prioriser_contacts(contacts):
