@@ -35,7 +35,7 @@ from auth import login_screen, set_password
 import billing
 from simulation_entretien import simulation_entretien_page
 from chatbot import (chatbot_page, generer_message_linkedin, generer_post_linkedin,
-                     generer_image_post, prioriser_contacts)
+                     generer_image_post, generer_video_post, prioriser_contacts)
 
 # Configuration
 st.set_page_config(
@@ -1258,8 +1258,9 @@ elif page == "🤖 Agents IA":
                     st.session_state.gen_post_history = (
                         [st.session_state.gen_post_text] + _hist)[:8]
                 st.session_state.pop("gen_post_image", None)
+                st.session_state.pop("gen_post_video", None)
                 if pg_avec_image:
-                    with st.spinner("Génération de l'image hyper-réaliste (gpt-image-1, ~15s)…"):
+                    with st.spinner("Génération de l'image hyper-réaliste (Nano Banana / repli gpt-image-1, ~15s)…"):
                         st.session_state.gen_post_image = generer_image_post(
                             st.session_state.gen_post_text, secteur=pg_secteur,
                             genre=_pref_genre, peau=_pref_peau, photo_b64=_photo_pour_image)
@@ -1268,6 +1269,7 @@ elif page == "🤖 Agents IA":
                 st.session_state.show_post_gen = False
                 st.session_state.pop("gen_post_text", None)
                 st.session_state.pop("gen_post_image", None)
+                st.session_state.pop("gen_post_video", None)
                 st.rerun()
 
         post_txt = st.session_state.get("gen_post_text", "")
@@ -1297,6 +1299,22 @@ elif page == "🤖 Agents IA":
                     st.rerun()
             elif pg_avec_image:
                 st.caption("⚠️ Image non générée (quota OpenAI ou erreur) — le post peut être publié sans image.")
+
+            # --- Vidéo : diaporama (image + texte incrusté + voix off TTS) ---
+            if st.button("🎬 Générer une vidéo (diaporama + voix off)",
+                         use_container_width=True, key="pg_gen_video"):
+                with st.spinner("Génération de la vidéo (image + texte + voix, ~20-40s)…"):
+                    st.session_state.gen_post_video = generer_video_post(
+                        post_edit, image_b64=st.session_state.get("gen_post_image", ""),
+                        langue=pg_langue)
+                if not st.session_state.get("gen_post_video"):
+                    st.error("❌ Vidéo non générée (moteur vidéo indisponible ou voix off en échec).")
+            _vid = st.session_state.get("gen_post_video")
+            if _vid:
+                st.video(_vid)
+                st.download_button("⬇️ Télécharger la vidéo (MP4)", data=_vid,
+                                   file_name="post_linkedin.mp4", mime="video/mp4",
+                                   use_container_width=True, key="pg_dl_video")
 
             # --- Connexion LinkedIn (API officielle) : statut + bouton ---
             import linkedin_oauth as _lio

@@ -622,10 +622,51 @@ def _photo_vers_png(photo_b64):
     return buf
 
 
+def _gemini_key():
+    """Clé API Google/Gemini (Nano Banana). None si non configurée."""
+    k = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not k:
+        try:
+            k = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
+        except Exception:
+            k = None
+    return k or None
+
+
+def _nano_banana_image(prompt, ref_png_bytes=None):
+    """Génère/édite une image via Nano Banana (Gemini 2.5 Flash Image) en REST (httpx).
+    ref_png_bytes : photo de référence (édition fidèle = ressemblance préservée).
+    Retourne l'image en base64 (string PNG) ou None. Aucune dépendance SDK ajoutée."""
+    import base64, httpx
+    key = _gemini_key()
+    if not key:
+        return None
+    model = os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    parts = [{"text": prompt}]
+    if ref_png_bytes:
+        parts.append({"inline_data": {"mime_type": "image/png",
+                                      "data": base64.b64encode(ref_png_bytes).decode()}})
+    try:
+        r = httpx.post(url, params={"key": key}, json={"contents": [{"parts": parts}]},
+                       timeout=120)
+        if r.status_code != 200:
+            return None
+        for cand in r.json().get("candidates", []):
+            for p in cand.get("content", {}).get("parts", []):
+                data = (p.get("inlineData") or p.get("inline_data") or {}).get("data")
+                if data:
+                    return data
+    except Exception:
+        return None
+    return None
+
+
 def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
-    """Génère une image hyper-réaliste (gpt-image-1) alignée sur le contenu du post.
-    Si photo_b64 est fourni (post qui met l'utilisateur en avant), l'image S'INSPIRE de
-    sa photo de profil (ressemblance). Retourne l'image en base64 (string) ou None."""
+    """Génère une image hyper-réaliste alignée sur le contenu du post.
+    Moteur PRINCIPAL : Nano Banana (Gemini 2.5 Flash Image) si clé Gemini présente —
+    excellent pour préserver la ressemblance depuis la photo de profil ; sinon repli
+    gpt-image-1. Retourne l'image en base64 (string) ou None."""
     client = _get_client()
     if client is None:
         return None
@@ -675,6 +716,10 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
                 "Faithfully PRESERVE the person's exact likeness: same face, facial features, skin "
                 "tone, hair and apparent age as the reference photo. " + _REAL + " " + _NOTXT
             )
+            # Nano Banana d'abord (meilleure préservation du visage par édition)
+            nb = _nano_banana_image(prompt_edit, ref_png_bytes=ref.getvalue())
+            if nb:
+                return nb
             r = client.with_options(timeout=110.0).images.edit(
                 model="gpt-image-1", image=ref, prompt=prompt_edit,
                 size="1024x1024", quality="medium")
@@ -686,6 +731,10 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
         f"Hyperrealistic professional photograph, {compo}. {scene} "
         f"The main person in the photo is clearly {person}. " + _REAL + " " + _NOTXT
     )
+    # Nano Banana d'abord, gpt-image-1 en repli
+    nb = _nano_banana_image(prompt)
+    if nb:
+        return nb
     try:
         img = client.with_options(timeout=110.0).images.generate(
             model="gpt-image-1", prompt=prompt, size="1024x1024",
@@ -694,6 +743,150 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
         return img.data[0].b64_json
     except Exception:
         return None
+
+
+def _charger_police(taille):
+    """Police TrueType lisible (fallback sûr si aucune TTF système)."""
+    from PIL import ImageFont
+    for nom in ("DejaVuSans-Bold.ttf", "DejaVuSans.ttf", "arial.ttf", "Arialbd.ttf"):
+        try:
+            return ImageFont.truetype(nom, taille)
+        except Exception:
+            continue
+    try:
+        return ImageFont.load_default(taille)  # Pillow >= 10.1
+    except Exception:
+        return ImageFont.load_default()
+
+
+def _slides_texte(post):
+    """Découpe le post en blocs courts pour l'affichage à l'écran (sans hashtags/@tags)."""
+    lignes = [l.strip() for l in (post or "").splitlines()
+              if l.strip() and not l.strip().startswith("#") and not l.strip().startswith("@")]
+    slides, cur = [], ""
+    for l in lignes:
+        if cur and len(cur) + len(l) > 130:
+            slides.append(cur.strip())
+            cur = l
+        else:
+            cur = (cur + "\n" + l).strip()
+    if cur:
+        slides.append(cur.strip())
+    return slides[:5] or [(post or "")[:130]]
+
+
+def _fond_vertical(image_b64, taille=(1080, 1920)):
+    """Construit le fond vertical 1080x1920 (cover-fit de l'image, ou dégradé sombre)."""
+    import base64, io as _io
+    from PIL import Image
+    W, H = taille
+    if image_b64:
+        try:
+            src = Image.open(_io.BytesIO(base64.b64decode(image_b64))).convert("RGB")
+            r = max(W / src.width, H / src.height)
+            src = src.resize((int(src.width * r) + 1, int(src.height * r) + 1))
+            x = (src.width - W) // 2
+            y = (src.height - H) // 2
+            return src.crop((x, y, x + W, y + H))
+        except Exception:
+            pass
+    # dégradé sombre par défaut
+    base = Image.new("RGB", (W, H), (12, 14, 20))
+    return base
+
+
+def _frame_slide(fond, texte, police):
+    """Incruste un bloc de texte (bas) sur le fond vertical. Retourne un array numpy (H,W,3)."""
+    import numpy as np
+    from PIL import Image, ImageDraw
+    W, H = fond.size
+    img = fond.copy()
+    draw = ImageDraw.Draw(img, "RGBA")
+    # voile sombre bas pour la lisibilité
+    draw.rectangle([0, int(H * 0.58), W, H], fill=(0, 0, 0, 150))
+    # retour à la ligne au pixel près
+    marge = 70
+    maxw = W - 2 * marge
+    mots = texte.replace("\n", " \n ").split(" ")
+    lignes, cur = [], ""
+    for m in mots:
+        if m == "\n":
+            lignes.append(cur.strip())
+            cur = ""
+            continue
+        essai = (cur + " " + m).strip()
+        if draw.textlength(essai, font=police) > maxw and cur:
+            lignes.append(cur.strip())
+            cur = m
+        else:
+            cur = essai
+    if cur.strip():
+        lignes.append(cur.strip())
+    lignes = [l for l in lignes if l][:8]
+    # hauteur de ligne
+    bbox = draw.textbbox((0, 0), "Ay", font=police)
+    lh = (bbox[3] - bbox[1]) + 18
+    total = lh * len(lignes)
+    y = H - 140 - total
+    for l in lignes:
+        w = draw.textlength(l, font=police)
+        x = (W - w) // 2
+        draw.text((x + 2, y + 2), l, font=police, fill=(0, 0, 0, 200))  # ombre
+        draw.text((x, y), l, font=police, fill=(255, 255, 255, 255))
+        y += lh
+    return np.array(img)
+
+
+def generer_video_post(post_text, image_b64="", langue="fr", voix="alloy"):
+    """Génère une vidéo verticale (diaporama) à partir d'un post : image de fond +
+    texte incrusté défilant + voix off TTS. Retourne les octets MP4 ou None.
+    Rendu serveur via moviepy + ffmpeg embarqué (imageio-ffmpeg), sans ImageMagick."""
+    import os as _os, tempfile
+    try:
+        from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips
+    except Exception:
+        return None  # dépendance moviepy absente (repli silencieux)
+
+    client = _get_client()
+    # 1. Voix off (réutilise le moteur TTS existant)
+    audio_bytes = _synthese_vocale(client, post_text)
+    if not audio_bytes:
+        return None
+
+    tmpdir = tempfile.mkdtemp(prefix="post_video_")
+    mp3_path = _os.path.join(tmpdir, "voix.mp3")
+    out_path = _os.path.join(tmpdir, "post.mp4")
+    try:
+        with open(mp3_path, "wb") as f:
+            f.write(audio_bytes)
+        audio = AudioFileClip(mp3_path)
+        duree = max(6.0, float(audio.duration))
+
+        fond = _fond_vertical(image_b64)
+        police = _charger_police(58)
+        slides = _slides_texte(post_text)
+        par_slide = duree / len(slides)
+
+        clips = []
+        for txt in slides:
+            frame = _frame_slide(fond, txt, police)
+            clips.append(ImageClip(frame).set_duration(par_slide))
+        video = concatenate_videoclips(clips, method="compose").set_audio(audio)
+        video.write_videofile(
+            out_path, fps=24, codec="libx264", audio_codec="aac",
+            preset="ultrafast", threads=2, logger=None,
+            temp_audiofile=_os.path.join(tmpdir, "a.m4a"),
+        )
+        with open(out_path, "rb") as f:
+            return f.read()
+    except Exception:
+        return None
+    finally:
+        try:
+            import shutil
+            shutil.rmtree(tmpdir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 def chatbot_page():
