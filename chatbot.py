@@ -622,6 +622,14 @@ def _photo_vers_png(photo_b64):
     return buf
 
 
+def _set_img_engine(nom):
+    """Mémorise le moteur image utilisé (affiché dans l'UI pour vérifier Nano Banana)."""
+    try:
+        st.session_state["post_img_engine"] = nom
+    except Exception:
+        pass
+
+
 def _gemini_key():
     """Clé API Google/Gemini (Nano Banana). None si non configurée."""
     k = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
@@ -719,10 +727,12 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
             # Nano Banana d'abord (meilleure préservation du visage par édition)
             nb = _nano_banana_image(prompt_edit, ref_png_bytes=ref.getvalue())
             if nb:
+                _set_img_engine("Nano Banana (Gemini)")
                 return nb
             r = client.with_options(timeout=110.0).images.edit(
                 model="gpt-image-1", image=ref, prompt=prompt_edit,
                 size="1024x1024", quality="medium")
+            _set_img_engine("gpt-image-1 (repli)")
             return r.data[0].b64_json
         except Exception:
             pass  # repli : génération normale sans photo
@@ -734,12 +744,14 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
     # Nano Banana d'abord, gpt-image-1 en repli
     nb = _nano_banana_image(prompt)
     if nb:
+        _set_img_engine("Nano Banana (Gemini)")
         return nb
     try:
         img = client.with_options(timeout=110.0).images.generate(
             model="gpt-image-1", prompt=prompt, size="1024x1024",
             quality="medium", n=1,
         )
+        _set_img_engine("gpt-image-1 (repli)")
         return img.data[0].b64_json
     except Exception:
         return None
