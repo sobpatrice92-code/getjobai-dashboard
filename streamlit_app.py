@@ -155,6 +155,7 @@ AGENT_LABELS = {
     "networking_agent": ("🤝", "Networking Agent"),
     "followup_engine": ("📧", "Follow-up Engine"),
     "candidature_prep": ("📝", "Préparer Candidatures"),
+    "apply_bot": ("🎯", "Apply Bot (coller une URL)"),
     "entretien_prep": ("🎙️", "Préparer mon Entretien"),
     "mail_tracker": ("📬", "Suivi Boîte Mail"),
     "candidature_send": ("🚀", "Postuler (Copilote)"),
@@ -700,6 +701,27 @@ elif page == "📤 Candidatures":
         en_attente = 0
 
     st.markdown("<br>", unsafe_allow_html=True)
+
+    # 🎯 Apply Bot — coller l'URL d'une offre trouvée ailleurs
+    if st.session_state.user_id:
+        with st.expander("🎯 Postuler à une offre précise (colle son URL)", expanded=False):
+            st.caption(
+                "Tu as repéré une offre (LinkedIn, Indeed, site d'entreprise…) ? Colle son "
+                "lien : l'IA scrape l'offre, rédige ta lettre + un CV adapté (dans la langue "
+                "de l'offre, sans rien inventer) et prépare la candidature ci-dessous, à "
+                "valider. Elle cible aussi l'entreprise pour ton réseautage.")
+            ab_url = st.text_input("Lien de l'offre", key="apply_bot_url",
+                                   placeholder="https://…")
+            if st.button("🎯 Préparer cette candidature", key="apply_bot_go",
+                         use_container_width=True):
+                u = (ab_url or "").strip()
+                if not u.startswith("http"):
+                    st.warning("Colle une URL valide (commençant par http).")
+                else:
+                    db.create_action(st.session_state.user_id, "apply_bot", {"job_url": u})
+                    st.success("✅ Lancé ! Scraping + lettre + CV adapté en cours → la "
+                               "candidature apparaîtra ci-dessous (statut « en attente ») "
+                               "dans ~1 min, prête à valider puis « Approuver & Postuler ».")
 
     # Liste RÉELLE des candidatures depuis Supabase
     if st.session_state.user_id:
