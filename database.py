@@ -161,6 +161,19 @@ class SupabaseClient:
             st.error(f"Erreur create_post_linkedin: {e}")
             return False
 
+    def get_recent_posts(self, user_id: str, limit: int = 6) -> list:
+        """Retourne le texte des derniers posts de l'utilisateur (anti-répétition).
+        Sert à interdire au générateur de réutiliser les mêmes ouvertures/angles."""
+        url = (f"{self.url}/rest/v1/posts_linkedin?user_id=eq.{user_id}"
+               f"&statut=neq.debug&select=texte&order=created_at.desc&limit={limit}")
+        try:
+            r = httpx.get(url, headers=self.headers, timeout=10)
+            if r.status_code == 200:
+                return [row.get("texte", "") for row in r.json() if row.get("texte")]
+        except Exception:
+            pass
+        return []
+
     def create_scheduled_post(self, user_id: str, texte: str, image_b64: str,
                               scheduled_at_iso: str) -> bool:
         """Enregistre un post à publier AUTOMATIQUEMENT à une date/heure (UTC ISO)

@@ -1247,11 +1247,16 @@ elif page == "🤖 Agents IA":
         with c_gen:
             if st.button("✨ Générer le post", type="primary", use_container_width=True):
                 with st.spinner("Génération du post…"):
+                    _hist = st.session_state.get("gen_post_history", [])
+                    _recents = _hist + _db_pref.get_recent_posts(st.session_state.user_id, limit=6)
                     st.session_state.gen_post_text = generer_post_linkedin(
                         secteur=pg_secteur, ville=pg_ville, langue=pg_langue,
                         theme=pg_theme or None, editos=_pref_editos,
-                        nom=_pref_nom, tag_personne=_pref_tag,
+                        nom=_pref_nom, tag_personne=_pref_tag, eviter=_recents[:8],
                     )
+                    # Mémoire de session : éviter de répéter même sans publication
+                    st.session_state.gen_post_history = (
+                        [st.session_state.gen_post_text] + _hist)[:8]
                 st.session_state.pop("gen_post_image", None)
                 if pg_avec_image:
                     with st.spinner("Génération de l'image hyper-réaliste (gpt-image-1, ~15s)…"):

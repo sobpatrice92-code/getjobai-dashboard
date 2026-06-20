@@ -415,10 +415,14 @@ _IMG_COMPOS = [
 
 # Clichés IA / formules creuses à bannir (cœur de la 'compétence humanizer')
 _CLICHES_BANNIS = (
-    "dans un monde où, à l'ère du numérique, je suis ravi/heureux de, force est de constater, "
+    "dans un monde où, à l'ère du numérique, je suis ravi/heureux/fier de, force est de constater, "
     "passionné par, n'hésitez pas, en tant que professionnel, plongeons dans, "
     "il est important de noter, au cœur de, véritable atout, game changer, "
-    "repousser les limites, ensemble, nous pouvons"
+    "repousser les limites, ensemble nous pouvons, et ce n'est que le début, "
+    "le secret c'est, voici ce que j'ai appris, spoiler, croyez-moi, la vérité c'est que, "
+    "ça m'a fait réfléchir, et si je vous disais que, laissez-moi vous raconter, "
+    "changer la donne, faire la différence, sortir de sa zone de confort, "
+    "chaque jour est une opportunité, le pouvoir de, libérer son potentiel"
 )
 
 
@@ -435,8 +439,13 @@ def _humaniser_texte(client, texte, is_en=False):
          "FORBIDDEN: asterisks, markdown, ellipses (...). Reply ONLY with the rewritten post."
          if is_en else
          "Réécris ce post LinkedIn pour qu'il sonne 100% humain et authentique, comme écrit par un "
-         "vrai professionnel à partir de son vécu. Supprime TOUT cliché IA et toute formule corporate "
-         f"creuse (ex : {_CLICHES_BANNIS}). GARDE la PREMIÈRE LIGNE (le hook) courte et percutante, "
+         "vrai professionnel à partir de son vécu, à l'oral, comme s'il parlait à un collègue. "
+         "Supprime TOUT cliché IA et toute formule corporate "
+         f"creuse (ex : {_CLICHES_BANNIS}). "
+         "Remplace l'abstrait par du concret : préfère un fait précis à une généralité, un verbe "
+         "simple à un mot ronflant. Phrases COURTES. Pas de leçon de vie plaquée à la fin. "
+         "Pas de ton « influenceur » ni de fausse vulnérabilité théâtrale. "
+         "GARDE la PREMIÈRE LIGNE (le hook) courte et percutante, "
          "intacte. Garde le sens, les chiffres concrets, les hashtags et la "
          "question finale. GARDE une mise en page TRÈS AÉRÉE : chaque idée sur sa ligne, une LIGNE "
          "VIDE entre chaque idée. INTERDIT : astérisques, markdown, points de suspension (...). "
@@ -463,11 +472,12 @@ _EDITO_MAP = {
 
 
 def generer_post_linkedin(secteur="", ville="", province="", langue="fr",
-                          nom="", theme=None, editos=None, tag_personne=""):
+                          nom="", theme=None, editos=None, tag_personne="", eviter=None):
     """Génère un post LinkedIn humanisé (texte seul, sans publication), aligné sur le profil
     de CHAQUE utilisateur. Aucune dépendance navigateur — GPT-4o + passe humanizer.
     secteur : métier/compétences de l'utilisateur. tag_personne : mention optionnelle à taguer.
-    editos : lignes éditoriales choisies (on en pioche une au hasard pour varier)."""
+    editos : lignes éditoriales choisies (on en pioche une au hasard pour varier).
+    eviter : liste des textes des derniers posts — on interdit d'en réutiliser ouvertures/angles."""
     import random
     client = _get_client()
     secteur_in = (secteur or "").strip()
@@ -483,8 +493,12 @@ def generer_post_linkedin(secteur="", ville="", province="", langue="fr",
     kws = [k.strip().replace(" ", "") for k in secteur_in.replace("/", ",").split(",")
            if k.strip()][:4] if secteur_in else []
     ht_user = " ".join(f"#{k.capitalize()}" for k in kws)
-    ht_base = (f"#JobSearch #Professional #{ville.replace(' ', '') or 'Canada'}" if is_en
-               else f"#Emploi #Professionnel #{ville.replace(' ', '') or 'Canada'}")
+    # Hashtags de base ROTATIFS (anti-répétition : ne plus toujours #Emploi #Professionnel)
+    _ht_pool = (["#Career", "#Hiring", "#Jobs", "#Growth", "#Networking", "#Leadership",
+                 "#Opportunity", "#WorkLife", "#Skills"] if is_en else
+                ["#Emploi", "#Carriere", "#Recrutement", "#Reseautage", "#Metier",
+                 "#Competences", "#Opportunite", "#Croissance", "#Travail"])
+    ht_base = " ".join(random.sample(_ht_pool, 2)) + f" #{ville.replace(' ', '') or 'Canada'}"
     hashtags = (ht_user + " " + ht_base).strip()
     lang_instr = ("Write the ENTIRE post in natural, professional ENGLISH." if is_en
                   else "Rédige TOUT le post en FRANÇAIS naturel et professionnel.")
@@ -509,13 +523,30 @@ def generer_post_linkedin(secteur="", ville="", province="", langue="fr",
     hook = random.choice(_HOOKS)
     fmt = random.choice(_POST_FORMATS)
 
+    # ANTI-RÉPÉTITION : on montre les derniers posts et on INTERDIT d'en reprendre l'ouverture
+    eviter_block = ""
+    recents = [t for t in (eviter or []) if (t or "").strip()][:6]
+    if recents:
+        apercus = []
+        for t in recents:
+            premiere = next((l.strip() for l in str(t).splitlines() if l.strip()), "")
+            if premiere:
+                apercus.append(f"  • « {premiere[:90]} »")
+        if apercus:
+            eviter_block = (
+                "\nPOSTS DÉJÀ PUBLIÉS PAR L'AUTEUR (tu dois être TOTALEMENT différent) :\n"
+                + "\n".join(apercus)
+                + "\nINTERDIT de réutiliser ces premières lignes, le même angle, la même "
+                  "structure ou les mêmes tournures. Choisis un angle, un exemple et une "
+                  "ouverture NEUFS. Si un thème a déjà été traité, prends-le sous un autre jour.\n")
+
     prompt = f"""Tu es {nom}, professionnel basé à {loc}.
 Ton métier / tes compétences : {secteur}. Tu écris depuis TON vécu dans CE métier précis.
 
 Thème du post : {theme}
 Angle d'écriture (pour varier à chaque fois) : {angle}
 Structure du post : {fmt}
-
+{eviter_block}
 LANGUE : {lang_instr}
 
 RÈGLES (STRICTES) :
