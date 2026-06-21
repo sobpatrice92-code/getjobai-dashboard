@@ -1310,7 +1310,9 @@ elif page == "🤖 Agents IA":
                         post_edit, image_b64=st.session_state.get("gen_post_image", ""),
                         langue=pg_langue)
                 if not st.session_state.get("gen_post_video"):
-                    st.error("❌ Vidéo non générée (moteur vidéo indisponible ou voix off en échec).")
+                    _verr = st.session_state.get("video_err", "")
+                    st.error(f"❌ Vidéo non générée — {_verr}" if _verr
+                             else "❌ Vidéo non générée (moteur vidéo indisponible ou voix off en échec).")
             _vid = st.session_state.get("gen_post_video")
             if _vid:
                 st.video(_vid)

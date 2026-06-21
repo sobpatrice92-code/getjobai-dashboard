@@ -854,16 +854,29 @@ def generer_video_post(post_text, image_b64="", langue="fr", voix="alloy"):
     texte incrusté défilant + voix off TTS. Retourne les octets MP4 ou None.
     Rendu serveur via moviepy + ffmpeg embarqué (imageio-ffmpeg), sans ImageMagick."""
     import os as _os, tempfile
+
+    def _err(msg):
+        try:
+            st.session_state["video_err"] = msg
+        except Exception:
+            pass
+        return None
+
+    try:
+        st.session_state.pop("video_err", None)
+    except Exception:
+        pass
+
     try:
         from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips
-    except Exception:
-        return None  # dépendance moviepy absente (repli silencieux)
+    except Exception as e:
+        return _err(f"moviepy indisponible sur le serveur : {str(e)[:200]}")
 
     client = _get_client()
     # 1. Voix off (réutilise le moteur TTS existant)
     audio_bytes = _synthese_vocale(client, post_text)
     if not audio_bytes:
-        return None
+        return _err("Voix off (TTS) en échec — vérifier OPENAI_API_KEY / quota audio.")
 
     tmpdir = tempfile.mkdtemp(prefix="post_video_")
     mp3_path = _os.path.join(tmpdir, "voix.mp3")
@@ -891,8 +904,10 @@ def generer_video_post(post_text, image_b64="", langue="fr", voix="alloy"):
         )
         with open(out_path, "rb") as f:
             return f.read()
-    except Exception:
-        return None
+    except Exception as e:
+        import traceback
+        return _err(f"Rendu vidéo en échec : {str(e)[:240]} "
+                    f"[{traceback.extract_tb(e.__traceback__)[-1].name}]")
     finally:
         try:
             import shutil
