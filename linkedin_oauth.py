@@ -358,7 +358,11 @@ def publish_video(access_token: str, member_id: str, texte: str, video_bytes: by
                 "uploadedPartIds": etags}}, timeout=30)
         if fin.status_code not in (200, 201):
             return False, f"finalizeUpload HTTP {fin.status_code}: {fin.text[:200]}"
-        # 4) création du post référençant la vidéo
+        # 3b) attendre que LinkedIn ait TRAITÉ la vidéo (sinon rest/posts refuse)
+        statut = _attendre_video_prete(base_h, video_urn)
+        if statut == "PROCESSING_FAILED":
+            return False, "LinkedIn n'a pas pu traiter la vidéo (format/codec refusé)."
+        # 4) création du post référençant la vidéo (avec ré-essais si encore en traitement)
         body = {
             "author": author, "commentary": texte, "visibility": "PUBLIC",
             "distribution": {"feedDistribution": "MAIN_FEED",
@@ -366,14 +370,41 @@ def publish_video(access_token: str, member_id: str, texte: str, video_bytes: by
             "content": {"media": {"title": "Vidéo", "id": video_urn}},
             "lifecycleState": "PUBLISHED", "isReshareDisabledByAuthor": False,
         }
-        r = httpx.post("https://api.linkedin.com/rest/posts",
-                       headers={**base_h, "Content-Type": "application/json"},
-                       json=body, timeout=30)
-        if r.status_code in (200, 201):
-            return True, r.headers.get("x-restli-id", video_urn)
-        return False, f"rest/posts HTTP {r.status_code}: {r.text[:200]}"
+        derniere = ""
+        for tentative in range(4):
+            r = httpx.post("https://api.linkedin.com/rest/posts",
+                           headers={**base_h, "Content-Type": "application/json"},
+                           json=body, timeout=30)
+            if r.status_code in (200, 201):
+                return True, r.headers.get("x-restli-id", video_urn)
+            derniere = f"rest/posts HTTP {r.status_code}: {r.text[:200]}"
+            # média peut-être pas encore prêt -> on patiente puis on réessaie
+            time.sleep(6)
+        return False, derniere
     except Exception as e:
         return False, str(e)[:200]
+
+
+def _attendre_video_prete(base_h: dict, video_urn: str, timeout_s: int = 45) -> str:
+    """Sonde le statut de la vidéo jusqu'à AVAILABLE (ou échec/timeout).
+    Best-effort : si l'endpoint ne répond pas, retourne '' (on tentera quand même)."""
+    from urllib.parse import quote
+    url = f"https://api.linkedin.com/rest/videos/{quote(video_urn, safe='')}"
+    fin = time.time() + timeout_s
+    dernier = ""
+    while time.time() < fin:
+        try:
+            r = httpx.get(url, headers=base_h, timeout=15)
+            if r.status_code == 200:
+                dernier = (r.json().get("status") or "").upper()
+                if dernier in ("AVAILABLE", "PROCESSING_FAILED"):
+                    return dernier
+            else:
+                return dernier  # endpoint indispo -> on ne bloque pas
+        except Exception:
+            return dernier
+        time.sleep(5)
+    return dernier
 
 
 def simuler_publication_video(db, user_id: str, texte: str, video_bytes: bytes) -> tuple:
