@@ -181,9 +181,9 @@ class SupabaseClient:
         return None
 
     def get_video_job(self, action_id: str) -> dict:
-        """Lit l'état d'une tâche vidéo : status + video_b64 (résultat) + error."""
+        """Lit l'état d'une tâche vidéo : status + video_b64 (résultat) + error_message."""
         url = (f"{self.url}/rest/v1/actions?id=eq.{action_id}"
-               "&select=status,video_b64,error")
+               "&select=status,video_b64,error_message")
         try:
             r = httpx.get(url, headers=self.headers, timeout=10)
             if r.status_code == 200 and r.json():

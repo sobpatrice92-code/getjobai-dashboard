@@ -1328,7 +1328,7 @@ elif page == "🤖 Agents IA":
                     st.session_state.pop("video_job_id", None)
                     st.rerun()
                 elif _stt == "failed":
-                    st.error(f"❌ Rendu vidéo en échec : {(_job.get('error') or '')[:300]}")
+                    st.error(f"❌ Rendu vidéo en échec : {(_job.get('error_message') or '')[:300]}")
                     st.session_state.pop("video_job_id", None)
                 else:
                     st.info("🎬 Vidéo en cours de génération par le worker… "
