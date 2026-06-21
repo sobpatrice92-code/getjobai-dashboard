@@ -1346,6 +1346,29 @@ elif page == "🤖 Agents IA":
                     else:
                         st.error(f"❌ Échec API : {info}")
 
+                # --- Publier la VIDÉO (Videos API) — simulation par défaut ---
+                _vid_pub = st.session_state.get("gen_post_video")
+                if _vid_pub:
+                    st.markdown("**🎬 Publier la vidéo sur LinkedIn**")
+                    _simuler = st.checkbox(
+                        "🧪 Simulation (déroule les étapes SANS rien publier)",
+                        value=True, key="pg_vid_simuler")
+                    _lbl = ("🧪 Lancer la simulation" if _simuler
+                            else "🚀 Publier la vidéo MAINTENANT (réel)")
+                    if st.button(_lbl, use_container_width=True, key="pg_publish_video",
+                                 type=("secondary" if _simuler else "primary")):
+                        with st.spinner("Simulation…" if _simuler
+                                        else "Upload + publication de la vidéo…"):
+                            okv, infov = _lio.publish_video_for_user(
+                                _db, st.session_state.user_id, post_edit,
+                                _vid_pub, simuler=_simuler)
+                        if okv and _simuler:
+                            st.info(infov)
+                        elif okv:
+                            st.success(f"✅ Vidéo publiée sur LinkedIn ! ({infov})")
+                        else:
+                            st.error(f"❌ {infov}")
+
                 # --- Planifier la publication (date + heure, heure de l'Est) ---
                 with st.expander("📅 Planifier la publication (au lieu de publier maintenant)"):
                     from datetime import date as _date, time as _time, datetime as _dtmod

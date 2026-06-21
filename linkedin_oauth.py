@@ -303,6 +303,118 @@ def publish_for_user(db, user_id: str, texte: str, image_b64: str = "") -> tuple
     return publish(token, member, texte, image_b64)
 
 
+# --- Publication VIDÉO (Videos API) -----------------------------------------
+_LI_CHUNK = 4 * 1024 * 1024  # taille de partie indicative (LinkedIn ~4 Mo)
+
+
+def publish_video(access_token: str, member_id: str, texte: str, video_bytes: bytes) -> tuple:
+    """Publie un post avec VIDÉO via la Videos API LinkedIn.
+    Flux : initializeUpload -> PUT des parties (collecte des ETags) -> finalizeUpload
+    -> rest/posts. Retourne (ok, message/urn)."""
+    try:
+        from test_mode import est_test
+    except Exception:
+        est_test = lambda: False
+    if est_test():
+        return True, "test-mode-simulé (aucune vidéo réelle publiée)"
+    if not video_bytes:
+        return False, "Vidéo vide."
+    author = f"urn:li:person:{member_id}"
+    base_h = {
+        "Authorization": f"Bearer {access_token}",
+        "X-Restli-Protocol-Version": "2.0.0",
+        "LinkedIn-Version": os.getenv("LINKEDIN_API_VERSION", "202506"),
+    }
+    try:
+        # 1) initializeUpload
+        init = httpx.post(
+            "https://api.linkedin.com/rest/videos?action=initializeUpload",
+            headers={**base_h, "Content-Type": "application/json"},
+            json={"initializeUploadRequest": {
+                "owner": author, "fileSizeBytes": len(video_bytes),
+                "uploadCaptions": False, "uploadThumbnail": False}}, timeout=30)
+        if init.status_code not in (200, 201):
+            return False, f"initializeUpload HTTP {init.status_code}: {init.text[:200]}"
+        val = init.json()["value"]
+        video_urn = val["video"]
+        upload_token = val.get("uploadToken", "")
+        instructions = val.get("uploadInstructions", [])
+        # 2) PUT de chaque partie -> collecte des ETags
+        etags = []
+        for ins in instructions:
+            first, last = int(ins["firstByte"]), int(ins["lastByte"])
+            part = video_bytes[first:last + 1]
+            up = httpx.put(ins["uploadUrl"], content=part,
+                           headers={"Authorization": f"Bearer {access_token}"}, timeout=120)
+            if up.status_code not in (200, 201):
+                return False, f"upload partie HTTP {up.status_code}: {up.text[:150]}"
+            etags.append(up.headers.get("etag") or up.headers.get("ETag") or "")
+        # 3) finalizeUpload
+        fin = httpx.post(
+            "https://api.linkedin.com/rest/videos?action=finalizeUpload",
+            headers={**base_h, "Content-Type": "application/json"},
+            json={"finalizeUploadRequest": {
+                "video": video_urn, "uploadToken": upload_token,
+                "uploadedPartIds": etags}}, timeout=30)
+        if fin.status_code not in (200, 201):
+            return False, f"finalizeUpload HTTP {fin.status_code}: {fin.text[:200]}"
+        # 4) création du post référençant la vidéo
+        body = {
+            "author": author, "commentary": texte, "visibility": "PUBLIC",
+            "distribution": {"feedDistribution": "MAIN_FEED",
+                             "targetEntities": [], "thirdPartyDistributionChannels": []},
+            "content": {"media": {"title": "Vidéo", "id": video_urn}},
+            "lifecycleState": "PUBLISHED", "isReshareDisabledByAuthor": False,
+        }
+        r = httpx.post("https://api.linkedin.com/rest/posts",
+                       headers={**base_h, "Content-Type": "application/json"},
+                       json=body, timeout=30)
+        if r.status_code in (200, 201):
+            return True, r.headers.get("x-restli-id", video_urn)
+        return False, f"rest/posts HTTP {r.status_code}: {r.text[:200]}"
+    except Exception as e:
+        return False, str(e)[:200]
+
+
+def simuler_publication_video(db, user_id: str, texte: str, video_bytes: bytes) -> tuple:
+    """SIMULATION (dry-run) de la publication vidéo : vérifie la connexion réelle et
+    déroule les étapes SANS aucun appel d'écriture à LinkedIn. Retourne (ok, rapport)."""
+    token, member = _valid_token(db, user_id)
+    if not token:
+        return False, "LinkedIn non connecté (ou jeton expiré). Reconnectez LinkedIn d'abord."
+    if not video_bytes:
+        return False, "Aucune vidéo à publier (génère d'abord la vidéo)."
+    taille = len(video_bytes)
+    nb_parties = max(1, -(-taille // _LI_CHUNK))  # ceil
+    version = os.getenv("LINKEDIN_API_VERSION", "202506")
+    apercu = (texte or "").strip().replace("\n", " ")[:120]
+    rapport = (
+        "🧪 SIMULATION — aucune publication réelle effectuée\n\n"
+        f"• Compte LinkedIn : connecté ✅ (urn:li:person:{member})\n"
+        f"• Jeton d'accès : valide ✅ (LinkedIn-Version {version})\n"
+        f"• Vidéo : {taille/1024/1024:.2f} Mo → {nb_parties} partie(s) d'upload\n"
+        f"• Texte du post : « {apercu}{'…' if len(texte or '') > 120 else ''} »\n\n"
+        "Étapes qui SERAIENT exécutées en réel :\n"
+        f"  1. POST /rest/videos?action=initializeUpload (owner, fileSizeBytes={taille})\n"
+        f"  2. PUT de {nb_parties} partie(s) + collecte des ETags\n"
+        "  3. POST /rest/videos?action=finalizeUpload (video urn + uploadedPartIds)\n"
+        "  4. POST /rest/posts (commentary + content.media = video urn)\n\n"
+        "Tout est prêt. Décoche « Simulation » pour publier réellement."
+    )
+    return True, rapport
+
+
+def publish_video_for_user(db, user_id: str, texte: str, video_bytes: bytes,
+                           simuler: bool = False) -> tuple:
+    """Helper haut niveau : simule OU publie réellement la vidéo de l'utilisateur."""
+    if simuler:
+        return simuler_publication_video(db, user_id, texte, video_bytes)
+    token, member = _valid_token(db, user_id)
+    if not token:
+        return False, "LinkedIn non connecté (ou jeton expiré). Reconnectez LinkedIn."
+    return publish_video(token, member, texte, video_bytes)
+
+
 def handle_callback(db, session_user_id: str = None):
     """À appeler au chargement de l'app. Si on revient de LinkedIn (?code&state),
     échange le code et stocke le jeton. Retourne (ok, message) ou None si pas un retour OAuth.
