@@ -807,14 +807,14 @@ def _fond_vertical(image_b64, taille=(1080, 1920)):
     return base
 
 
-def _frame_slide(fond, texte, police):
-    """Incruste un bloc de texte (bas) sur le fond vertical. Retourne un array numpy (H,W,3)."""
-    import numpy as np
+def _overlay_caption(texte, police, taille=(1080, 1920)):
+    """Sous-titre TRANSPARENT (RGBA) : voile sombre bas + texte centré, fond transparent.
+    Sera superposé (fixe et net) sur l'image animée. Retourne une image PIL RGBA."""
     from PIL import Image, ImageDraw
-    W, H = fond.size
-    img = fond.copy()
-    draw = ImageDraw.Draw(img, "RGBA")
-    # voile sombre bas pour la lisibilité
+    W, H = taille
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    # voile sombre bas pour la lisibilité (dégradé simple : bande semi-opaque)
     draw.rectangle([0, int(H * 0.58), W, H], fill=(0, 0, 0, 150))
     # retour à la ligne au pixel près
     marge = 70
@@ -835,7 +835,6 @@ def _frame_slide(fond, texte, police):
     if cur.strip():
         lignes.append(cur.strip())
     lignes = [l for l in lignes if l][:8]
-    # hauteur de ligne
     bbox = draw.textbbox((0, 0), "Ay", font=police)
     lh = (bbox[3] - bbox[1]) + 18
     total = lh * len(lignes)
@@ -846,7 +845,7 @@ def _frame_slide(fond, texte, police):
         draw.text((x + 2, y + 2), l, font=police, fill=(0, 0, 0, 200))  # ombre
         draw.text((x, y), l, font=police, fill=(255, 255, 255, 255))
         y += lh
-    return np.array(img)
+    return img
 
 
 def _duree_mp3(ffmpeg, mp3_path):
@@ -896,39 +895,47 @@ def generer_video_post(post_text, image_b64="", langue="fr", voix="alloy"):
     tmpdir = tempfile.mkdtemp(prefix="post_video_")
     mp3_path = _os.path.join(tmpdir, "voix.mp3")
     out_path = _os.path.join(tmpdir, "post.mp4")
-    list_path = _os.path.join(tmpdir, "slides.txt")
+    bg_path = _os.path.join(tmpdir, "fond.png")
     try:
         from PIL import Image
         with open(mp3_path, "wb") as f:
             f.write(audio_bytes)
         duree = _duree_mp3(ffmpeg, mp3_path)
+        W, H, FPS = 1080, 1920, 24
+        frames = max(1, int(round(duree * FPS)))
 
-        # 2. Pré-rendu des frames (PIL = léger), une par slide
-        fond = _fond_vertical(image_b64)
+        # 2. Fond (image cover-fit ou dégradé) + sous-titres TRANSPARENTS par slide
+        _fond_vertical(image_b64, (W, H)).convert("RGB").save(bg_path)
         police = _charger_police(58)
         slides = _slides_texte(post_text)
-        par_slide = max(2.0, duree / len(slides))
-        pngs = []
+        seg = duree / len(slides)
+        ov_paths = []
         for i, txt in enumerate(slides):
-            frame = _frame_slide(fond, txt, police)  # np.array
-            p = _os.path.join(tmpdir, f"s{i}.png")
-            Image.fromarray(frame).save(p)
-            pngs.append(p)
+            p = _os.path.join(tmpdir, f"ov{i}.png")
+            _overlay_caption(txt, police, (W, H)).save(p)
+            ov_paths.append(p)
 
-        # 3. Fichier concat (slideshow) — dernière image répétée (exigence du démuxeur)
-        lignes = []
-        for p in pngs:
-            lignes.append(f"file '{p}'")
-            lignes.append(f"duration {par_slide:.3f}")
-        lignes.append(f"file '{pngs[-1]}'")
-        with open(list_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(lignes))
-
-        # 4. ffmpeg : images -> vidéo + audio, fin calée sur la voix off
-        cmd = [
-            ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", list_path,
-            "-i", mp3_path, "-c:v", "libx264", "-preset", "ultrafast",
-            "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", "-b:a", "128k",
+        # 3. ffmpeg : image ANIMÉE (zoompan = Ken Burns) + sous-titres fixes superposés
+        cmd = [ffmpeg, "-y", "-i", bg_path]            # input 0 : fond (image unique)
+        for p in ov_paths:                             # inputs 1..n : sous-titres (bouclés)
+            cmd += ["-loop", "1", "-i", p]
+        cmd += ["-i", mp3_path]                         # input n+1 : voix off
+        # zoom lent + recadrage centré
+        fc = [f"[0:v]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},"
+              f"zoompan=z='min(zoom+0.0007,1.18)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+              f"d={frames}:s={W}x{H}:fps={FPS},setsar=1[bg]"]
+        prev = "bg"
+        for i in range(len(ov_paths)):
+            t0 = i * seg
+            t1 = (i + 1) * seg if i < len(ov_paths) - 1 else duree + 1
+            out = f"v{i}"
+            fc.append(f"[{prev}][{i+1}:v]overlay=0:0:enable='between(t,{t0:.3f},{t1:.3f})'[{out}]")
+            prev = out
+        cmd += [
+            "-filter_complex", ";".join(fc),
+            "-map", f"[{prev}]", "-map", f"{len(ov_paths)+1}:a",
+            "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
+            "-r", str(FPS), "-c:a", "aac", "-b:a", "128k",
             "-shortest", "-movflags", "+faststart", out_path,
         ]
         proc = subprocess.run(cmd, capture_output=True, timeout=180)
