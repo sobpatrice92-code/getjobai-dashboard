@@ -901,12 +901,14 @@ def generer_video_post(post_text, image_b64="", langue="fr", voix="alloy"):
         with open(mp3_path, "wb") as f:
             f.write(audio_bytes)
         duree = _duree_mp3(ffmpeg, mp3_path)
-        W, H, FPS = 1080, 1920, 24
+        # Résolution RÉDUITE (720x1280) : ~2,2x moins de pixels -> mémoire/CPU bien
+        # plus bas sur l'instance Render (évite les dépassements mémoire/redémarrages).
+        W, H, FPS = 720, 1280, 24
         frames = max(1, int(round(duree * FPS)))
 
         # 2. Fond (image cover-fit ou dégradé) + sous-titres TRANSPARENTS par slide
         _fond_vertical(image_b64, (W, H)).convert("RGB").save(bg_path)
-        police = _charger_police(58)
+        police = _charger_police(40)
         slides = _slides_texte(post_text)
         seg = duree / len(slides)
         ov_paths = []
@@ -935,7 +937,7 @@ def generer_video_post(post_text, image_b64="", langue="fr", voix="alloy"):
             "-filter_complex", ";".join(fc),
             "-map", f"[{prev}]", "-map", f"{len(ov_paths)+1}:a",
             "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
-            "-r", str(FPS), "-c:a", "aac", "-b:a", "128k",
+            "-r", str(FPS), "-threads", "1", "-c:a", "aac", "-b:a", "128k",
             "-shortest", "-movflags", "+faststart", out_path,
         ]
         proc = subprocess.run(cmd, capture_output=True, timeout=180)
