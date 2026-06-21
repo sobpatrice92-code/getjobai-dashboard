@@ -161,6 +161,37 @@ class SupabaseClient:
             st.error(f"Erreur create_post_linkedin: {e}")
             return False
 
+    def enqueue_video_job(self, user_id: str, post_text: str, image_b64: str = "",
+                          langue: str = "fr"):
+        """Met une tâche de rendu vidéo en file (table actions). Le WORKER LOCAL
+        (agents/video_post.py) la rend hors de l'instance web → zéro mémoire ici.
+        Retourne l'id de l'action, ou None."""
+        url = f"{self.url}/rest/v1/actions"
+        h = {**self.headers, "Prefer": "return=representation"}
+        body = {"user_id": user_id, "action_type": "video_post",
+                "parameters": {"post_text": post_text, "image_b64": image_b64 or "",
+                               "langue": langue},
+                "status": "pending", "priority": 4}
+        try:
+            r = httpx.post(url, headers=h, json=body, timeout=20)
+            if r.status_code in (200, 201) and r.json():
+                return r.json()[0].get("id")
+        except Exception as e:
+            st.error(f"Erreur enqueue_video_job: {e}")
+        return None
+
+    def get_video_job(self, action_id: str) -> dict:
+        """Lit l'état d'une tâche vidéo : status + video_b64 (résultat) + error."""
+        url = (f"{self.url}/rest/v1/actions?id=eq.{action_id}"
+               "&select=status,video_b64,error")
+        try:
+            r = httpx.get(url, headers=self.headers, timeout=10)
+            if r.status_code == 200 and r.json():
+                return r.json()[0]
+        except Exception:
+            pass
+        return {}
+
     def get_recent_posts(self, user_id: str, limit: int = 6) -> list:
         """Retourne le texte des derniers posts de l'utilisateur (anti-répétition).
         Sert à interdire au générateur de réutiliser les mêmes ouvertures/angles."""

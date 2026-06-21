@@ -35,7 +35,7 @@ from auth import login_screen, set_password
 import billing
 from simulation_entretien import simulation_entretien_page
 from chatbot import (chatbot_page, generer_message_linkedin, generer_post_linkedin,
-                     generer_image_post, generer_video_post, prioriser_contacts)
+                     generer_image_post, prioriser_contacts)
 
 # Configuration
 st.set_page_config(
@@ -1302,17 +1302,41 @@ elif page == "🤖 Agents IA":
             elif pg_avec_image:
                 st.caption("⚠️ Image non générée (quota OpenAI ou erreur) — le post peut être publié sans image.")
 
-            # --- Vidéo : diaporama (image + texte incrusté + voix off TTS) ---
-            if st.button("🎬 Générer une vidéo (diaporama + voix off)",
+            # --- Vidéo : rendu DÉPORTÉ sur le worker local (zéro mémoire ici) ---
+            if st.button("🎬 Générer une vidéo (image animée + voix off)",
                          use_container_width=True, key="pg_gen_video"):
-                with st.spinner("Génération de la vidéo (image + texte + voix, ~20-40s)…"):
-                    st.session_state.gen_post_video = generer_video_post(
-                        post_edit, image_b64=st.session_state.get("gen_post_image", ""),
-                        langue=pg_langue)
-                if not st.session_state.get("gen_post_video"):
-                    _verr = st.session_state.get("video_err", "")
-                    st.error(f"❌ Vidéo non générée — {_verr}" if _verr
-                             else "❌ Vidéo non générée (moteur vidéo indisponible ou voix off en échec).")
+                _jid = get_supabase_client().enqueue_video_job(
+                    st.session_state.user_id, post_edit,
+                    st.session_state.get("gen_post_image", ""), pg_langue)
+                if _jid:
+                    st.session_state.video_job_id = _jid
+                    st.session_state.pop("gen_post_video", None)
+                else:
+                    st.error("❌ Impossible de mettre la vidéo en file.")
+                st.rerun()
+
+            # Suivi de la tâche vidéo en cours (le worker la rend en différé)
+            _jid = st.session_state.get("video_job_id")
+            if _jid and not st.session_state.get("gen_post_video"):
+                _job = get_supabase_client().get_video_job(_jid)
+                _stt = _job.get("status", "")
+                if _stt == "completed" and _job.get("video_b64"):
+                    try:
+                        st.session_state.gen_post_video = base64.b64decode(_job["video_b64"])
+                    except Exception:
+                        st.session_state.gen_post_video = None
+                    st.session_state.pop("video_job_id", None)
+                    st.rerun()
+                elif _stt == "failed":
+                    st.error(f"❌ Rendu vidéo en échec : {(_job.get('error') or '')[:300]}")
+                    st.session_state.pop("video_job_id", None)
+                else:
+                    st.info("🎬 Vidéo en cours de génération par le worker… "
+                            "(garde le worker allumé ; ça prend ~15-40s)")
+                    if st.button("🔄 Rafraîchir l'état de la vidéo",
+                                 use_container_width=True, key="pg_refresh_video"):
+                        st.rerun()
+
             _vid = st.session_state.get("gen_post_video")
             if _vid:
                 st.video(_vid)
