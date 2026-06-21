@@ -223,6 +223,24 @@ class SupabaseClient:
             st.error(f"Erreur create_scheduled_post: {e}")
             return False
 
+    def create_scheduled_video_post(self, user_id: str, texte: str, video_b64: str,
+                                    scheduled_at_iso: str) -> bool:
+        """Planifie une VIDÉO déjà rendue : la stocke (posts_linkedin.video_b64) avec
+        scheduled_at. Le publieur cloud la postera via la Videos API le moment venu."""
+        url = f"{self.url}/rest/v1/posts_linkedin"
+        h = {**self.headers, "Content-Type": "application/json", "Prefer": "return=minimal"}
+        body = {"user_id": user_id, "texte": texte, "video_b64": video_b64 or "",
+                "image_b64": "", "statut": "scheduled", "scheduled_at": scheduled_at_iso}
+        try:
+            r = httpx.post(url, headers=h, json=body, timeout=30)
+            if r.status_code in (200, 201, 204):
+                return True
+            st.error(f"Erreur create_scheduled_video_post: {r.status_code} {r.text[:200]}")
+            return False
+        except Exception as e:
+            st.error(f"Erreur create_scheduled_video_post: {e}")
+            return False
+
     def update_contact_message(self, contact_id: str, message: str) -> bool:
         url = f"{self.url}/rest/v1/contacts_reseau?id=eq.{contact_id}"
         h = {**self.headers, "Prefer": "return=minimal"}

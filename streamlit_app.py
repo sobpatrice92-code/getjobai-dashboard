@@ -1395,6 +1395,36 @@ elif page == "🤖 Agents IA":
                         else:
                             st.error(f"❌ {infov}")
 
+                    # --- Planifier la VIDÉO (publiée auto par le cron cloud) ---
+                    with st.expander("📅 Planifier la vidéo (au lieu de publier maintenant)"):
+                        from datetime import (date as _vd, time as _vt,
+                                              datetime as _vdt, timezone as _vtz)
+                        cVD, cVH = st.columns(2)
+                        with cVD:
+                            dv = st.date_input("Date", min_value=_vd.today(), key="pg_vsched_date")
+                        with cVH:
+                            hv = st.time_input("Heure (heure de l'Est)", value=_vt(9, 0),
+                                               key="pg_vsched_time")
+                        if st.button("📅 Planifier cette vidéo", use_container_width=True,
+                                     key="pg_vsched_btn"):
+                            try:
+                                from zoneinfo import ZoneInfo
+                                dvl = _vdt.combine(dv, hv, tzinfo=ZoneInfo("America/Toronto"))
+                            except Exception:
+                                dvl = _vdt.combine(dv, hv, tzinfo=_vtz.utc)
+                            if dvl <= _vdt.now(dvl.tzinfo):
+                                st.warning("⚠️ Choisissez une date/heure dans le futur.")
+                            else:
+                                import base64 as _b64v
+                                _v_b64 = _b64v.b64encode(_vid_pub).decode()
+                                iso_v = dvl.astimezone(_vtz.utc).isoformat()
+                                if _db.create_scheduled_video_post(
+                                        st.session_state.user_id, post_edit, _v_b64, iso_v):
+                                    st.success(f"✅ Vidéo planifiée pour le {_fmt_dt(iso_v)} — "
+                                               "elle sera publiée automatiquement.")
+                                else:
+                                    st.error("❌ Échec de la planification de la vidéo.")
+
                 # --- Planifier la publication (date + heure, heure de l'Est) ---
                 with st.expander("📅 Planifier la publication (au lieu de publier maintenant)"):
                     from datetime import date as _date, time as _time, datetime as _dtmod
