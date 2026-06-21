@@ -670,11 +670,35 @@ def _nano_banana_image(prompt, ref_png_bytes=None):
     return None
 
 
-def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
-    """Génère une image hyper-réaliste alignée sur le contenu du post.
-    Moteur PRINCIPAL : Nano Banana (Gemini 2.5 Flash Image) si clé Gemini présente —
-    excellent pour préserver la ressemblance depuis la photo de profil ; sinon repli
-    gpt-image-1. Retourne l'image en base64 (string) ou None."""
+def _generer_diagramme(client, scene):
+    """Image de type INFOGRAPHIE / diagramme (sans personne) illustrant le post."""
+    prompt = (
+        "A clean modern flat-design infographic / conceptual diagram that visually explains "
+        f"the topic of: {scene}. Professional vector illustration, simple icons, shapes, arrows "
+        "and schematic elements, soft muted corporate palette, lots of negative space, balanced "
+        "composition. NO realistic human, NO photograph. Avoid readable text or gibberish letters "
+        "— communicate with icons and shapes only."
+    )
+    nb = _nano_banana_image(prompt)
+    if nb:
+        _set_img_engine("Nano Banana (Gemini)")
+        return nb
+    try:
+        img = client.with_options(timeout=110.0).images.generate(
+            model="gpt-image-1", prompt=prompt, size="1024x1024", quality="medium", n=1)
+        _set_img_engine("gpt-image-1 (repli)")
+        return img.data[0].b64_json
+    except Exception:
+        return None
+
+
+def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64="", style="auto"):
+    """Génère une image alignée sur le post. `style` choisi par l'utilisateur :
+      - "auto"      : l'IA décide (portrait si le post met l'auteur en avant, sinon scène)
+      - "moi"       : portrait à la ressemblance de l'utilisateur (sa photo)
+      - "diagramme" : infographie/schéma illustrant le post (AUCUNE personne)
+      - "scene"     : scène/illustration SANS la personne
+    Moteur PRINCIPAL : Nano Banana (Gemini), repli gpt-image-1. Retourne b64 ou None."""
     client = _get_client()
     if client is None:
         return None
@@ -702,6 +726,16 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
         portrait = bool(obj.get("portrait"))
     except Exception:
         scene = f"{person}, a professional in a {secteur} work environment"
+
+    # --- Application du STYLE choisi par l'utilisateur ---
+    if style == "diagramme":
+        return _generer_diagramme(client, scene)
+    if style == "scene":
+        photo_b64 = ""          # pas de personne issue de la photo
+        portrait = False
+    elif style == "moi":
+        portrait = True         # portrait à la ressemblance (si photo dispo)
+    want_person = (style != "scene")
 
     import random
     compo = "editorial head-and-shoulders portrait, subject looking toward camera" if portrait \
@@ -737,10 +771,17 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64=""):
         except Exception:
             pass  # repli : génération normale sans photo
 
-    prompt = (
-        f"Hyperrealistic professional photograph, {compo}. {scene} "
-        f"The main person in the photo is clearly {person}. " + _REAL + " " + _NOTXT
-    )
+    if want_person:
+        prompt = (
+            f"Hyperrealistic professional photograph, {compo}. {scene} "
+            f"The main person in the photo is clearly {person}. " + _REAL + " " + _NOTXT
+        )
+    else:
+        prompt = (
+            f"Hyperrealistic professional editorial photograph. {scene} "
+            "No people in the frame — focus on the environment, objects and atmosphere. "
+            + _REAL + " " + _NOTXT
+        )
     # Nano Banana d'abord, gpt-image-1 en repli
     nb = _nano_banana_image(prompt)
     if nb:

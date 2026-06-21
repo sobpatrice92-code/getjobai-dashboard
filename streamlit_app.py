@@ -1232,16 +1232,23 @@ elif page == "🤖 Agents IA":
         pg_theme = st.text_input("Thème (optionnel — laissez vide pour un thème automatique)",
                                  value="", key="pg_theme")
 
-        pg_avec_image = st.checkbox("🖼️ Générer aussi une image hyper-réaliste alignée sur le post",
+        pg_avec_image = st.checkbox("🖼️ Générer aussi une image alignée sur le post",
                                     value=True, key="pg_avec_image")
-        pg_moi = False
+        # Choix du TYPE d'image (l'utilisateur n'est plus obligé d'avoir le personnage)
+        _img_opts = ["🤖 Automatique", "📊 Diagramme / infographie", "🎬 Scène (sans moi)"]
         if _pref_photo:
-            pg_moi = st.checkbox("🧑 Me mettre en avant (image qui me RESSEMBLE, depuis ma photo)",
-                                 value=True, key="pg_moi")
-        else:
-            st.caption("💡 Ajoutez une photo dans **Paramètres → 🎨 Post LinkedIn** pour des images "
-                       "qui vous ressemblent (posts qui vous mettent en avant).")
-        _photo_pour_image = _pref_photo if pg_moi else ""
+            _img_opts.insert(1, "🧑 Moi en portrait (ma ressemblance)")
+        _img_choice = st.selectbox("Type d'image", _img_opts, key="pg_img_style",
+                                   help="Diagramme = schéma illustratif sans personne. "
+                                        "Scène = illustration sans vous. Moi = portrait à votre ressemblance.")
+        _style_map = {"🤖 Automatique": "auto", "🧑 Moi en portrait (ma ressemblance)": "moi",
+                      "📊 Diagramme / infographie": "diagramme", "🎬 Scène (sans moi)": "scene"}
+        pg_img_style = _style_map.get(_img_choice, "auto")
+        if not _pref_photo:
+            st.caption("💡 Ajoutez une photo dans **Paramètres → 🎨 Post LinkedIn** pour pouvoir "
+                       "choisir « Moi en portrait » (image à votre ressemblance).")
+        # Photo utilisée seulement quand on veut le personnage (moi / auto)
+        _photo_pour_image = _pref_photo if pg_img_style in ("moi", "auto") else ""
 
         c_gen, c_close = st.columns([3, 1])
         with c_gen:
@@ -1260,10 +1267,11 @@ elif page == "🤖 Agents IA":
                 st.session_state.pop("gen_post_image", None)
                 st.session_state.pop("gen_post_video", None)
                 if pg_avec_image:
-                    with st.spinner("Génération de l'image hyper-réaliste (Nano Banana / repli gpt-image-1, ~15s)…"):
+                    with st.spinner("Génération de l'image (Nano Banana / repli gpt-image-1, ~15s)…"):
                         st.session_state.gen_post_image = generer_image_post(
                             st.session_state.gen_post_text, secteur=pg_secteur,
-                            genre=_pref_genre, peau=_pref_peau, photo_b64=_photo_pour_image)
+                            genre=_pref_genre, peau=_pref_peau, photo_b64=_photo_pour_image,
+                            style=pg_img_style)
         with c_close:
             if st.button("✖ Fermer", use_container_width=True):
                 st.session_state.show_post_gen = False
@@ -1294,10 +1302,11 @@ elif page == "🤖 Agents IA":
                 except Exception:
                     st.caption("⚠️ Aperçu image indisponible.")
                 if st.button("🔄 Régénérer l'image", key="pg_regen_img"):
-                    with st.spinner("Nouvelle image (gpt-image-1)…"):
+                    with st.spinner("Nouvelle image…"):
                         st.session_state.gen_post_image = generer_image_post(
                             post_edit, secteur=pg_secteur,
-                            genre=_pref_genre, peau=_pref_peau, photo_b64=_photo_pour_image)
+                            genre=_pref_genre, peau=_pref_peau, photo_b64=_photo_pour_image,
+                            style=pg_img_style)
                     st.rerun()
             elif pg_avec_image:
                 st.caption("⚠️ Image non générée (quota OpenAI ou erreur) — le post peut être publié sans image.")
