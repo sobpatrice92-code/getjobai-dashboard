@@ -670,26 +670,66 @@ def _nano_banana_image(prompt, ref_png_bytes=None):
     return None
 
 
-def _generer_diagramme(client, scene):
-    """Image de type INFOGRAPHIE / diagramme (sans personne) illustrant le post."""
+def _generer_diagramme(client, post_text, secteur=""):
+    """INFOGRAPHIE pro (sans personne) conçue depuis le post : titre + points + mise
+    en page structurée. Moteur : gpt-image-1 qualité 'high' (meilleur pour le texte et
+    la composition), Nano Banana en repli."""
+    import json as _json
+    spec = {"title": "", "points": [], "layout": "steps", "accent": "deep professional blue"}
+    try:
+        r = client.with_options(timeout=30.0).chat.completions.create(
+            model="gpt-4o", max_tokens=280, temperature=0.5,
+            response_format={"type": "json_object"},
+            messages=[{"role": "user", "content": (
+                "À partir de ce post LinkedIn, conçois une infographie professionnelle. "
+                "Renvoie UNIQUEMENT ce JSON :\n"
+                '{"title":"titre court accrocheur (≤5 mots, MÊME LANGUE que le post)",'
+                '"points":["3 à 4 étiquettes TRÈS courtes (≤4 mots chacune) résumant les idées clés"],'
+                '"layout":"un seul de: steps | comparison | cycle | pyramid | checklist",'
+                '"accent":"une couleur d\'accent professionnelle en anglais (ex: deep blue, teal, emerald)"}\n\n'
+                f"PROFIL: {secteur}\nPOST:\n" + (post_text or "")[:800])}])
+        spec = _json.loads(r.choices[0].message.content) or spec
+    except Exception:
+        pass
+    title = (spec.get("title") or "").strip()
+    pts = [str(p).strip() for p in (spec.get("points") or []) if str(p).strip()][:4]
+    layout = (spec.get("layout") or "steps").strip().lower()
+    accent = (spec.get("accent") or "deep professional blue").strip()
+    layout_desc = {
+        "steps": "a clean horizontal 3-4 step process flow, numbered nodes connected by arrows",
+        "comparison": "a balanced two-column comparison layout (left vs right)",
+        "cycle": "a circular cycle diagram with 3-4 nodes and curved arrows",
+        "pyramid": "a layered pyramid with 3-4 stacked tiers",
+        "checklist": "a vertical checklist, each item with a check icon",
+    }.get(layout, "a clean horizontal 3-4 step process flow")
+    pts_txt = "; ".join(pts) if pts else "the key ideas of the post"
+
     prompt = (
-        "A clean modern flat-design infographic / conceptual diagram that visually explains "
-        f"the topic of: {scene}. Professional vector illustration, simple icons, shapes, arrows "
-        "and schematic elements, soft muted corporate palette, lots of negative space, balanced "
-        "composition. NO realistic human, NO photograph. Avoid readable text or gibberish letters "
-        "— communicate with icons and shapes only."
+        "A polished, premium professional INFOGRAPHIC designed for LinkedIn (square). "
+        f"Layout: {layout_desc}. "
+        + (f'Bold headline title at the top: "{title}". ' if title else "")
+        + f"Labelled elements (use EXACTLY these short words): {pts_txt}. "
+        "Design language: flat modern vector, clean grid, generous white space, strong visual "
+        f"hierarchy, a refined color system around {accent} with 1-2 complementary tones, subtle "
+        "soft shadows, crisp minimalist line icons for each point, the look of a top management-"
+        "consulting / design-agency slide. Render the short title and labels as clean, correctly "
+        "spelled, perfectly legible sans-serif text — keep every word short. "
+        "No photograph, no human, no faces, no logos or brand names, no gibberish or lorem ipsum; "
+        "only the exact short words provided."
     )
+    # gpt-image-1 'high' d'abord (meilleur designer/texte), Nano Banana en repli
+    try:
+        img = client.with_options(timeout=120.0).images.generate(
+            model="gpt-image-1", prompt=prompt, size="1024x1024", quality="high", n=1)
+        _set_img_engine("gpt-image-1 (high)")
+        return img.data[0].b64_json
+    except Exception:
+        pass
     nb = _nano_banana_image(prompt)
     if nb:
         _set_img_engine("Nano Banana (Gemini)")
         return nb
-    try:
-        img = client.with_options(timeout=110.0).images.generate(
-            model="gpt-image-1", prompt=prompt, size="1024x1024", quality="medium", n=1)
-        _set_img_engine("gpt-image-1 (repli)")
-        return img.data[0].b64_json
-    except Exception:
-        return None
+    return None
 
 
 def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64="", style="auto"):
@@ -702,6 +742,9 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64="", s
     client = _get_client()
     if client is None:
         return None
+    # Diagramme : infographie conçue depuis le POST (pas de scène photo à dériver)
+    if style == "diagramme":
+        return _generer_diagramme(client, post_text, secteur)
     person = _person_desc(genre, peau)
     # 1. Dériver une scène + décider si l'auteur est MIS EN AVANT (portrait/lumière)
     portrait = bool(photo_b64)
@@ -728,8 +771,6 @@ def generer_image_post(post_text, secteur="", genre="", peau="", photo_b64="", s
         scene = f"{person}, a professional in a {secteur} work environment"
 
     # --- Application du STYLE choisi par l'utilisateur ---
-    if style == "diagramme":
-        return _generer_diagramme(client, scene)
     if style == "scene":
         photo_b64 = ""          # pas de personne issue de la photo
         portrait = False
