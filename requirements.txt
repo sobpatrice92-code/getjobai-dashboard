@@ -5,5 +5,4 @@ extra-streamlit-components>=0.1.60
 pypdf>=4.0.0
 reportlab>=4.0.0
 cryptography>=42.0.0
-moviepy==1.0.3
 imageio-ffmpeg>=0.4.9

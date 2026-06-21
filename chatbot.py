@@ -849,11 +849,25 @@ def _frame_slide(fond, texte, police):
     return np.array(img)
 
 
+def _duree_mp3(ffmpeg, mp3_path):
+    """Lit la durée d'un MP3 via ffmpeg (parse le stderr). Défaut 12s si illisible."""
+    import subprocess, re
+    try:
+        p = subprocess.run([ffmpeg, "-i", mp3_path], capture_output=True, text=True, timeout=30)
+        m = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", p.stderr or "")
+        if m:
+            h, mi, s = int(m.group(1)), int(m.group(2)), float(m.group(3))
+            return max(6.0, h * 3600 + mi * 60 + s)
+    except Exception:
+        pass
+    return 12.0
+
+
 def generer_video_post(post_text, image_b64="", langue="fr", voix="alloy"):
     """Génère une vidéo verticale (diaporama) à partir d'un post : image de fond +
-    texte incrusté défilant + voix off TTS. Retourne les octets MP4 ou None.
-    Rendu serveur via moviepy + ffmpeg embarqué (imageio-ffmpeg), sans ImageMagick."""
-    import os as _os, tempfile
+    texte incrusté + voix off TTS. Retourne les octets MP4 ou None.
+    Rendu 100% ffmpeg (imageio-ffmpeg) — léger, avec timeout (pas de moviepy)."""
+    import os as _os, tempfile, subprocess
 
     def _err(msg):
         try:
@@ -868,9 +882,10 @@ def generer_video_post(post_text, image_b64="", langue="fr", voix="alloy"):
         pass
 
     try:
-        from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips
+        import imageio_ffmpeg
+        ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     except Exception as e:
-        return _err(f"moviepy indisponible sur le serveur : {str(e)[:200]}")
+        return _err(f"ffmpeg indisponible sur le serveur : {str(e)[:200]}")
 
     client = _get_client()
     # 1. Voix off (réutilise le moteur TTS existant)
@@ -881,29 +896,49 @@ def generer_video_post(post_text, image_b64="", langue="fr", voix="alloy"):
     tmpdir = tempfile.mkdtemp(prefix="post_video_")
     mp3_path = _os.path.join(tmpdir, "voix.mp3")
     out_path = _os.path.join(tmpdir, "post.mp4")
+    list_path = _os.path.join(tmpdir, "slides.txt")
     try:
+        from PIL import Image
         with open(mp3_path, "wb") as f:
             f.write(audio_bytes)
-        audio = AudioFileClip(mp3_path)
-        duree = max(6.0, float(audio.duration))
+        duree = _duree_mp3(ffmpeg, mp3_path)
 
+        # 2. Pré-rendu des frames (PIL = léger), une par slide
         fond = _fond_vertical(image_b64)
         police = _charger_police(58)
         slides = _slides_texte(post_text)
-        par_slide = duree / len(slides)
+        par_slide = max(2.0, duree / len(slides))
+        pngs = []
+        for i, txt in enumerate(slides):
+            frame = _frame_slide(fond, txt, police)  # np.array
+            p = _os.path.join(tmpdir, f"s{i}.png")
+            Image.fromarray(frame).save(p)
+            pngs.append(p)
 
-        clips = []
-        for txt in slides:
-            frame = _frame_slide(fond, txt, police)
-            clips.append(ImageClip(frame).set_duration(par_slide))
-        video = concatenate_videoclips(clips, method="compose").set_audio(audio)
-        video.write_videofile(
-            out_path, fps=24, codec="libx264", audio_codec="aac",
-            preset="ultrafast", threads=2, logger=None,
-            temp_audiofile=_os.path.join(tmpdir, "a.m4a"),
-        )
+        # 3. Fichier concat (slideshow) — dernière image répétée (exigence du démuxeur)
+        lignes = []
+        for p in pngs:
+            lignes.append(f"file '{p}'")
+            lignes.append(f"duration {par_slide:.3f}")
+        lignes.append(f"file '{pngs[-1]}'")
+        with open(list_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lignes))
+
+        # 4. ffmpeg : images -> vidéo + audio, fin calée sur la voix off
+        cmd = [
+            ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", list_path,
+            "-i", mp3_path, "-c:v", "libx264", "-preset", "ultrafast",
+            "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", "-b:a", "128k",
+            "-shortest", "-movflags", "+faststart", out_path,
+        ]
+        proc = subprocess.run(cmd, capture_output=True, timeout=180)
+        if proc.returncode != 0 or not _os.path.exists(out_path):
+            err = (proc.stderr or b"").decode("utf-8", "replace")[-250:]
+            return _err(f"Encodage ffmpeg en échec : {err}")
         with open(out_path, "rb") as f:
             return f.read()
+    except subprocess.TimeoutExpired:
+        return _err("Rendu trop long (timeout 180s) — vidéo abandonnée.")
     except Exception as e:
         import traceback
         return _err(f"Rendu vidéo en échec : {str(e)[:240]} "
