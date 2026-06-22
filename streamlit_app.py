@@ -350,6 +350,7 @@ _GOTO_PAGES = {
     "reseau": "🤝 Réseau",
     "livrables": "📦 Livrables",
     "parametres": "⚙️ Paramètres",
+    "simulation": "🎤 Simulation entretien",
 }
 _goto = st.query_params.get("goto")
 if _goto in _GOTO_PAGES:
@@ -911,23 +912,35 @@ elif page == "📤 Candidatures":
                         if st.button("🗑️ Suppr.", key=f"s_del_{cid}", use_container_width=True):
                             db.delete_candidature(cid); st.rerun()
 
-                    # Si entretien obtenu -> préparer CET entretien (ciblé entreprise/poste)
+                    # Si entretien obtenu -> guide écrit OU simulation live (ciblés entreprise/poste)
                     if stt == "entretien":
-                        if st.button(f"🎙️ Préparer cet entretien ({company})", key=f"prep_{cid}",
-                                     type="primary", use_container_width=True):
-                            action = db.create_action(
-                                user_id=st.session_state.user_id,
-                                agent_name="entretien_prep",
-                                params={"source": "candidature", "job_title": titre, "company": company}
-                            )
-                            if action and action.get("id"):
-                                # Emmène l'utilisateur voir l'agent tourner en direct
-                                st.session_state.monitor_action_id = action["id"]
-                                st.session_state.monitor_agent = "Préparer mon Entretien"
-                                st.query_params["goto"] = "agents"
+                        ep1, ep2 = st.columns(2)
+                        with ep1:
+                            if st.button("🎙️ Préparer (guide écrit)", key=f"prep_{cid}",
+                                         type="primary", use_container_width=True):
+                                action = db.create_action(
+                                    user_id=st.session_state.user_id,
+                                    agent_name="entretien_prep",
+                                    params={"source": "candidature", "job_title": titre,
+                                            "company": company})
+                                if action and action.get("id"):
+                                    # Emmène l'utilisateur voir l'agent tourner en direct
+                                    st.session_state.monitor_action_id = action["id"]
+                                    st.session_state.monitor_agent = "Préparer mon Entretien"
+                                    st.query_params["goto"] = "agents"
+                                    st.rerun()
+                                else:
+                                    st.error("Échec du lancement.")
+                        with ep2:
+                            if st.button("🎤 Simulation live", key=f"sim_{cid}",
+                                         use_container_width=True):
+                                # Pré-remplit la page Simulation avec ce poste / entreprise
+                                st.session_state["sim_poste"] = titre
+                                st.session_state["sim_ent"] = company
+                                st.session_state.pop("sim_active", None)
+                                st.session_state.pop("sim_score", None)
+                                st.query_params["goto"] = "simulation"
                                 st.rerun()
-                            else:
-                                st.error("Échec du lancement.")
 
 # ============================================================
 # PAGE: SIMULATION ENTRETIEN (live)
