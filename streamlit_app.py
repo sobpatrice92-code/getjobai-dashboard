@@ -354,10 +354,14 @@ _GOTO_PAGES = {
 _goto = st.query_params.get("goto")
 if _goto in _GOTO_PAGES:
     st.session_state["nav_page"] = _GOTO_PAGES[_goto]
-    try:
-        del st.query_params["goto"]
-    except Exception:
-        pass
+    _ag = st.query_params.get("ag")
+    if _ag:
+        st.session_state["preselect_agent"] = _ag
+    for _k in ("goto", "ag"):
+        try:
+            del st.query_params[_k]
+        except Exception:
+            pass
 
 
 with st.sidebar:
@@ -1177,11 +1181,67 @@ elif page == "🤖 Agents IA":
         "Stratégie Carrière": "career_strategy_agent"
     }
 
+    def _launch_agent(name):
+        """Lance un agent (même logique que les boutons de la grille)."""
+        if name == "Post LinkedIn":
+            st.session_state.show_post_gen = True
+            st.session_state.pop("gen_post_text", None)
+            st.session_state.pop("preselect_agent", None)
+            st.rerun()
+        elif st.session_state.user_id:
+            try:
+                _db = get_supabase_client()
+                _act = _db.create_action(
+                    user_id=st.session_state.user_id,
+                    agent_name=agent_mapping.get(name, "unknown"),
+                    params={"source": "guide"})
+                if _act and _act.get("id"):
+                    st.session_state.monitor_action_id = _act["id"]
+                    st.session_state.monitor_agent = name
+                    st.session_state.pop("preselect_agent", None)
+                    st.rerun()
+                elif _act:
+                    alert(f"✅ {name} lancé! (suivi indisponible)", "success")
+                else:
+                    st.error("❌ Échec du lancement")
+            except Exception as _e:
+                st.error(f"❌ Erreur: {str(_e)}")
+        else:
+            st.error("User ID manquant")
+
+    # Bandeau « agent présélectionné » (arrivée depuis une carte du Guide)
+    _pre = st.session_state.get("preselect_agent")
+    if _pre in {a["name"] for a in agents}:
+        _pa = next(a for a in agents if a["name"] == _pre)
+        st.markdown(
+            "<div style='background:linear-gradient(135deg,rgba(45,212,191,.14),"
+            "rgba(30,155,255,.10));border:1px solid rgba(45,212,191,.45);border-radius:14px;"
+            "padding:1rem 1.2rem;margin-bottom:.6rem;display:flex;align-items:center;gap:.8rem'>"
+            f"<div style='font-size:1.8rem'>{_pa['icon']}</div>"
+            "<div><div style='color:#eaf6ff;font-weight:700;font-size:1.05rem'>"
+            f"Agent sélectionné depuis le Guide : {_pa['name']}</div>"
+            f"<div style='color:#bcd3e6;font-size:.86rem'>{_pa['desc']}</div></div></div>",
+            unsafe_allow_html=True)
+        _cb1, _cb2 = st.columns([3, 1])
+        with _cb1:
+            if st.button(f"🚀 Lancer {_pre} maintenant", type="primary",
+                         use_container_width=True, key="preselect_launch"):
+                _launch_agent(_pre)
+        with _cb2:
+            if st.button("✖ Annuler", use_container_width=True, key="preselect_cancel"):
+                st.session_state.pop("preselect_agent", None)
+                st.rerun()
+        st.markdown("---")
+
     _AG_ACCENTS = ["blue", "purple", "green", "orange", "cyan"]
     for i, agent in enumerate(agents):
         with col1 if i % 2 == 0 else col2:
             card(agent["name"], agent["desc"], agent["color"], agent["icon"],
                  accent=_AG_ACCENTS[i % len(_AG_ACCENTS)], footer=f"📊 {agent['stats']}")
+            if agent["name"] == st.session_state.get("preselect_agent"):
+                st.markdown("<div style='color:#2dd4bf;font-weight:700;font-size:.84rem;"
+                            "margin:-.2rem 0 .3rem'>⭐ Sélectionné depuis le Guide</div>",
+                            unsafe_allow_html=True)
 
             if st.button(f"🚀 Lancer {agent['name']}", key=f"launch_{i}", use_container_width=True):
                 # Post LinkedIn = génération manuelle dans le Dashboard (pas de publication auto)
@@ -1761,7 +1821,26 @@ elif page == "📖 Guide":
         "<div style='display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;"
         f"margin:.2rem 0 1.4rem'>{_flow}</div>", unsafe_allow_html=True)
 
-    # --- Agents en CARTES CLIQUABLES (clic = aller à la page de l'agent) ---
+    # --- Agents en CARTES CLIQUABLES (clic = page Agents IA + agent présélectionné) ---
+    from urllib.parse import quote as _q
+    # Nom de carte (Guide) -> nom exact de l'agent (page Agents IA)
+    _GUIDE_AGENT = {
+        "Job Hunter": "Job Hunter",
+        "Indeed Agent (multi-sources)": "Indeed Agent",
+        "COOP Hunter (stages étudiants)": "COOP Hunter",
+        "Orchestrateur (sources complémentaires)": "Orchestrateur",
+        "Préparer Candidatures": "Préparer Candidatures",
+        "Postuler (Copilote)": "Postuler (Copilote)",
+        "Suivi Boîte Mail": "Suivi Boîte Mail",
+        "Follow-up Engine (relances)": "Follow-up Engine",
+        "Préparer mon Entretien": "Préparer mon Entretien",
+        "ATS Optimizer": "ATS Optimizer",
+        "Profil LinkedIn 10/10": "Profil LinkedIn 10/10",
+        "Stratégie Carrière": "Stratégie Carrière",
+        "Networking Agent": "Networking Agent",
+        "Post LinkedIn": "Post LinkedIn",
+        "Immigration Advisor": "Immigration Advisor",
+    }
     st.markdown(
         "<style>.gja-gcard{transition:transform .15s ease,border-color .15s ease,"
         "box-shadow .15s ease}.gja-gcard:hover{transform:translateY(-3px);"
@@ -1771,8 +1850,10 @@ elif page == "📖 Guide":
         st.markdown(f"### {groupe['cat']}")
         _cards = ""
         for a in groupe["items"]:
+            _ag = _GUIDE_AGENT.get(a["nom"], "")
+            _href = "?goto=agents" + (f"&ag={_q(_ag)}" if _ag else "")
             _cards += (
-                "<a href='?goto=agents' target='_self' class='gja-gcard' "
+                f"<a href='{_href}' target='_self' class='gja-gcard' "
                 "style='text-decoration:none;color:inherit;cursor:pointer;"
                 "background:linear-gradient(160deg,rgba(20,28,42,.92),rgba(12,17,27,.92));"
                 "border:1px solid rgba(45,212,191,.22);border-radius:14px;padding:1rem 1.1rem;"
