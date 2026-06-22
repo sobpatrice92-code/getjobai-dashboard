@@ -815,20 +815,27 @@ elif page == "📤 Candidatures":
                                + f"Score {score}/100 • Statut: **{c.get('status','')}**"
                                + (f" • [Voir l'offre]({url})" if url else ""))
 
-                    # RÉPONSE DÉTECTÉE : extrait du message + lien direct Gmail
-                    if stt in ("reponse", "entretien", "recue"):
+                    # RÉPONSE DÉTECTÉE (réponse / entretien / accusé / refus) :
+                    # extrait du message + lien direct Gmail
+                    if stt in ("reponse", "entretien", "recue", "refus"):
                         _ex = (c.get("reponse_extrait") or "").strip()
                         _gq = (company or "").replace(" ", "%20")
                         _gurl = f"https://mail.google.com/mail/u/0/#search/{_gq}"
-                        _ttl = ("🎯 Invitation à un entretien" if stt == "entretien"
-                                else "💬 Réponse reçue" if stt == "reponse"
-                                else "📬 Accusé de réception")
+                        _ttl = {"entretien": "🎯 Invitation à un entretien",
+                                "reponse": "💬 Réponse reçue",
+                                "recue": "📬 Accusé de réception",
+                                "refus": "❌ Refus de l'employeur"}.get(stt, "💬 Réponse")
+                        # Rouge pour un refus, vert pour une réponse positive/neutre
+                        if stt == "refus":
+                            _bg, _bd, _tc = "rgba(239,68,68,0.10)", "rgba(239,68,68,0.35)", "#f3cccc"
+                        else:
+                            _bg, _bd, _tc = "rgba(34,197,94,0.10)", "rgba(34,197,94,0.35)", "#cfe9d6"
                         if _ex:
                             _safe = _ex.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                             st.markdown(
-                                "<div style='background:rgba(34,197,94,0.10);border:1px solid "
-                                "rgba(34,197,94,0.35);border-radius:10px;padding:10px 12px;margin:4px 0;'>"
-                                f"<b>{_ttl}</b><br><span style='color:#cfe9d6'>{_safe}</span></div>",
+                                f"<div style='background:{_bg};border:1px solid {_bd};"
+                                "border-radius:10px;padding:10px 12px;margin:4px 0;'>"
+                                f"<b>{_ttl}</b><br><span style='color:{_tc}'>{_safe}</span></div>",
                                 unsafe_allow_html=True)
                         else:
                             st.info(f"{_ttl} — le message complet est dans votre Gmail.")
