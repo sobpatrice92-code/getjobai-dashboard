@@ -1715,20 +1715,55 @@ elif page == "📖 Guide":
         },
     ]
 
+    # --- Diagramme de parcours (infographie « en un coup d'œil ») ---
+    _stages = [
+        ("⚙️", "Régler", "Paramètres · 1 fois"),
+        ("🔎", "Trouver", "📋 Offres"),
+        ("📨", "Postuler", "📤 Candidatures"),
+        ("🎯", "Se préparer", "📦 Livrables"),
+        ("🤝", "Rayonner", "🤝 Réseau"),
+    ]
+    _flow = ""
+    for _i, (_e, _t, _s) in enumerate(_stages):
+        _flow += (
+            "<div style='flex:1 1 120px;min-width:120px;background:rgba(30,155,255,.08);"
+            "border:1px solid rgba(45,212,191,.25);border-radius:12px;padding:.7rem .5rem;"
+            "text-align:center'>"
+            f"<div style='font-size:1.5rem'>{_e}</div>"
+            f"<div style='color:#eaf4ff;font-weight:700;font-size:.92rem'>{_t}</div>"
+            f"<div style='color:#9fc7e8;font-size:.74rem;margin-top:.15rem'>{_s}</div></div>"
+        )
+        if _i < len(_stages) - 1:
+            _flow += ("<div style='display:flex;align-items:center;color:#2dd4bf;"
+                      "font-size:1.4rem;font-weight:700'>›</div>")
+    st.markdown("### 🗺️ Votre parcours en un coup d'œil")
+    st.markdown(
+        "<div style='display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;"
+        f"margin:.2rem 0 1.4rem'>{_flow}</div>", unsafe_allow_html=True)
+
+    # --- Agents en CARTES visuelles (toujours affichées, faciles à scanner) ---
     for groupe in GUIDE:
         st.markdown(f"### {groupe['cat']}")
+        _cards = ""
         for a in groupe["items"]:
-            with st.expander(f"{a['icon']}  {a['nom']}"):
-                st.markdown(f"**Ce qu'il fait —** {a['fait']}")
-                st.markdown(f"**Quand l'utiliser —** {a['quand']}")
-                st.markdown(f"**Pré-requis —** {a['prerequis']}")
-                st.markdown(
-                    f"<div style='margin-top:.5rem;padding:.5rem .8rem;border-radius:8px;"
-                    f"background:rgba(45,212,191,0.10);border:1px dashed rgba(45,212,191,0.40);"
-                    f"color:#bff0e6;'>📍 <b>Où trouver le résultat :</b> {a['ou']}</div>",
-                    unsafe_allow_html=True,
-                )
-        st.markdown("")
+            _cards += (
+                "<div style='background:linear-gradient(160deg,rgba(20,28,42,.92),"
+                "rgba(12,17,27,.92));border:1px solid rgba(45,212,191,.22);border-radius:14px;"
+                "padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.3rem'>"
+                f"<div style='font-size:1.6rem'>{a['icon']}</div>"
+                f"<div style='font-weight:700;color:#eaf4ff;font-size:1.03rem'>{a['nom']}</div>"
+                f"<div style='color:#c3d6e8;font-size:.85rem;line-height:1.4'>{a['fait']}</div>"
+                f"<div style='color:#9fc7e8;font-size:.79rem;margin-top:.25rem'>"
+                f"🕒 <b>Quand :</b> {a['quand']}</div>"
+                f"<div style='color:#9fc7e8;font-size:.79rem'>🧩 <b>Pré-requis :</b> {a['prerequis']}</div>"
+                "<div style='margin-top:auto;padding-top:.55rem'>"
+                "<span style='display:inline-block;padding:.32rem .7rem;border-radius:8px;"
+                "background:rgba(45,212,191,.12);border:1px dashed rgba(45,212,191,.4);"
+                f"color:#bff0e6;font-size:.78rem'>📍 {a['ou']}</span></div></div>"
+            )
+        st.markdown(
+            "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));"
+            f"gap:14px;margin:.3rem 0 1.4rem'>{_cards}</div>", unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("### 🚀 Une offre trouvée — comment postuler ?")
