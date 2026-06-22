@@ -765,7 +765,7 @@ elif page == "📤 Candidatures":
                 "en_attente": "⏳", "validee": "✔️", "a_envoyer": "📨", "sans_email": "✉️",
                 "easyapply": "📝", "envoi_en_cours": "📤", "envoyee": "✅", "recue": "📬",
                 "relancee": "🔁", "reponse": "💬", "entretien": "🎯", "refus": "❌",
-                "a_explorer": "🔎",
+                "a_explorer": "🔎", "non_remis": "⚠️",
             }
             # Classement hiérarchique : les plus récentes en premier (date + heure)
             cands = sorted(cands, key=lambda c: c.get("created_at") or "", reverse=True)
@@ -778,6 +778,7 @@ elif page == "📤 Candidatures":
                 "📝 Easy Apply (LinkedIn)": ("easyapply",),
                 "🔎 À explorer (portails stages)": ("a_explorer",),
                 "✅ Envoyées": ("envoyee", "recue", "envoi_en_cours", "relancee"),
+                "⚠️ Non remis": ("non_remis",),
                 "💬 Réponses": ("reponse",),
                 "🎯 Entretiens": ("entretien",),
                 "❌ Refus": ("refus",),
@@ -817,6 +818,26 @@ elif page == "📤 Candidatures":
                     st.caption((f"🕒 {date_aff} • " if date_aff else "")
                                + f"Score {score}/100 • Statut: **{c.get('status','')}**"
                                + (f" • [Voir l'offre]({url})" if url else ""))
+
+                    # Transparence : à QUELLE adresse RH la candidature a été envoyée
+                    _to_email = (c.get("contact_email") or "").strip()
+                    if _to_email and stt in ("envoyee", "recue", "relancee", "reponse",
+                                             "entretien", "refus", "non_remis"):
+                        st.caption(f"📤 Envoyée à : **{_to_email}**")
+
+                    # NON REMIS (bounce) : la candidature n'est PAS arrivée
+                    if stt == "non_remis":
+                        _why = (c.get("reponse_extrait") or "").strip()
+                        _wsafe = _why.replace("<", "&lt;").replace(">", "&gt;")
+                        st.markdown(
+                            "<div style='background:rgba(245,158,11,0.12);border:1px solid "
+                            "rgba(245,158,11,0.45);border-radius:10px;padding:10px 12px;margin:4px 0;'>"
+                            "<b>⚠️ Non remis</b> — l'email n'a pas pu être livré (adresse RH invalide "
+                            "ou rejetée). Cette candidature <b>n'est pas arrivée</b>. Postulez "
+                            "manuellement : téléchargez la lettre + le CV ci-dessous et déposez-les "
+                            "sur le site de l'employeur."
+                            + (f"<br><span style='color:#f5d8a8'>{_wsafe[:300]}</span>" if _why else "")
+                            + "</div>", unsafe_allow_html=True)
 
                     # RÉPONSE DÉTECTÉE (réponse / entretien / accusé / refus) :
                     # extrait du message + lien direct Gmail
