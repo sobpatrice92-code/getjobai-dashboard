@@ -942,6 +942,40 @@ elif page == "📤 Candidatures":
                                 st.query_params["goto"] = "simulation"
                                 st.rerun()
 
+                        # 🎧 Coaching audio : briefing oral motivant ciblé sur CET entretien
+                        _ck = f"coach_audio_{cid}"
+                        if st.button("🎧 Coaching audio (briefing oral ~60s)", key=f"coach_{cid}",
+                                     use_container_width=True):
+                            try:
+                                from chatbot import _get_client, _synthese_vocale
+                                _cli = _get_client()
+                                if _cli:
+                                    with st.spinner("Génération du briefing audio…"):
+                                        _cv = (cv_offre or "")[:3000]
+                                        _scr = _cli.chat.completions.create(
+                                            model="gpt-4o", temperature=0.5, max_tokens=340,
+                                            messages=[{"role": "user", "content": (
+                                                "Tu es un coach d'entretien. Rédige un BRIEFING ORAL "
+                                                "motivant d'environ 60 secondes pour un candidat qui passe "
+                                                f"un entretien pour le poste « {titre} » chez « {company} ». "
+                                                "À la 2e personne, ton chaleureux et stratégique : 2-3 points "
+                                                "forts à mettre en avant, 1 question probable + comment y "
+                                                "répondre, et une phrase de confiance pour finir. SANS "
+                                                "markdown, prêt à lire à voix haute."
+                                                + (f"\n\nCV du candidat :\n{_cv}" if _cv else ""))}],
+                                        ).choices[0].message.content
+                                        _au = _synthese_vocale(_cli, _scr)
+                                    if _au:
+                                        st.session_state[_ck] = _au
+                                    else:
+                                        st.info("Audio momentanément indisponible.")
+                                else:
+                                    st.info("Service audio indisponible (clé OpenAI).")
+                            except Exception:
+                                st.info("Audio indisponible pour le moment.")
+                        if st.session_state.get(_ck):
+                            st.audio(st.session_state[_ck], format="audio/mp3")
+
 # ============================================================
 # PAGE: SIMULATION ENTRETIEN (live)
 # ============================================================
