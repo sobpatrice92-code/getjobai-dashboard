@@ -235,6 +235,21 @@ _ANGLE = {
 }
 
 
+def _langue_contact(titre, entreprise=""):
+    """Langue probable (FR/EN) d'un contact selon son titre/entreprise. Défaut FR
+    (contexte bilingue Ottawa/Québec)."""
+    txt = f"{titre} {entreprise}".lower()
+    if any(c in txt for c in "éèêëàâçùûôîï") or any(w in txt for w in (
+            "ingénieur", "directrice", "responsable", "chargé", "gestion", "société",
+            "ressources", "développ", "québec", "ventes", "comptab", "conseil", "recruteur")):
+        return "fr"
+    if any(w in txt for w in ("manager", "engineer", "director", "officer", "lead", "recruiter",
+                              "talent", "head", "software", "developer", "sales", "analyst",
+                              "specialist", "consultant", "owner", "founder")):
+        return "en"
+    return "fr"
+
+
 _NOM_GENERIQUE = ("recruteur", "recruiter", "recrutement", "talent", " rh", "hr ", "ressources",
                   "équipe", "team", "service", "—", "•", "department")
 
@@ -271,15 +286,26 @@ def generer_message_linkedin(nom, titre, entreprise, secteur="votre secteur",
     prenom = _prenom_utile(nom)
     moi = nom_user or "un professionnel"
     ent = _clean_entreprise(entreprise)
-    salut = f"Bonjour {prenom}, " if prenom else "Bonjour, "
-    if poste_postule:
-        _chez = f" chez {ent}" if ent else ""
-        fb = (f"{salut}je viens de déposer ma candidature pour le poste de {poste_postule}{_chez}. "
-              f"Comme vous y travaillez, je me permets de vous le signaler — votre regard me serait "
-              f"précieux. Au plaisir d'échanger, {nom_user}.")
+    lang = _langue_contact(titre, entreprise)
+    if lang == "en":
+        salut = f"Hi {prenom}, " if prenom else "Hi, "
+        if poste_postule:
+            _at = f" at {ent}" if ent else ""
+            fb = (f"{salut}I just applied for the {poste_postule} role{_at}. Since you work there, "
+                  f"I wanted to reach out — your perspective would be valuable. Best, {nom_user}.")
+        else:
+            fb = (f"{salut}I'm {nom_user}, working in {secteur}. I'm growing my network in this field "
+                  f"and would be glad to connect. Best, {nom_user}.")
     else:
-        fb = (f"{salut}je suis {nom_user}, en {secteur}. Je développe mon réseau dans ce domaine et "
-              f"serais heureux d'entrer en contact. Au plaisir, {nom_user}.")
+        salut = f"Bonjour {prenom}, " if prenom else "Bonjour, "
+        if poste_postule:
+            _chez = f" chez {ent}" if ent else ""
+            fb = (f"{salut}je viens de déposer ma candidature pour le poste de {poste_postule}{_chez}. "
+                  f"Comme vous y travaillez, je me permets de vous le signaler — votre regard me serait "
+                  f"précieux. Au plaisir d'échanger, {nom_user}.")
+        else:
+            fb = (f"{salut}je suis {nom_user}, en {secteur}. Je développe mon réseau dans ce domaine et "
+                  f"serais heureux d'entrer en contact. Au plaisir, {nom_user}.")
     if client is None:
         return fb[:290]
     try:
@@ -299,11 +325,17 @@ def generer_message_linkedin(nom, titre, entreprise, secteur="votre secteur",
                    + (f"poste « {titre} »" if titre else "poste inconnu")
                    + (f", entreprise {ent}" if ent else "") + ". "
                    "Rédige une INVITATION de connexion avec un motif clair et pertinent."))
-        ouverture = (f"Commence par « Bonjour {prenom}, »." if prenom
-                     else "Prénom INCONNU : commence simplement par « Bonjour, » (sans nom).")
+        if lang == "en":
+            ouverture = (f"Start with « Hi {prenom}, »." if prenom
+                         else "NAME UNKNOWN: start simply with « Hi, » (no name).")
+            lang_dir = "Write the ENTIRE message IN ENGLISH."
+        else:
+            ouverture = (f"Commence par « Bonjour {prenom}, »." if prenom
+                         else "Prénom INCONNU : commence simplement par « Bonjour, » (sans nom).")
+            lang_dir = "Rédige TOUT le message EN FRANÇAIS."
         prompt = (
-            "Tu es un expert RH en recrutement et en mise en relation. Rédige UN message LinkedIn en "
-            "français, MAX 280 caractères, qui sonne HUMAIN, sincère et naturel.\n"
+            "Tu es un expert RH en recrutement et un coach en mise en relation. Rédige UN message "
+            f"LinkedIn de MAX 280 caractères, qui sonne HUMAIN, sincère et naturel. {lang_dir}\n"
             + consigne + "\n"
             "INTERDITS ABSOLUS : n'invente AUCUN compliment ni fait sur la personne (jamais « votre "
             "travail m'inspire », « approche innovante », « j'admire votre parcours » — tu ne connais "
