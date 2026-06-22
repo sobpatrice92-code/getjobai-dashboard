@@ -753,6 +753,8 @@ elif page == "📤 Candidatures":
         cands = db.get_candidatures_list(st.session_state.user_id)
 
         cv_texte = db.get_user_cv(st.session_state.user_id)
+        _user_nom = ((db.get_user_settings(st.session_state.user_id) or {}).get("full_name")
+                     or "").strip()
 
         if not cands:
             empty_state("📭", "Aucune candidature pour l'instant",
@@ -975,6 +977,53 @@ elif page == "📤 Candidatures":
                                 st.info("Audio indisponible pour le moment.")
                         if st.session_state.get(_ck):
                             st.audio(st.session_state[_ck], format="audio/mp3")
+
+                        # ✉️ Relance de remerciement post-entretien (à relire + envoyer)
+                        if st.button("✉️ Mail de remerciement post-entretien",
+                                     key=f"thx_{cid}", use_container_width=True):
+                            try:
+                                from chatbot import _get_client
+                                import json as _json
+                                _cli = _get_client()
+                                if _cli:
+                                    with st.spinner("Rédaction du message de remerciement…"):
+                                        _r = _cli.chat.completions.create(
+                                            model="gpt-4o", temperature=0.6, max_tokens=420,
+                                            response_format={"type": "json_object"},
+                                            messages=[{"role": "user", "content": (
+                                                "Rédige un email de REMERCIEMENT post-entretien, dans la "
+                                                "MÊME LANGUE que l'intitulé du poste. "
+                                                f"Poste : « {titre} ». Entreprise : « {company} ». "
+                                                f"Candidat : {_user_nom or '[votre nom]'}. "
+                                                "Ton chaleureux, professionnel, sincère, concis (120-160 "
+                                                "mots) : remercier pour l'échange, réaffirmer l'intérêt et "
+                                                "un point fort discuté, rester disponible. PAS de markdown, "
+                                                "PAS de crochets (sauf le nom si inconnu). Signe avec le nom "
+                                                "du candidat. Renvoie UNIQUEMENT ce JSON : "
+                                                '{"objet":"...", "corps":"..."}')}],
+                                        ).choices[0].message.content
+                                        _obj = _json.loads(_r)
+                                    st.session_state[f"thx_obj_{cid}"] = (
+                                        _obj.get("objet") or "Merci pour l'entretien").strip()
+                                    st.session_state[f"thx_body_{cid}"] = (_obj.get("corps") or "").strip()
+                                    st.session_state[f"thx_show_{cid}"] = True
+                                else:
+                                    st.info("Service IA indisponible (clé OpenAI).")
+                            except Exception:
+                                st.info("Génération indisponible pour le moment.")
+                        if st.session_state.get(f"thx_show_{cid}"):
+                            st.text_input("Objet du mail", key=f"thx_obj_{cid}")
+                            st.text_area("Message de remerciement (relisez / modifiez)",
+                                         height=200, key=f"thx_body_{cid}")
+                            _to = (c.get("contact_email") or "").strip()
+                            if _to:
+                                from urllib.parse import quote as _qz
+                                _ml = (f"mailto:{_to}?subject={_qz(st.session_state[f'thx_obj_{cid}'])}"
+                                       f"&body={_qz(st.session_state[f'thx_body_{cid}'])}")
+                                st.markdown(f"📧 [Envoyer via votre messagerie (vers {_to})]({_ml})")
+                            else:
+                                st.caption("Aucun email du recruteur enregistré — copiez le message "
+                                           "et envoyez-le depuis votre boîte.")
 
 # ============================================================
 # PAGE: SIMULATION ENTRETIEN (live)
