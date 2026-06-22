@@ -914,15 +914,18 @@ elif page == "📤 Candidatures":
                     # Si entretien obtenu -> préparer CET entretien (ciblé entreprise/poste)
                     if stt == "entretien":
                         if st.button(f"🎙️ Préparer cet entretien ({company})", key=f"prep_{cid}",
-                                     type="primary"):
+                                     type="primary", use_container_width=True):
                             action = db.create_action(
                                 user_id=st.session_state.user_id,
                                 agent_name="entretien_prep",
                                 params={"source": "candidature", "job_title": titre, "company": company}
                             )
                             if action and action.get("id"):
-                                alert(f"🎙️ Préparation d'entretien lancée pour {company} ! "
-                                      "Suivez-la dans 🤖 Agents IA, résultat dans 📦 Livrables.", "success")
+                                # Emmène l'utilisateur voir l'agent tourner en direct
+                                st.session_state.monitor_action_id = action["id"]
+                                st.session_state.monitor_agent = "Préparer mon Entretien"
+                                st.query_params["goto"] = "agents"
+                                st.rerun()
                             else:
                                 st.error("Échec du lancement.")
 
