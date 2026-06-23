@@ -1310,6 +1310,14 @@ elif page == "🤖 Agents IA":
 
     def _launch_agent(name):
         """Lance un agent (même logique que les boutons de la grille)."""
+        # Garde-fou ESSAI : un agent hors essai n'est pas lançable pendant le trial.
+        if (billing.enabled() and not st.session_state.get("is_admin")
+                and name not in {"Job Hunter", "Préparer Candidatures",
+                                 "Préparer mon Entretien", "Postuler (Copilote)"}
+                and billing.sub_status(st.session_state.user_id) == "trialing"):
+            st.warning(f"🔒 « {name} » est disponible avec l'abonnement complet "
+                       "(après votre essai gratuit).")
+            return
         if name == "Post LinkedIn":
             st.session_state.show_post_gen = True
             st.session_state.pop("gen_post_text", None)
@@ -1360,6 +1368,19 @@ elif page == "🤖 Agents IA":
                 st.rerun()
         st.markdown("---")
 
+    # Restriction d'ESSAI : pendant les 14 jours (statut 'trialing'), seuls quelques
+    # agents sont accessibles ; le reste se débloque avec l'abonnement complet.
+    _TRIAL_AGENTS = {"Job Hunter", "Préparer Candidatures",
+                     "Préparer mon Entretien", "Postuler (Copilote)"}
+    _en_essai = bool(billing.enabled() and st.session_state.user_id
+                     and not st.session_state.get("is_admin")
+                     and billing.sub_status(st.session_state.user_id) == "trialing")
+    if _en_essai:
+        st.info("🎁 **Essai gratuit — 14 jours.** Vous avez accès à : "
+                + " · ".join(sorted(_TRIAL_AGENTS))
+                + ". Les autres agents se débloquent avec l'**abonnement complet** "
+                "(à la fin de l'essai). Vous pouvez vous abonner / gérer ça dans la barre latérale.")
+
     _AG_ACCENTS = ["blue", "purple", "green", "orange", "cyan"]
     for i, agent in enumerate(agents):
         with col1 if i % 2 == 0 else col2:
@@ -1370,7 +1391,11 @@ elif page == "🤖 Agents IA":
                             "margin:-.2rem 0 .3rem'>⭐ Sélectionné depuis le Guide</div>",
                             unsafe_allow_html=True)
 
-            if st.button(f"🚀 Lancer {agent['name']}", key=f"launch_{i}", use_container_width=True):
+            if _en_essai and agent["name"] not in _TRIAL_AGENTS:
+                st.button(f"🔒 {agent['name']} (après l'essai)", key=f"lock_{i}",
+                          use_container_width=True, disabled=True)
+                st.caption("Disponible avec l'abonnement complet.")
+            elif st.button(f"🚀 Lancer {agent['name']}", key=f"launch_{i}", use_container_width=True):
                 # Post LinkedIn = génération manuelle dans le Dashboard (pas de publication auto)
                 if agent["name"] == "Post LinkedIn":
                     st.session_state.show_post_gen = True

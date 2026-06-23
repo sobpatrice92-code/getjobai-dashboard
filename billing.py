@@ -48,6 +48,11 @@ def is_active(user_id: str) -> bool:
     return _sub_status(user_id) in ("active", "trialing")
 
 
+def sub_status(user_id: str) -> str:
+    """Statut d'abonnement brut ('active' | 'trialing' | 'none' | …)."""
+    return _sub_status(user_id)
+
+
 def _backend(path: str, user_id: str):
     r = httpx.post(f"{_backend_url()}{path}",
                    json={"user_id": user_id, "token": _sign(user_id)}, timeout=25)
