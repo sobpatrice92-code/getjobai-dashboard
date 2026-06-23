@@ -11,6 +11,11 @@ import httpx
 import streamlit as st
 from typing import Optional, Dict
 
+try:
+    import billing  # pour adapter le message d'inscription (abonnement vs approbation)
+except Exception:  # pragma: no cover
+    billing = None
+
 
 def _supabase():
     """Récupère url + headers Supabase (mêmes credentials que database.py)."""
@@ -181,7 +186,11 @@ def login_screen():
                         st.rerun()
 
             with tab_signup:
-                st.caption("Votre compte devra être approuvé par un administrateur avant accès.")
+                if billing and billing.enabled():
+                    st.caption("Créez votre compte, puis activez votre abonnement "
+                               "(essai gratuit de 14 jours).")
+                else:
+                    st.caption("Votre compte devra être approuvé par un administrateur avant accès.")
                 s_name = st.text_input("Nom complet", key="signup_name")
                 s_email = st.text_input("Email", key="signup_email")
                 s_pwd = st.text_input("Mot de passe (min. 6 caractères)", type="password", key="signup_pwd")
@@ -197,6 +206,11 @@ def login_screen():
                     elif email_exists(s_email):
                         st.error("Un compte existe déjà avec cet email.")
                     elif create_user(s_email, s_pwd, s_name):
-                        st.success("✅ Compte créé ! Il sera actif dès qu'un administrateur l'aura approuvé.")
+                        if billing and billing.enabled():
+                            st.success("✅ Compte créé ! Connectez-vous pour démarrer votre "
+                                       "essai gratuit de 14 jours.")
+                        else:
+                            st.success("✅ Compte créé ! Il sera actif dès qu'un administrateur "
+                                       "l'aura approuvé.")
                     else:
                         st.error("Erreur lors de la création du compte.")
