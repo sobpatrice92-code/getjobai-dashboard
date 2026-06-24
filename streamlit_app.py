@@ -34,6 +34,7 @@ from database import get_supabase_client
 from auth import login_screen, set_password
 import billing
 import notion_link
+import zapier_link
 from simulation_entretien import simulation_entretien_page
 from chatbot import (chatbot_page, generer_message_linkedin, generer_post_linkedin,
                      generer_image_post, prioriser_contacts)
@@ -350,6 +351,7 @@ _GOTO_PAGES = {
     "candidatures": "📤 Candidatures",
     "reseau": "🤝 Réseau",
     "notion": "🗂️ Notion",
+    "zapier": "⚡ Automatisations",
     "livrables": "📦 Livrables",
     "parametres": "⚙️ Paramètres",
     "simulation": "🎤 Simulation entretien",
@@ -395,6 +397,7 @@ with st.sidebar:
         "🎤 Simulation entretien",
         "🤝 Réseau",
         "🗂️ Notion",
+        "⚡ Automatisations",
         "📦 Livrables",
         "📅 Planificateur",
         "💬 Assistant IA",
@@ -2252,6 +2255,20 @@ elif page == "🗂️ Notion":
         alert("Connectez-vous pour synchroniser votre espace Notion.", "warning")
     else:
         notion_link.render_panel(st.session_state.user_id)
+
+# ============================================================
+# PAGE: AUTOMATISATIONS (Zapier — GetJobAI source d'événements)
+# ============================================================
+
+elif page == "⚡ Automatisations":
+    hero_holographic(
+        "⚡ Automatisations",
+        "Connectez GetJobAI à 9000+ apps via Zapier (Slack, Gmail, Calendar, Sheets…)"
+    )
+    if not st.session_state.user_id:
+        alert("Connectez-vous pour configurer vos automatisations.", "warning")
+    else:
+        zapier_link.render_panel(st.session_state.user_id)
 
 # ============================================================
 # PAGE: LIVRABLES (résultats de tous les agents)
