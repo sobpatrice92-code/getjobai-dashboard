@@ -35,6 +35,7 @@ from auth import login_screen, set_password
 import billing
 import notion_link
 import zapier_link
+import mcp_link
 from simulation_entretien import simulation_entretien_page
 from chatbot import (chatbot_page, generer_message_linkedin, generer_post_linkedin,
                      generer_image_post, prioriser_contacts)
@@ -352,6 +353,7 @@ _GOTO_PAGES = {
     "reseau": "🤝 Réseau",
     "notion": "🗂️ Notion",
     "zapier": "⚡ Automatisations",
+    "mcp": "🔌 Accès IA",
     "livrables": "📦 Livrables",
     "parametres": "⚙️ Paramètres",
     "simulation": "🎤 Simulation entretien",
@@ -398,6 +400,7 @@ with st.sidebar:
         "🤝 Réseau",
         "🗂️ Notion",
         "⚡ Automatisations",
+        "🔌 Accès IA",
         "📦 Livrables",
         "📅 Planificateur",
         "💬 Assistant IA",
@@ -2269,6 +2272,20 @@ elif page == "⚡ Automatisations":
         alert("Connectez-vous pour configurer vos automatisations.", "warning")
     else:
         zapier_link.render_panel(st.session_state.user_id)
+
+# ============================================================
+# PAGE: ACCÈS IA (serveur MCP — interroger ses données via une IA)
+# ============================================================
+
+elif page == "🔌 Accès IA":
+    hero_holographic(
+        "🔌 Accès IA (MCP)",
+        "Interrogez vos candidatures et votre réseau via Claude, ChatGPT…"
+    )
+    if not st.session_state.user_id:
+        alert("Connectez-vous pour activer l'accès IA.", "warning")
+    else:
+        mcp_link.render_panel(st.session_state.user_id)
 
 # ============================================================
 # PAGE: LIVRABLES (résultats de tous les agents)
