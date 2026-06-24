@@ -33,6 +33,7 @@ from database import get_supabase_client
 # Import Authentification + Assistant IA
 from auth import login_screen, set_password
 import billing
+import notion_link
 from simulation_entretien import simulation_entretien_page
 from chatbot import (chatbot_page, generer_message_linkedin, generer_post_linkedin,
                      generer_image_post, prioriser_contacts)
@@ -348,6 +349,7 @@ _GOTO_PAGES = {
     "offres": "📋 Offres d'Emploi",
     "candidatures": "📤 Candidatures",
     "reseau": "🤝 Réseau",
+    "notion": "🗂️ Notion",
     "livrables": "📦 Livrables",
     "parametres": "⚙️ Paramètres",
     "simulation": "🎤 Simulation entretien",
@@ -392,6 +394,7 @@ with st.sidebar:
         "🤖 Agents IA",
         "🎤 Simulation entretien",
         "🤝 Réseau",
+        "🗂️ Notion",
         "📦 Livrables",
         "📅 Planificateur",
         "💬 Assistant IA",
@@ -2235,6 +2238,20 @@ elif page == "🤝 Réseau":
                 st.caption("Aucune autre personne pour l'instant.")
             for c in _personnes:
                 _render_contact(c)
+
+# ============================================================
+# PAGE: NOTION (espace de travail synchronisé par utilisateur)
+# ============================================================
+
+elif page == "🗂️ Notion":
+    hero_holographic(
+        "🗂️ Mon espace Notion",
+        "Vos candidatures et votre réseau, synchronisés dans votre propre Notion"
+    )
+    if not st.session_state.user_id:
+        alert("Connectez-vous pour synchroniser votre espace Notion.", "warning")
+    else:
+        notion_link.render_panel(st.session_state.user_id)
 
 # ============================================================
 # PAGE: LIVRABLES (résultats de tous les agents)
