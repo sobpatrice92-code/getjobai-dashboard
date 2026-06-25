@@ -2714,6 +2714,16 @@ elif page == "⚙️ Paramètres":
         else:
             st.warning("❌ Aucun CV enregistré.")
 
+        # Garde-fou : refuser un CV-MODÈLE (placeholders) -> sinon les agents
+        # génèrent de faux CV/lettres détachés du candidat.
+        _PH_CV = ("[your name]", "[previous employer]", "[university name]", "[year]",
+                  "[certifying body]", "[location]", "[votre nom]", "[année", "[employeur",
+                  "[your address]", "[your phone", "[your email]")
+
+        def _cv_est_modele(t):
+            tl = (t or "").lower()
+            return sum(1 for m in _PH_CV if m in tl) >= 2
+
         up = st.file_uploader("Téléverser votre CV (PDF)", type=["pdf"], key="cv_pdf")
         if up is not None:
             try:
@@ -2724,7 +2734,12 @@ elif page == "⚙️ Paramètres":
                 if texte:
                     st.text_area("Aperçu du texte extrait", value=texte[:1500], height=160,
                                  disabled=True)
-                    if st.button("💾 Enregistrer ce CV", type="primary", key="save_cv_pdf"):
+                    if _cv_est_modele(texte):
+                        st.error("⚠️ Ce document ressemble à un CV-MODÈLE (champs entre "
+                                 "crochets comme [Your Name]). Remplissez-le avec vos vraies "
+                                 "informations avant de l'enregistrer, sinon les candidatures "
+                                 "générées ne porteront pas vos infos.")
+                    elif st.button("💾 Enregistrer ce CV", type="primary", key="save_cv_pdf"):
                         ok = db.update_user(st.session_state.user_id,
                                             {"cv_text": texte, "cv_filename": up.name})
                         if ok:
@@ -2739,12 +2754,16 @@ elif page == "⚙️ Paramètres":
         st.markdown("**Ou collez le texte de votre CV :**")
         cv_txt = st.text_area("Texte du CV", value=_cv_actuel, height=220, key="cv_texte")
         if st.button("💾 Enregistrer le CV (texte)", key="save_cv_txt"):
-            ok = db.update_user(st.session_state.user_id,
-                                {"cv_text": cv_txt.strip(), "cv_filename": _cv_nom or "CV.txt"})
-            if ok:
-                st.success("✅ CV enregistré!")
+            if _cv_est_modele(cv_txt):
+                st.error("⚠️ Ce texte ressemble à un CV-MODÈLE (placeholders [ ]). "
+                         "Remplissez vos vraies informations avant d'enregistrer.")
             else:
-                st.error("Erreur de sauvegarde.")
+                ok = db.update_user(st.session_state.user_id,
+                                    {"cv_text": cv_txt.strip(), "cv_filename": _cv_nom or "CV.txt"})
+                if ok:
+                    st.success("✅ CV enregistré!")
+                else:
+                    st.error("Erreur de sauvegarde.")
 
     with tab4:
         st.subheader("📧 Gmail d'envoi (Copilote — postuler par email)")
