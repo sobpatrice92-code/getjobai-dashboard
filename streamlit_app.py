@@ -45,7 +45,7 @@ st.set_page_config(
     page_title="GetJobAI - Votre Assistant IA de Recherche d'Emploi",
     page_icon="🚀",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",   # auto : déployée sur desktop, repliée sur mobile
     menu_items={
         'About': "GetJobAI - Automatisez votre recherche d'emploi avec l'IA"
     }

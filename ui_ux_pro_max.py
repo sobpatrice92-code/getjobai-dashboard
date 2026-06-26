@@ -749,6 +749,40 @@ def inject_animations():
         }
         /* Cartes/panneaux : padding réduit */
         [data-testid="stVerticalBlockBorderWrapper"] { padding: 0.2rem !important; }
+
+        /* ★ CLÉ MOBILE : empiler les colonnes (sinon tout est écrasé côte à côte) */
+        [data-testid="stHorizontalBlock"]{ flex-wrap:wrap !important; gap:.55rem !important; }
+        [data-testid="stHorizontalBlock"] > [data-testid="column"],
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+        [data-testid="column"], [data-testid="stColumn"]{
+            flex:1 1 100% !important; min-width:100% !important; width:100% !important; }
+
+        /* Marges du conteneur principal réduites */
+        .block-container, [data-testid="stMainBlockContainer"]{
+            padding-left:.7rem !important; padding-right:.7rem !important; padding-top:1rem !important; }
+
+        /* Médias jamais plus larges que l'écran */
+        .stApp img, [data-testid="stMarkdownContainer"] img,
+        [data-testid="stImage"] img{ max-width:100% !important; height:auto !important; }
+
+        /* Tableaux/dataframes : scroll horizontal au lieu de déborder */
+        [data-testid="stDataFrame"], [data-testid="stTable"],
+        [data-testid="stMarkdownContainer"] table{
+            display:block !important; overflow-x:auto !important; max-width:100% !important; }
+
+        /* Boutons et liens pleine largeur (cibles tactiles) */
+        .stButton button, .stDownloadButton button, .stLinkButton a,
+        [data-testid="stFormSubmitButton"] button{ width:100% !important; }
+
+        /* Onglets défilables horizontalement au lieu de se chevaucher */
+        [data-testid="stTabs"] [data-baseweb="tab-list"]{
+            overflow-x:auto !important; flex-wrap:nowrap !important; }
+
+        /* Métriques natives un cran plus petites */
+        [data-testid="stMetricValue"]{ font-size:1.5rem !important; }
+
+        /* Coupe tout débordement horizontal résiduel */
+        [data-testid="stAppViewContainer"], [data-testid="stMain"]{ overflow-x:hidden !important; }
     }
     </style>
     """, unsafe_allow_html=True)
